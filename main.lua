@@ -1,31 +1,46 @@
-local Terrain = require 'terrain'
-local Map = require 'map'
+local Grid = require 'grid'
+local TerrainGen = require 'terraingen'
 
 -- show live output in console, don't wait for app to close
 io.stdout:setvbuf("no")
 
-love.math.setRandomSeed(love.timer.getTime())
+math.randomseed(os.time())
 
-local t = nil
+local g = nil
 
 function love.load()
-	t = Terrain(4)
-	t:generate(0.3)
+	g = Grid(129)
 
-	print(t)
+	local t = TerrainGen(g)
+	t:generate()
+	--print(g)
+
+	--t = Terrain(4)
+	--t:generate(0.3)
+	--print(t)
 end
 
 function love.draw()
-	local size = t:getSize() - 1
-	local n = 0
-	for x = 1, size do
-		for y = 1, size do
-			local v = t:getValue(x, y)
-			n = n + 1
-			print(v)
-			love.graphics.points(1, 1)
-			love.graphics.points(1, 2)
+	local size = g:getSize()
+	for x = 1, size - 1 do
+		for y = 1, size - 1 do
+			local v = g:getValue(x, y)
+
+			if v < 0.4 then
+				love.graphics.setColor(0, 0, 1.0)
+			elseif v < 0.41 then
+				love.graphics.setColor(160/255, 160/255, 9/255)
+			elseif v < 0.7 then
+				love.graphics.setColor(0, 1.0, 0)
+			elseif v < 0.95 then
+				love.graphics.setColor(64/255, 192/255, 64/255)
+			elseif v < 0.98 then
+				love.graphics.setColor(0.5, 0.5, 0.5)
+			elseif v ~= -1 then
+				love.graphics.setColor(1.0, 1.0, 1.0)
+			end
+
+			love.graphics.rectangle('fill', x * 4, y * 4, 4, 4)
 		end
 	end
-	print('1111')
 end

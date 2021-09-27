@@ -14,7 +14,7 @@ local g5 = nil -- right1
 local g6 = nil -- right2
 
 function love.load()
-	local gridSize = 17
+	local gridSize = 33
 
 	g1 = Grid(gridSize)
 	local t = TerrainGen(g1)
@@ -83,11 +83,11 @@ function love.load()
 end
 
 function love.draw()
-	local scale = 8
+	local scale = 4
 
-	local size = g1:getSize()
-	for x = 1, size - 1 do
-		for y = 1, size - 1 do
+	local size = g1:getSize() - 1
+	for x = 1, size do
+		for y = 1, size do
 			do
 				local v = g1:getValue(x, y)
 
@@ -101,7 +101,7 @@ function love.draw()
 					love.graphics.setColor(64/255, 192/255, 64/255)
 				elseif v < 0.98 then
 					love.graphics.setColor(0.5, 0.5, 0.5)
-				elseif v ~= -1 then
+				else
 					love.graphics.setColor(1.0, 1.0, 1.0)
 				end
 
@@ -121,7 +121,7 @@ function love.draw()
 					love.graphics.setColor(64/255, 192/255, 64/255)
 				elseif v < 0.98 then
 					love.graphics.setColor(0.5, 0.5, 0.5)
-				elseif v ~= -1 then
+				else
 					love.graphics.setColor(1.0, 1.0, 1.0)
 				end
 
@@ -141,7 +141,7 @@ function love.draw()
 					love.graphics.setColor(64/255, 192/255, 64/255)
 				elseif v < 0.98 then
 					love.graphics.setColor(0.5, 0.5, 0.5)
-				elseif v ~= -1 then
+				else
 					love.graphics.setColor(1.0, 1.0, 1.0)
 				end
 
@@ -161,7 +161,7 @@ function love.draw()
 					love.graphics.setColor(64/255, 192/255, 64/255)
 				elseif v < 0.98 then
 					love.graphics.setColor(0.5, 0.5, 0.5)
-				elseif v ~= -1 then
+				else
 					love.graphics.setColor(1.0, 1.0, 1.0)
 				end
 
@@ -181,7 +181,7 @@ function love.draw()
 					love.graphics.setColor(64/255, 192/255, 64/255)
 				elseif v < 0.98 then
 					love.graphics.setColor(0.5, 0.5, 0.5)
-				elseif v ~= -1 then
+				else
 					love.graphics.setColor(1.0, 1.0, 1.0)
 				end
 
@@ -201,7 +201,7 @@ function love.draw()
 					love.graphics.setColor(64/255, 192/255, 64/255)
 				elseif v < 0.98 then
 					love.graphics.setColor(0.5, 0.5, 0.5)
-				elseif v ~= -1 then
+				else
 					love.graphics.setColor(1.0, 1.0, 1.0)
 				end
 

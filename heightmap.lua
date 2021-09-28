@@ -5,6 +5,48 @@ local Tile = require 'tile'
 local HeightMap = {}
 HeightMap.__index = HeightMap
 
+local function getLeftTile(self, x, y)
+	local x = (x - 1) % self._width
+	return self._tiles[y][x]
+end
+
+local function getRightTile(self, x, y)
+	local x = (x + 1) % self._width
+	return self._tiles[y][x]
+end
+
+local function getTopTile(self, x, y)
+	local y = (y - 1) % self._height
+	return self._tiles[y][x]
+end
+
+local function getBottomTile(self, x, y)
+	local y = (y + 1) % self._height
+	return self._tiles[y][x]
+end
+
+local function getHeightType(height)
+	if height < 0.2 then return 'deepWater'
+	elseif height < 0.55 then return 'shallowWater'
+	elseif height < 0.6 then return 'sand'
+	elseif height < 0.7 then return 'grass'
+	elseif height < 0.8 then return 'forest'
+	elseif height < 0.9 then return 'mountain'
+	else return 'snow'
+	end
+end
+
+--[[
+local function updateBitmasks()
+	for y = 0, self._height - 1 do
+		for x = 0, self._width - 1 do
+			local tile = self._tiles[y][x]
+			tile:updateBitmask()
+		end
+	end
+end
+]]
+
 local function generateMapData(self)
 	local mapData = MapData(self._width, self._height)
 
@@ -50,6 +92,7 @@ function HeightMap:new(width, height)
 	return setmetatable({
 		_width = width,
 		_height = height,
+		_tiles = {},
 	}, HeightMap)
 end
 
@@ -58,17 +101,29 @@ function HeightMap:generate()
 
 	local mapData = generateMapData(self)
 
-	local tiles = {}
+	self._tiles = {}
 	for y = 0, self._height - 1 do
-		tiles[y] = {}
+		self._tiles[y] = {}
 		for x = 0, self._width - 1 do
 			local heightValue = mapData:getNormalizedValue(x, y)
-			local tile = Tile(x, y, heightValue)
-			tiles[y][x] = tile
+			local heightType = getHeightType(heightValue)
+			local tile = Tile(x, y, heightValue, heightType)
+			self._tiles[y][x] = tile
 		end
 	end
 
-	local texture = TextureGen(self._width, self._height, tiles):generate()
+	for y = 0, self._height - 1 do
+		for x = 0, self._width - 1 do
+			local tile = self._tiles[y][x]
+			tile:setTopTile(getTopTile(self, x, y))
+			tile:setBottomTile(getBottomTile(self, x, y))
+			tile:setLeftTile(getLeftTile(self, x, y))
+			tile:setRightTile(getRightTile(self, x, y))
+			tile:updateBitmask()
+		end
+	end
+
+	local texture = TextureGen(self._width, self._height, self._tiles):generate()
 
 	return texture
 end

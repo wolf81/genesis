@@ -2,8 +2,6 @@ local MapData = {}
 MapData.__index = MapData
 
 function MapData:new(width, height)
-	print('new')
-
 	local data = {}
 	for y = 0, height - 1 do
 		data[y] = {}

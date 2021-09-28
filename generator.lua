@@ -180,8 +180,21 @@ function Generator:generate()
 		for x = 0, self._width - 1 do
 			local heightValue = mapData:getNormalizedValue(x, y)			
 			local heatValue = 1.0 - 2 * math.abs((y / self._height) - 0.5);
+
+			local tile = Tile(x, y, heightValue, heatValue)
+			local heightType = tile:getHeightType()
+			if heightType == 'grass' then
+				heatValue = heatValue - 0.1 * heightValue
+			elseif heightType == 'forest' then
+				heatValue = heatValue - 0.2 * heightValue
+			elseif heightType == 'mountain' then
+				heatValue = heatValue - 0.3 * heightValue
+			elseif heightType == 'snow' then
+				heatValue = heatValue - 0.4 * heightValue				
+			end
+			tile:setHeatValue(heatValue)
 			
-			self._tiles[y][x] = Tile(x, y, heightValue, heatValue)
+			self._tiles[y][x] = tile
 		end
 	end
 

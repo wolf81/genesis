@@ -70,6 +70,10 @@ function Tile:getHeatValue()
 	return self._heatValue
 end
 
+function Tile:setHeatValue(heatValue)
+	self._heatValue = heatValue
+end
+
 function Tile:getHeightType()
 	if self._heightValue < 0.35 then return 'deepWater', false
 	elseif self._heightValue < 0.55 then return 'shallowWater', false

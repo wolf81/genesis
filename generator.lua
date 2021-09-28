@@ -26,26 +26,6 @@ local function getBottomTile(self, x, y)
 	return self._tiles[y][x]
 end
 
-local function getHeightType(height)
-	if height < 0.35 then return 'deepWater', false
-	elseif height < 0.55 then return 'shallowWater', false
-	elseif height < 0.6 then return 'sand', true
-	elseif height < 0.7 then return 'grass', true
-	elseif height < 0.8 then return 'forest', true
-	elseif height < 0.9 then return 'mountain', true
-	else return 'snow', true
-	end
-end
-
-local function getHeatType(heat)
-	if heat < 0.15 then return 'coldest'
-	elseif heat < 0.30 then return 'colder'
-	elseif heat < 0.45 then return 'cold'
-	elseif heat < 0.60 then return 'warm'
-	elseif heat < 0.75 then return 'warmer'
-	else return 'warmest' end
-end
-
 local function floodFill2(tile, tileGroup, stack)
 	if tile:isFloodFilled() then
 		return
@@ -198,13 +178,10 @@ function Generator:generate()
 	for y = 0, self._height - 1 do
 		self._tiles[y] = {}
 		for x = 0, self._width - 1 do
-			local heightValue = mapData:getNormalizedValue(x, y)
-			local heightType, collidable = getHeightType(heightValue)
-			
+			local heightValue = mapData:getNormalizedValue(x, y)			
 			local heatValue = 1.0 - 2 * math.abs((y / self._height) - 0.5);
-			local heatType = getHeatType(heatValue)
 			
-			self._tiles[y][x] = Tile(x, y, heightValue, heightType, collidable, heatValue, heatType)
+			self._tiles[y][x] = Tile(x, y, heightValue, heatValue)
 		end
 	end
 

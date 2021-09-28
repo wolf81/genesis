@@ -49,15 +49,7 @@ function TextureGen:generateHeatmap(width, height, tiles)
 			for x = 0, width - 1 do
 				local tile = tiles[y][x]
 
-				local heatValue = tile:getHeatValue()
 				local heatType = tile:getHeatType()
-				--[[
-				local g = 1.0 - 2 * math.abs((y / height) - 0.5);
-				local r = (1.0 - heatValue) * g
-				local b = 1.0 - r
-				local color = { r, 0.0, b, 1.0 }
-				]]
-
 				local color = getHeatColor(heatType)
 
 				if tile:getBitmask() ~= 15 then

@@ -1,20 +1,21 @@
 local Tile = {}
 Tile.__index = Tile
 
-function Tile:new(x, y, heightValue, heightType, collidable, heatValue, heatType)
+function Tile:new(x, y, heightValue, heatValue)
 	return setmetatable({
 		_heightValue = heightValue,
-		_heightType = heightType,
 		_heatValue = heatValue,
-		_heatType = heatType,
-		_isCollidable = collidable,
 		_isFloodFilled = false,
 		_coord = { x, y },
 	}, Tile)
 end
 
 function Tile:isCollidable()
-	return self._isCollidable
+	local heightType = self:getHeightType()
+	return (
+		heightType ~= 'deepWater' and 
+		heightType ~= 'shallowWater'
+	)
 end
 
 function Tile:isFloodFilled()
@@ -69,20 +70,24 @@ function Tile:getHeatValue()
 	return self._heatValue
 end
 
-function Tile:setHeatType(heatType)
-	self._heatType = heatType
+function Tile:getHeightType()
+	if self._heightValue < 0.35 then return 'deepWater', false
+	elseif self._heightValue < 0.55 then return 'shallowWater', false
+	elseif self._heightValue < 0.6 then return 'sand', true
+	elseif self._heightValue < 0.7 then return 'grass', true
+	elseif self._heightValue < 0.8 then return 'forest', true
+	elseif self._heightValue < 0.9 then return 'mountain', true
+	else return 'snow', true
+	end
 end
 
 function Tile:getHeatType()
-	return self._heatType
-end
-
-function Tile:setHeightType(heightType)
-	self._heightType = heightType
-end
-
-function Tile:getHeightType()
-	return self._heightType
+	if self._heatValue < 0.15 then return 'coldest'
+	elseif self._heatValue < 0.30 then return 'colder'
+	elseif self._heatValue < 0.45 then return 'cold'
+	elseif self._heatValue < 0.60 then return 'warm'
+	elseif self._heatValue < 0.75 then return 'warmer'
+	else return 'warmest' end
 end
 
 function Tile:getBitmask()
@@ -91,20 +96,22 @@ end
 
 function Tile:updateBitmask()
 	local count = 0	
+
+	local heightType = self:getHeightType()
 	
-	if self._topTile:getHeightType() == self._heightType then
+	if self._topTile:getHeightType() == heightType then
 		count = count + 1
 	end
 
-	if self._rightTile:getHeightType() == self._heightType then
+	if self._rightTile:getHeightType() == heightType then
 		count = count + 2
 	end
 
-	if self._bottomTile:getHeightType() == self._heightType then
+	if self._bottomTile:getHeightType() == heightType then
 		count = count + 4
 	end
 
-	if self._leftTile:getHeightType() == self._heightType then
+	if self._leftTile:getHeightType() == heightType then
 		count = count + 8
 	end
 

@@ -1,3 +1,5 @@
+require 'constants'
+
 local MapData = require 'mapdata'
 local TextureGen = require 'texturegen'
 local Tile = require 'tile'
@@ -26,7 +28,7 @@ local function getBottomTile(self, x, y)
 	return self._tiles[y][x]
 end
 
-local function floodFill2(tile, tileGroup, stack)
+local function floodFillGroup(tile, tileGroup, stack)
 	if tile:isFloodFilled() then
 		return
 	elseif tileGroup:getType() == 'land' and not tile:isCollidable() then
@@ -65,7 +67,7 @@ local function floodFill(self)
 					stack[#stack + 1] = tile
 
 					while #stack > 0 do
-						floodFill2(table.remove(stack), tileGroup, stack)
+						floodFillGroup(table.remove(stack), tileGroup, stack)
 					end
 
 					if tileGroup:getSize() > 0 then
@@ -76,7 +78,7 @@ local function floodFill(self)
 					stack[#stack + 1] = tile
 
 					while #stack > 0 do
-						floodFill2(table.remove(stack), tileGroup, stack)
+						floodFillGroup(table.remove(stack), tileGroup, stack)
 					end
 
 					if tileGroup:getSize() > 0 then
@@ -88,8 +90,7 @@ local function floodFill(self)
 	end
 end
 
---[[
-local function updateBitmasks()
+local function updateBitmasks(self)
 	for y = 0, self._height - 1 do
 		for x = 0, self._width - 1 do
 			local tile = self._tiles[y][x]
@@ -97,46 +98,155 @@ local function updateBitmasks()
 		end
 	end
 end
-]]
 
-local function generateMapData(self)
-	local mapData = MapData(self._width, self._height)
+local function initialize(self)
+	local lacunarity = 2.0
 
-	local r = math.random() * 256
-	
+	local fractalBrownianMotion = function(octaves, frequency, seed, x, y, z, w)
+		local r = 0.0
+		local amplitude = 0.5
+		local gain = 0.5
+
+		for _ = 1, octaves do
+			r = r + amplitude * love.math.noise(frequency * (seed + x), frequency * (seed + y), frequency * (seed + z), frequency * (seed + w))
+			frequency = frequency * lacunarity
+			amplitude = amplitude * gain
+		end
+
+		return r
+	end
+
+	local heightMapSeed = math.random()
+	self._heightMap = function(x, y, z, w)
+		return fractalBrownianMotion(6, 1.25, heightMapSeed, x, y, z, w)
+	end
+
+	local heatMapSeed = math.random()
+	self._heatMap = function(x, y, z, w)
+		return fractalBrownianMotion(4, 3.0, heatMapSeed, x, y, z, w)
+	end
+
+	local moisureMapSeed = math.random()
+	self._moistureMap = function(x, y, z, w)
+		return fractalBrownianMotion(4, 3.0, moisureMapSeed, x, y, z, w)
+	end
+end
+
+local function getData(self)
+	self._heightData = MapData(self._width , self._height)
+	self._heatData = MapData(self._width, self._height)
+	self._moistureData = MapData(self._width, self._height)
+
 	for y = 0, self._height - 1 do
 		for x = 0, self._width - 1 do
-			local x1 = 0
-			local x2 = 5
-			local y1 = 0
-			local y2 = 5
+			local x1, x2 = 0, 2
+			local y1, y2 = 0, 2
 			local dx = x2 - x1
 			local dy = y2 - y1
 
 			local s = x / self._width
 			local t = y / self._height
 
-			local nx = x1 + math.cos(s * 2 * math.pi) * dx / (2 * math.pi) + r
-			local ny = y1 + math.cos(t * 2 * math.pi) * dy / (2 * math.pi) + r
-			local nz = x1 + math.sin(s * 2 * math.pi) * dx / (2 * math.pi) + r
-			local nw = y1 + math.sin(t * 2 * math.pi) * dy / (2 * math.pi) + r
+			local nx = x1 + math.cos(s * 2 * math.pi) * dx / (2 * math.pi)
+			local ny = y1 + math.cos(t * 2 * math.pi) * dy / (2 * math.pi)
+			local nz = x1 + math.sin(s * 2 * math.pi) * dx / (2 * math.pi)
+			local nw = y1 + math.sin(t * 2 * math.pi) * dy / (2 * math.pi)
 
-			-- octaves ?
-			local u1 = love.math.noise(nx, ny, nz, nw)
-			local u2 = love.math.noise(nx * 2, ny * 2, nz * 2, nw * 2)
-			local u3 = love.math.noise(nx * 4, ny * 4, nz * 4, nw * 4)
-			local u4 = love.math.noise(nx * 8, ny * 8, nz * 8, nw * 8)
-			local u5 = love.math.noise(nx * 16, ny * 16, nz * 16, nw * 16)
-			--local u6 = love.math.noise(xx * 32, yy * 32, zz * 32)
-			local u = u1 + u2 / 2 + u3 / 4 + u4 / 8 + u5 / 16 -- + u6 / 32
+			local heightValue = self._heightMap(nx, ny, nz, nw)
+			self._heightData:setValue(x, y, heightValue)
 
-			local f = 1.25 -- frequency?
+			local heatValue = self._heatMap(nx, ny, nz, nw)
+			local h = self._height - 1
+			local factor = 0.5 - math.abs((y - h / 2) / h)
+			self._heatData:setValue(x, y, heatValue * factor)
 
-			mapData:setValue(x, y, u / f)
+			local moistureValue = self._moistureMap(nx, ny, nz, nw)
+			self._moistureData:setValue(x, y, moistureValue)
 		end
 	end
 
-	return mapData
+	--[[
+	print(heightData)
+	print(moistureData)
+	print(heatData)
+	]]
+end
+
+local function loadTiles(self)
+	self._tiles = {}
+	for y = 0, self._height - 1 do
+		self._tiles[y] = {}
+		for x = 0, self._width - 1 do
+			local tile = Tile(x, y)
+			self._tiles[y][x] = tile
+
+			local heightValue = self._heightData:getNormalizedValue(x, y)
+			tile:setHeightValue(heightValue)
+
+			if heightValue < TerrainType.DEEP_WATER then
+				tile:setTerrainType(TerrainType.DEEP_WATER)
+				tile:setCollidable(false)
+			elseif heightValue < TerrainType.SHALLOW_WATER then
+				tile:setTerrainType(TerrainType.SHALLOW_WATER)
+				tile:setCollidable(false)
+			elseif heightValue < TerrainType.SAND then
+				tile:setTerrainType(TerrainType.SAND)
+			elseif heightValue < TerrainType.GRASS then
+				tile:setTerrainType(TerrainType.GRASS)
+			elseif heightValue < TerrainType.FOREST	then
+				tile:setTerrainType(TerrainType.FOREST)
+			elseif heightValue < TerrainType.ROCK then
+				tile:setTerrainType(TerrainType.ROCK)
+			else
+				tile:setTerrainType(TerrainType.SNOW)				
+			end
+
+			local terrainType = tile:getTerrainType()
+			local heatValue = self._heatData:getValue(x, y)
+			if terrainType == TerrainType.FOREST then
+				heatValue = heatValue - 0.10 * heightValue
+			elseif terrainType == TerrainType.ROCK then
+				heatValue = heatValue - 0.25 * heightValue
+			elseif terrainType == TerrainType.SNOW then
+				heatValue = heatValue - 0.40 * heightValue
+			else
+				heatValue = heatValue + 0.01 * heightValue
+			end
+			tile:setHeatValue(heatValue)
+
+			local heatValue = self._heatData:getNormalizedValue(x, y)
+			if heatValue < HeatType.COLDEST then
+				tile:setHeatType(HeatType.COLDEST)
+			elseif heatValue < HeatType.COLDER then
+				tile:setHeatType(HeatType.COLDER)
+			elseif heatValue < HeatType.COLD then
+				tile:setHeatType(HeatType.COLD)
+			elseif heatValue < HeatType.WARM then
+				tile:setHeatType(HeatType.WARM)
+			elseif heatValue < HeatType.WARMER then
+				tile:setHeatType(HeatType.WARMER)
+			else
+				tile:setHeatType(HeatType.WARMEST)
+			end
+			tile:setHeatValue(heatValue)
+
+			local moistureValue = self._moistureData:getNormalizedValue(x, y)
+			tile:setMoistureValue(moistureValue)
+		end
+	end
+end
+
+local function updateNeighbours(self)
+	for y = 0, self._height - 1 do
+		for x = 0, self._width - 1 do
+			local tile = self._tiles[y][x]
+			tile:setTopTile(getTopTile(self, x, y))
+			tile:setBottomTile(getBottomTile(self, x, y))
+			tile:setLeftTile(getLeftTile(self, x, y))
+			tile:setRightTile(getRightTile(self, x, y))
+			tile:updateBitmask()
+		end
+	end
 end
 
 function Generator:new(width, height)
@@ -146,6 +256,14 @@ function Generator:new(width, height)
 		_tiles = {},
 		_waterTiles = {},
 		_landTiles = {},
+
+		_heatData = MapData(0, 0),
+		_heightData = MapData(0, 0),
+		_moistureData = MapData(0, 0),
+
+		_heatMap = function() return 0 end,
+		_heightMap = function() return 0 end,
+		_moistureMap = function() return 0 end,
 	}, Generator)
 end
 
@@ -170,46 +288,14 @@ function Generator:getWaterTiles()
 end
 
 function Generator:generate()
-	print('->', self._width, self._height)
+	print('generate')
 
-	local mapData = generateMapData(self)
-
-	self._tiles = {}
-	for y = 0, self._height - 1 do
-		self._tiles[y] = {}
-		for x = 0, self._width - 1 do
-			local heightValue = mapData:getNormalizedValue(x, y)			
-			local heatValue = 1.0 - 2 * math.abs((y / self._height) - 0.5);
-
-			local tile = Tile(x, y, heightValue, heatValue)
-			local heightType = tile:getHeightType()
-			if heightType == 'grass' then
-				heatValue = heatValue - 0.1 * heightValue
-			elseif heightType == 'forest' then
-				heatValue = heatValue - 0.2 * heightValue
-			elseif heightType == 'mountain' then
-				heatValue = heatValue - 0.3 * heightValue
-			elseif heightType == 'snow' then
-				heatValue = heatValue - 0.4 * heightValue				
-			end
-			tile:setHeatValue(heatValue)
-			
-			self._tiles[y][x] = tile
-		end
-	end
-
-	for y = 0, self._height - 1 do
-		for x = 0, self._width - 1 do
-			local tile = self._tiles[y][x]
-			tile:setTopTile(getTopTile(self, x, y))
-			tile:setBottomTile(getBottomTile(self, x, y))
-			tile:setLeftTile(getLeftTile(self, x, y))
-			tile:setRightTile(getRightTile(self, x, y))
-			tile:updateBitmask()
-		end
-	end
-
+	initialize(self)
+	getData(self)
+	loadTiles(self)
+	updateNeighbours(self)
 	floodFill(self)
+	updateBitmasks(self)
 end
 
 return setmetatable(Generator, {

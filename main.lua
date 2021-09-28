@@ -2,6 +2,7 @@ local Grid = require 'grid'
 local TerrainGen = require 'terraingen'
 
 local HeightMap = require 'heightmap'
+local TextureGen = require 'texturegen'
 
 -- show live output in console, don't wait for app to close
 io.stdout:setvbuf("no")
@@ -18,7 +19,7 @@ local g5 = nil -- right1
 local g6 = nil -- right2
 ]]
 
-local texture = nil
+local texture1 = nil
 
 function love.load()
 	love.window.setTitle('Genesis')
@@ -26,7 +27,10 @@ function love.load()
 	local _ = love.window.setMode(1280, 800, {})
 
 	local heightMap = HeightMap(512, 512)
-	texture = heightMap:generate()
+	heightMap:generate()
+
+	texture1 = TextureGen():generateHeightmap(heightMap:getWidth(), heightMap:getHeight(), heightMap:getTiles())
+	texture2 = TextureGen():generateHeatmap(heightMap:getWidth(), heightMap:getHeight(), heightMap:getTiles())
 
 	--[[
 	local gridSize = 33
@@ -100,7 +104,9 @@ end
 
 function love.draw()
 	local scale = 1.0
-	love.graphics.draw(texture, 0, 0, 0, scale, scale)
+	love.graphics.draw(texture1, 0, 0, 0, scale, scale)
+
+	love.graphics.draw(texture2, texture1:getWidth() * scale, 0, 0, scale, scale)
 	--[[
 	local scale = 4
 

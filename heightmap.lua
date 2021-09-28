@@ -27,7 +27,7 @@ local function getBottomTile(self, x, y)
 end
 
 local function getHeightType(height)
-	if height < 0.2 then return 'deepWater', false
+	if height < 0.35 then return 'deepWater', false
 	elseif height < 0.55 then return 'shallowWater', false
 	elseif height < 0.6 then return 'sand', true
 	elseif height < 0.7 then return 'grass', true
@@ -79,7 +79,7 @@ local function floodFill(self)
 						floodFill2(table.remove(stack), tileGroup, stack)
 					end
 
-					if tileGroup:getTileCount() > 0 then
+					if tileGroup:getSize() > 0 then
 						self._landTiles[#self._landTiles + 1] = tileGroup
 					end
 				else
@@ -90,7 +90,7 @@ local function floodFill(self)
 						floodFill2(table.remove(stack), tileGroup, stack)
 					end
 
-					if tileGroup:getTileCount() > 0 then
+					if tileGroup:getSize() > 0 then
 						self._waterTiles[#self._waterTiles + 1] = tileGroup
 					end					
 				end
@@ -132,7 +132,6 @@ local function generateMapData(self)
 			local nz = x1 + math.sin(s * 2 * math.pi) * dx / (2 * math.pi) + r
 			local nw = y1 + math.sin(t * 2 * math.pi) * dy / (2 * math.pi) + r
 
-
 			-- octaves ?
 			local u1 = love.math.noise(nx, ny, nz, nw)
 			local u2 = love.math.noise(nx * 2, ny * 2, nz * 2, nw * 2)
@@ -159,6 +158,26 @@ function HeightMap:new(width, height)
 		_waterTiles = {},
 		_landTiles = {},
 	}, HeightMap)
+end
+
+function HeightMap:getWidth()
+	return self._width
+end
+
+function HeightMap:getHeight()
+	return self._height
+end
+
+function HeightMap:getTiles()
+	return self._tiles
+end
+
+function HeightMap:getLandTiles()
+	return self._landTiles
+end
+
+function HeightMap:getWaterTiles()
+	return self._waterTiles
 end
 
 function HeightMap:generate()
@@ -189,10 +208,6 @@ function HeightMap:generate()
 	end
 
 	floodFill(self)
-
-	local texture = TextureGen(self._width, self._height, self._tiles):generate()
-
-	return texture
 end
 
 return setmetatable(HeightMap, {

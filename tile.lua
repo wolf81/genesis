@@ -5,6 +5,8 @@ function Tile:new(x, y, heightValue, heightType, collidable)
 	return setmetatable({
 		_heightValue = heightValue,
 		_heightType = heightType,
+		_heatValue = 0.0,
+		_heatType = nil,
 		_isCollidable = collidable,
 		_isFloodFilled = false,
 		_coord = { x, y },
@@ -61,6 +63,18 @@ end
 
 function Tile:getHeightValue()
 	return self._heightValue
+end
+
+function Tile:getHeatValue()
+	return self._heatValue
+end
+
+function Tile:setHeatType(heatType)
+	self._heatType = heatType
+end
+
+function getHeatType()
+	return self._heatType
 end
 
 function Tile:setHeightType(heightType)

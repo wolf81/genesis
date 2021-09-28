@@ -20,7 +20,7 @@ function TileGroup:getTiles()
 	return self._tiles
 end
 
-function TileGroup:getTileCount()
+function TileGroup:getSize()
 	return #self._tiles
 end
 

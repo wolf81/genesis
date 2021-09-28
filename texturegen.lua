@@ -4,8 +4,8 @@ TextureGen.__index = TextureGen
 local function getColor(value)
 	if value < 0.4 then return 	   { 0.0, 0.0, 0.5, 1.0 }
 	elseif value < 0.6 then return { 25/255, 25/255, 150/255, 1.0 }
-	elseif value < 0.63 then return { 240/255, 240/255, 64/255, 1.0 }
-	elseif value < 0.75 then return { 50/255, 220/255, 20/255, 1.0 }
+	elseif value < 0.62 then return { 240/255, 240/255, 64/255, 1.0 }
+	elseif value < 0.7 then return { 50/255, 220/255, 20/255, 1.0 }
 	elseif value < 0.8 then return { 16/255, 160/255, 0.0, 1.0 }
 	elseif value < 0.9 then return { 0.5, 0.5, 0.5, 1.0 }
 	end

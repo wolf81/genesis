@@ -7,36 +7,33 @@ HeightMap.__index = HeightMap
 
 local function generateMapData(self)
 	local mapData = MapData(self._width, self._height)
+
+	local r = math.random() * 256
 	
-	local z = math.random()
-
-	local maxr = 1
-	local minr = 0.5
-	local yrad = 2 * maxr - minr
-	local ox = 200 * math.random() - 10
-	local oy = 20 * math.random() - 10
-	local oz = 20 * math.random() - 10
-
 	for y = 0, self._height - 1 do
-		local beta = 2 * y / self._height * math.pi
-
 		for x = 0, self._width - 1 do
-			local alpha = 2 * x / self._width * math.pi
+			local x1 = 0
+			local x2 = 5
+			local y1 = 0
+			local y2 = 5
+			local dx = x2 - x1
+			local dy = y2 - y1
 
-			local x1 = x / self._width
-			local y1 = y / self._height
+			local s = x / self._width
+			local t = y / self._height
 
-			local yy = oy + yrad * math.sin(beta)
-			local ur = maxr - minr * math.cos(beta)
-			local xx = ox + ur * math.cos(alpha)
-			local zz = oz + ur * math.sin(alpha)
+			local nx = x1 + math.cos(s * 2 * math.pi) * dx / (2 * math.pi) + r
+			local ny = y1 + math.cos(t * 2 * math.pi) * dy / (2 * math.pi) + r
+			local nz = x1 + math.sin(s * 2 * math.pi) * dx / (2 * math.pi) + r
+			local nw = y1 + math.sin(t * 2 * math.pi) * dy / (2 * math.pi) + r
+
 
 			-- octaves ?
-			local u1 = love.math.noise(xx, yy, zz)
-			local u2 = love.math.noise(xx * 2, yy * 2, zz * 2)
-			local u3 = love.math.noise(xx * 4, yy * 4, zz * 4)
-			local u4 = love.math.noise(xx * 8, yy * 8, zz * 8)
-			local u5 = love.math.noise(xx * 16, yy * 16, zz * 16)
+			local u1 = love.math.noise(nx, ny, nz, nw)
+			local u2 = love.math.noise(nx * 2, ny * 2, nz * 2, nw * 2)
+			local u3 = love.math.noise(nx * 4, ny * 4, nz * 4, nw * 4)
+			local u4 = love.math.noise(nx * 8, ny * 8, nz * 8, nw * 8)
+			local u5 = love.math.noise(nx * 16, ny * 16, nz * 16, nw * 16)
 			--local u6 = love.math.noise(xx * 32, yy * 32, zz * 32)
 			local u = u1 + u2 / 2 + u3 / 4 + u4 / 8 + u5 / 16 -- + u6 / 32
 

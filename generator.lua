@@ -38,11 +38,11 @@ local function getHeightType(height)
 end
 
 local function getHeatType(heat)
-	if heat < 0.05 then return 'coldest'
-	elseif heat < 0.18 then return 'colder'
-	elseif heat < 0.4 then return 'cold'
-	elseif heat < 0.6 then return 'warm'
-	elseif heat < 0.8 then return 'warmer'
+	if heat < 0.15 then return 'coldest'
+	elseif heat < 0.30 then return 'colder'
+	elseif heat < 0.45 then return 'cold'
+	elseif heat < 0.60 then return 'warm'
+	elseif heat < 0.75 then return 'warmer'
 	else return 'warmest' end
 end
 

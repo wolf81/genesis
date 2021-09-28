@@ -3,8 +3,8 @@ local TextureGen = require 'texturegen'
 local Tile = require 'tile'
 local TileGroup = require 'tilegroup'
 
-local HeightMap = {}
-HeightMap.__index = HeightMap
+local Generator = {}
+Generator.__index = Generator
 
 local function getLeftTile(self, x, y)
 	local x = (x - 1) % self._width
@@ -35,6 +35,15 @@ local function getHeightType(height)
 	elseif height < 0.9 then return 'mountain', true
 	else return 'snow', true
 	end
+end
+
+local function getHeatType(heat)
+	if heat < 0.05 then return 'coldest'
+	elseif heat < 0.18 then return 'colder'
+	elseif heat < 0.4 then return 'cold'
+	elseif heat < 0.6 then return 'warm'
+	elseif heat < 0.8 then return 'warmer'
+	else return 'warmest' end
 end
 
 local function floodFill2(tile, tileGroup, stack)
@@ -150,38 +159,38 @@ local function generateMapData(self)
 	return mapData
 end
 
-function HeightMap:new(width, height)
+function Generator:new(width, height)
 	return setmetatable({
 		_width = width,
 		_height = height,
 		_tiles = {},
 		_waterTiles = {},
 		_landTiles = {},
-	}, HeightMap)
+	}, Generator)
 end
 
-function HeightMap:getWidth()
+function Generator:getWidth()
 	return self._width
 end
 
-function HeightMap:getHeight()
+function Generator:getHeight()
 	return self._height
 end
 
-function HeightMap:getTiles()
+function Generator:getTiles()
 	return self._tiles
 end
 
-function HeightMap:getLandTiles()
+function Generator:getLandTiles()
 	return self._landTiles
 end
 
-function HeightMap:getWaterTiles()
+function Generator:getWaterTiles()
 	return self._waterTiles
 end
 
-function HeightMap:generate()
-	print(self._width, self._height)
+function Generator:generate()
+	print('->', self._width, self._height)
 
 	local mapData = generateMapData(self)
 
@@ -210,6 +219,6 @@ function HeightMap:generate()
 	floodFill(self)
 end
 
-return setmetatable(HeightMap, {
-	__call = HeightMap.new
+return setmetatable(Generator, {
+	__call = Generator.new
 })

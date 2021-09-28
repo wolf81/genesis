@@ -1,7 +1,23 @@
 local TextureGen = {}
 TextureGen.__index = TextureGen
 
-local function getColor(heightType)
+local function getHeatColor(heatType)
+	if heatType == 'coldest' then
+		return { 0.0, 1.0, 1.0, 1.0 }
+	elseif heatType == 'colder' then
+		return { 170/255, 1.0, 1.0, 1.0 }
+	elseif heatType == 'cold' then
+		return { 0.0, 229/255, 133/255, 1.0 }
+	elseif heatType == 'warm' then
+		return { 1.0, 1.0, 100/255, 1.0 }
+	elseif heatType == 'warmer' then
+		return { 1.0, 100/255, 0.0, 1.0 }
+	else -- warmest
+		return { 241/255, 12/255, 0.0, 1.0 }
+	end
+end
+
+local function getHeightColor(heightType)
 	if heightType == 'deepWater' then 
 		return { 0.0, 0.0, 0.5, 1.0 }
 	elseif heightType == 'shallowWater' then 
@@ -14,9 +30,10 @@ local function getColor(heightType)
 		return { 16/255, 160/255, 0.0, 1.0 }
 	elseif heightType == 'mountain' then 
 		return { 0.5, 0.5, 0.5, 1.0 }
+	else -- snow
+		return { 1.0, 1.0, 1.0, 1.0 }
 	end
 	
-	return { 1.0, 1.0, 1.0, 1.0 }
 end
 
 function TextureGen:new()
@@ -33,10 +50,15 @@ function TextureGen:generateHeatmap(width, height, tiles)
 				local tile = tiles[y][x]
 
 				local heatValue = tile:getHeatValue()
+				local heatType = tile:getHeatType()
+				--[[
 				local g = 1.0 - 2 * math.abs((y / height) - 0.5);
 				local r = (1.0 - heatValue) * g
 				local b = 1.0 - r
 				local color = { r, 0.0, b, 1.0 }
+				]]
+
+				local color = getHeatColor(heatType)
 
 				if tile:getBitmask() ~= 15 then
 					color = { color[1] * 0.4, color[2] * 0.4, color[3] * 0.4, 1 }
@@ -65,7 +87,7 @@ function TextureGen:generateHeightmap(width, height, tiles)
 			for x = 0, width - 1 do
 				local tile = tiles[y][x]
 				local heightType = tile:getHeightType()
-				local color = getColor(heightType)
+				local color = getHeightColor(heightType)
 
 				if tile:getBitmask() ~= 15 then
 					color = { color[1] * 0.4, color[2] * 0.4, color[3] * 0.4, 1 }

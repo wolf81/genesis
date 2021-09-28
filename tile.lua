@@ -1,12 +1,12 @@
 local Tile = {}
 Tile.__index = Tile
 
-function Tile:new(x, y, heightValue, heightType, collidable)
+function Tile:new(x, y, heightValue, heightType, collidable, heatValue, heatType)
 	return setmetatable({
 		_heightValue = heightValue,
 		_heightType = heightType,
-		_heatValue = 0.0,
-		_heatType = nil,
+		_heatValue = heatValue,
+		_heatType = heatType,
 		_isCollidable = collidable,
 		_isFloodFilled = false,
 		_coord = { x, y },
@@ -73,7 +73,7 @@ function Tile:setHeatType(heatType)
 	self._heatType = heatType
 end
 
-function getHeatType()
+function Tile:getHeatType()
 	return self._heatType
 end
 

@@ -200,8 +200,11 @@ function Generator:generate()
 		for x = 0, self._width - 1 do
 			local heightValue = mapData:getNormalizedValue(x, y)
 			local heightType, collidable = getHeightType(heightValue)
-			local tile = Tile(x, y, heightValue, heightType, collidable)
-			self._tiles[y][x] = tile
+			
+			local heatValue = 1.0 - 2 * math.abs((y / self._height) - 0.5);
+			local heatType = getHeatType(heatValue)
+			
+			self._tiles[y][x] = Tile(x, y, heightValue, heightType, collidable, heatValue, heatType)
 		end
 	end
 

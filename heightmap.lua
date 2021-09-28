@@ -1,6 +1,7 @@
 local MapData = require 'mapdata'
 local TextureGen = require 'texturegen'
 local Tile = require 'tile'
+local TileGroup = require 'tilegroup'
 
 local HeightMap = {}
 HeightMap.__index = HeightMap
@@ -26,13 +27,75 @@ local function getBottomTile(self, x, y)
 end
 
 local function getHeightType(height)
-	if height < 0.2 then return 'deepWater'
-	elseif height < 0.55 then return 'shallowWater'
-	elseif height < 0.6 then return 'sand'
-	elseif height < 0.7 then return 'grass'
-	elseif height < 0.8 then return 'forest'
-	elseif height < 0.9 then return 'mountain'
-	else return 'snow'
+	if height < 0.2 then return 'deepWater', false
+	elseif height < 0.55 then return 'shallowWater', false
+	elseif height < 0.6 then return 'sand', true
+	elseif height < 0.7 then return 'grass', true
+	elseif height < 0.8 then return 'forest', true
+	elseif height < 0.9 then return 'mountain', true
+	else return 'snow', true
+	end
+end
+
+local function floodFill2(tile, tileGroup, stack)
+	if tile:isFloodFilled() then
+		return
+	elseif tileGroup:getType() == 'land' and not tile:isCollidable() then
+		return
+	elseif TileGroup:getType() == 'water' and tile:isCollidable() then
+		return
+	end
+
+	tileGroup:add(tile)
+	tile:floodFill()
+
+	local adjacentTiles = { 
+		tile:getTopTile(), 
+		tile:getBottomTile(),
+		tile:getLeftTile(),
+		tile:getRightTile(),
+	}
+
+	for _, adjacentTile in ipairs(adjacentTiles) do
+		if not adjacentTile:isFloodFilled() and adjacentTile:isCollidable() == tile:isCollidable() then
+		stack[#stack + 1] = adjacentTile		
+		end
+	end
+end
+
+local function floodFill(self)
+	local stack = {}
+
+	for y = 0, self._height - 1 do
+		for x = 0, self._width - 1 do
+			local tile = self._tiles[y][x]
+
+			if not tile:isFloodFilled() then
+				if tile:isCollidable() then
+					local tileGroup = TileGroup('land')
+					stack[#stack + 1] = tile
+
+					while #stack > 0 do
+						floodFill2(table.remove(stack), tileGroup, stack)
+					end
+
+					if tileGroup:getTileCount() > 0 then
+						self._landTiles[#self._landTiles + 1] = tileGroup
+					end
+				else
+					local tileGroup = TileGroup('water')
+					stack[#stack + 1] = tile
+
+					while #stack > 0 do
+						floodFill2(table.remove(stack), tileGroup, stack)
+					end
+
+					if tileGroup:getTileCount() > 0 then
+						self._waterTiles[#self._waterTiles + 1] = tileGroup
+					end					
+				end
+			end
+		end
 	end
 end
 
@@ -93,6 +156,8 @@ function HeightMap:new(width, height)
 		_width = width,
 		_height = height,
 		_tiles = {},
+		_waterTiles = {},
+		_landTiles = {},
 	}, HeightMap)
 end
 
@@ -106,8 +171,8 @@ function HeightMap:generate()
 		self._tiles[y] = {}
 		for x = 0, self._width - 1 do
 			local heightValue = mapData:getNormalizedValue(x, y)
-			local heightType = getHeightType(heightValue)
-			local tile = Tile(x, y, heightValue, heightType)
+			local heightType, collidable = getHeightType(heightValue)
+			local tile = Tile(x, y, heightValue, heightType, collidable)
 			self._tiles[y][x] = tile
 		end
 	end
@@ -122,6 +187,8 @@ function HeightMap:generate()
 			tile:updateBitmask()
 		end
 	end
+
+	floodFill(self)
 
 	local texture = TextureGen(self._width, self._height, self._tiles):generate()
 

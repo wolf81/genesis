@@ -1,12 +1,26 @@
 local Tile = {}
 Tile.__index = Tile
 
-function Tile:new(x, y, heightValue, heightType)
+function Tile:new(x, y, heightValue, heightType, collidable)
 	return setmetatable({
 		_heightValue = heightValue,
 		_heightType = heightType,
+		_isCollidable = collidable,
+		_isFloodFilled = false,
 		_coord = { x, y },
 	}, Tile)
+end
+
+function Tile:isCollidable()
+	return self._isCollidable
+end
+
+function Tile:isFloodFilled()
+	return self._isFloodFilled
+end
+
+function Tile:floodFill()
+	self._isFloodFilled = true
 end
 
 function Tile:setTopTile(tile)

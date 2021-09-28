@@ -25,7 +25,7 @@ function love.load()
 
 	local _ = love.window.setMode(1280, 800, {})
 
-	local heightMap = HeightMap(128, 128)
+	local heightMap = HeightMap(512, 512)
 	texture = heightMap:generate()
 
 	--[[
@@ -99,7 +99,7 @@ function love.load()
 end
 
 function love.draw()
-	local scale = 4.0
+	local scale = 1.0
 	love.graphics.draw(texture, 0, 0, 0, scale, scale)
 	--[[
 	local scale = 4

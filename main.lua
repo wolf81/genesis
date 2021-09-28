@@ -14,6 +14,11 @@ local g5 = nil -- right1
 local g6 = nil -- right2
 
 function love.load()
+	love.window.setTitle('Genesis')
+
+	local success = love.window.setMode(1280, 800, {})
+
+
 	local gridSize = 33
 
 	g1 = Grid(gridSize)

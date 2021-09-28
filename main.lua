@@ -1,24 +1,34 @@
 local Grid = require 'grid'
 local TerrainGen = require 'terraingen'
 
+local HeightMap = require 'heightmap'
+
 -- show live output in console, don't wait for app to close
 io.stdout:setvbuf("no")
 
 math.randomseed(os.time())
+love.math.setRandomSeed(os.time())
 
+--[[
 local g1 = nil -- mid
 local g2 = nil -- bot
 local g3 = nil -- left
 local g4 = nil -- top
 local g5 = nil -- right1
 local g6 = nil -- right2
+]]
+
+local texture = nil
 
 function love.load()
 	love.window.setTitle('Genesis')
 
-	local success = love.window.setMode(1280, 800, {})
+	local _ = love.window.setMode(1280, 800, {})
 
+	local heightMap = HeightMap(128, 128)
+	texture = heightMap:generate()
 
+	--[[
 	local gridSize = 33
 
 	g1 = Grid(gridSize)
@@ -85,9 +95,13 @@ function love.load()
 	end
 	t = TerrainGen(g6)
 	t:generate()
+	]]
 end
 
 function love.draw()
+	local scale = 4.0
+	love.graphics.draw(texture, 0, 0, 0, scale, scale)
+	--[[
 	local scale = 4
 
 	local size = g1:getSize() - 1
@@ -214,4 +228,5 @@ function love.draw()
 			end			
 		end
 	end
+	]]
 end

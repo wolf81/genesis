@@ -164,9 +164,9 @@ local function getData(self)
 			self._heightData:setValue(x, y, heightValue)
 
 			local heatValue = self._heatMap(nx, ny, nz, nw)
-			local h = self._height
-			local factor = 0.5 - math.abs((y - h / 2) / h)
-			self._heatData:setValue(x, y, factor + heightValue)
+			local h = self._height - 1
+			local factor = 0.5 - math.abs(y - h / 2) / h
+			self._heatData:setValue(x, y, factor + heatValue)
 
 			local moistureValue = self._moistureMap(nx, ny, nz, nw)
 			self._moistureData:setValue(x, y, moistureValue)

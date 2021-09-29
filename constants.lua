@@ -43,7 +43,7 @@ TerrainType = {
 			return { 50/255, 220/255, 20/255, 1.0 }
 		elseif terrainType == TerrainType.FOREST then 
 			return { 16/255, 160/255, 0.0, 1.0 }
-		elseif terrainType == TerrainType.STONE then 
+		elseif terrainType == TerrainType.ROCK then 
 			return { 0.5, 0.5, 0.5, 1.0 }
 		else -- TerrainType.SNOW
 			return { 1.0, 1.0, 1.0, 1.0 }

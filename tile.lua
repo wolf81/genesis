@@ -1,7 +1,7 @@
 local Tile = {}
 Tile.__index = Tile
 
-function Tile:new(x, y)
+function Tile:new(x, y)	
 	return setmetatable({
 		_heightValue = 0,
 		_heatValue = 0,

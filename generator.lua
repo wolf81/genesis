@@ -173,6 +173,10 @@ local function getData(self)
 end
 
 local function loadTiles(self)
+	local normalize = function(value, min, max)
+		return (value - min) / (max - min)
+	end
+
 	self._tiles = {}
 	for y = 0, self._height - 1 do
 		self._tiles[y] = {}
@@ -180,7 +184,10 @@ local function loadTiles(self)
 			local tile = Tile(x, y)
 			self._tiles[y][x] = tile
 
-			local heightValue = self._heightData:getNormalizedValue(x, y)
+			local heightValue = self._heightData:getValue(x, y)
+			local heightMin = self._heightData:getMin()
+			local heightMax = self._heightData:getMax()
+			heightValue = normalize(heightValue, heightMin, heightMax)
 			tile:setHeightValue(heightValue)
 
 			if heightValue < TerrainType.DEEP_WATER then
@@ -201,36 +208,45 @@ local function loadTiles(self)
 				tile:setTerrainType(TerrainType.SNOW)				
 			end
 
-			local terrainType = tile:getTerrainType()
-			local heatValue = self._heatData:getValue(x, y)
-			if terrainType == TerrainType.FOREST then
-				heatValue = heatValue - 0.10 * heightValue
-			elseif terrainType == TerrainType.ROCK then
-				heatValue = heatValue - 0.25 * heightValue
-			elseif terrainType == TerrainType.SNOW then
-				heatValue = heatValue - 0.40 * heightValue
-			else
-				heatValue = heatValue + 0.01 * heightValue
+			do
+				local terrainType = tile:getTerrainType()
+				local heatValue = self._heatData:getValue(x, y)
+				if terrainType == TerrainType.FOREST then
+					self._heatData:setValue(x, y, heatValue - 0.10 * heightValue)
+				elseif terrainType == TerrainType.ROCK then
+					self._heatData:setValue(x, y, heatValue - 0.25 * heightValue)
+				elseif terrainType == TerrainType.SNOW then
+					self._heatData:setValue(x, y, heatValue - 0.40 * heightValue)
+				else
+					self._heatData:setValue(x, y, heatValue + 0.01 * heightValue)
+				end
 			end
-			tile:setHeatValue(heatValue)
 
-			local heatValue = self._heatData:getNormalizedValue(x, y)
-			if heatValue < HeatType.COLDEST then
-				tile:setHeatType(HeatType.COLDEST)
-			elseif heatValue < HeatType.COLDER then
-				tile:setHeatType(HeatType.COLDER)
-			elseif heatValue < HeatType.COLD then
-				tile:setHeatType(HeatType.COLD)
-			elseif heatValue < HeatType.WARM then
-				tile:setHeatType(HeatType.WARM)
-			elseif heatValue < HeatType.WARMER then
-				tile:setHeatType(HeatType.WARMER)
-			else
-				tile:setHeatType(HeatType.WARMEST)
+			do
+				local heatValue = self._heatData:getValue(x, y)
+				local heatMin = self._heatData:getMin()
+				local heatMax = self._heatData:getMax()
+				tile:setHeatValue(normalize(heatValue, heatMin, heatMax))
 			end
-			tile:setHeatValue(heatValue)
 
-			local moistureValue = self._moistureData:getNormalizedValue(x, y)
+			do
+				local heatValue = tile:getHeatValue()
+				if heatValue < HeatType.COLDEST then
+					tile:setHeatType(HeatType.COLDEST)
+				elseif heatValue < HeatType.COLDER then
+					tile:setHeatType(HeatType.COLDER)
+				elseif heatValue < HeatType.COLD then
+					tile:setHeatType(HeatType.COLD)
+				elseif heatValue < HeatType.WARM then
+					tile:setHeatType(HeatType.WARM)
+				elseif heatValue < HeatType.WARMER then
+					tile:setHeatType(HeatType.WARMER)
+				else
+					tile:setHeatType(HeatType.WARMEST)
+				end
+			end
+
+			local moistureValue = self._moistureData:getValue(x, y)
 			tile:setMoistureValue(moistureValue)
 		end
 	end

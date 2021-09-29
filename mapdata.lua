@@ -10,10 +10,12 @@ function MapData:new(width, height)
 		end
 	end
 
+	local nan = 0.0 / 0.0
+
 	return setmetatable({
 		_data = data,
-		_min = 1.0,
-		_max = 0.0,
+		_min = nan,
+		_max = nan,
 	}, MapData)
 end
 
@@ -27,9 +29,12 @@ function MapData:getValue(x, y)
 	return self._data[y][x]
 end
 
-function MapData:getNormalizedValue(x, y)
-	local value = self._data[y][x]
-	return (value - self._min) / (self._max - self._min) 
+function MapData:getMin()
+	return self._min
+end
+
+function MapData:getMax()
+	return self._max
 end
 
 function MapData:__tostring()

@@ -100,32 +100,30 @@ local function updateBitmasks(self)
 end
 
 local function initialize(self)
-	local lacunarity = 2.0
-
-	local fractalBrownianMotion = function(octaves, f, a, x, y, z, w)
+	local fractalBrownianMotion = function(n, f, a, l, g, x, y, z, w)
 		local val = 0.0
-		local ca = 0.5
-		local gain = 0.5
+		local ca = g
+		local cf = l
 
-		for _ = 1, octaves do
-			val = val + love.math.noise(f * x, f * y, f * z, f * w) * ca
-			f = f * lacunarity
-			ca = ca * a
+		for _ = 1, n do
+			val = val + love.math.noise(f * x, f * y, f * z, f * w) * a
+			f = f * cf
+			a = a * ca
 		end
 
 		return val
 	end
 
 	self._heightMap = function(x, y, z, w)
-		return fractalBrownianMotion(6, 1.25, 0.5, x, y, z, w)
+		return fractalBrownianMotion(6, 1.25, 0.5, 2.0, 0.5, x, y, z, w)
 	end
 
 	self._heatMap = function(x, y, z, w)
-		return fractalBrownianMotion(4, 3.0, 0.5, x, y, z, w)
+		return fractalBrownianMotion(4, 3.0, 0.5, 2.0, 0.5, x, y, z, w)
 	end
 
 	self._moistureMap = function(x, y, z, w)
-		return fractalBrownianMotion(4, 3.0, 0.5, x, y, z, w)
+		return fractalBrownianMotion(4, 3.0, 0.5, 2.0, 0.5, x, y, z, w)
 	end
 end
 

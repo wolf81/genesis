@@ -102,33 +102,30 @@ end
 local function initialize(self)
 	local lacunarity = 2.0
 
-	local fractalBrownianMotion = function(octaves, frequency, seed, x, y, z, w)
+	local fractalBrownianMotion = function(octaves, f, x, y, z, w)
 		local r = 0.0
 		local amplitude = 0.5
 		local gain = 0.5
 
 		for _ = 1, octaves do
-			r = r + amplitude * love.math.noise(frequency * (seed + x), frequency * (seed + y), frequency * (seed + z), frequency * (seed + w))
-			frequency = frequency * lacunarity
+			r = r + amplitude * love.math.noise(f * x, f * y, f * z, f * w)
+			f = f * lacunarity
 			amplitude = amplitude * gain
 		end
 
 		return r
 	end
 
-	local heightMapSeed = math.random()
 	self._heightMap = function(x, y, z, w)
-		return fractalBrownianMotion(6, 1.25, heightMapSeed, x, y, z, w)
+		return fractalBrownianMotion(6, 1.25, x, y, z, w)
 	end
 
-	local heatMapSeed = math.random()
 	self._heatMap = function(x, y, z, w)
-		return fractalBrownianMotion(4, 3.0, heatMapSeed, x, y, z, w)
+		return fractalBrownianMotion(4, 3.0, x, y, z, w)
 	end
 
-	local moisureMapSeed = math.random()
 	self._moistureMap = function(x, y, z, w)
-		return fractalBrownianMotion(4, 3.0, moisureMapSeed, x, y, z, w)
+		return fractalBrownianMotion(4, 3.0, x, y, z, w)
 	end
 end
 
@@ -136,6 +133,9 @@ local function getData(self)
 	self._heightData = MapData(self._width , self._height)
 	self._heatData = MapData(self._width, self._height)
 	self._moistureData = MapData(self._width, self._height)
+
+	local sx = math.random(self._width)
+	local sy = math.random(self._height)
 
 	for y = 0, self._height - 1 do
 		for x = 0, self._width - 1 do
@@ -147,10 +147,10 @@ local function getData(self)
 			local s = x / self._width
 			local t = y / self._height
 
-			local nx = x1 + math.cos(s * 2 * math.pi) * dx / (2 * math.pi)
-			local ny = y1 + math.cos(t * 2 * math.pi) * dy / (2 * math.pi)
-			local nz = x1 + math.sin(s * 2 * math.pi) * dx / (2 * math.pi)
-			local nw = y1 + math.sin(t * 2 * math.pi) * dy / (2 * math.pi)
+			local nx = x1 + math.cos(s * 2 * math.pi) * dx / (2 * math.pi) + sx
+			local ny = y1 + math.cos(t * 2 * math.pi) * dy / (2 * math.pi) + sy
+			local nz = x1 + math.sin(s * 2 * math.pi) * dx / (2 * math.pi) + sx
+			local nw = y1 + math.sin(t * 2 * math.pi) * dy / (2 * math.pi) + sy
 
 			local heightValue = self._heightMap(nx, ny, nz, nw)
 			self._heightData:setValue(x, y, heightValue)
@@ -182,35 +182,40 @@ local function loadTiles(self)
 		self._tiles[y] = {}
 		for x = 0, self._width - 1 do
 			local tile = Tile(x, y)
-			self._tiles[y][x] = tile
 
-			local heightValue = self._heightData:getValue(x, y)
-			local heightMin = self._heightData:getMin()
-			local heightMax = self._heightData:getMax()
-			heightValue = normalize(heightValue, heightMin, heightMax)
-			tile:setHeightValue(heightValue)
-
-			if heightValue < TerrainType.DEEP_WATER then
-				tile:setTerrainType(TerrainType.DEEP_WATER)
-				tile:setCollidable(false)
-			elseif heightValue < TerrainType.SHALLOW_WATER then
-				tile:setTerrainType(TerrainType.SHALLOW_WATER)
-				tile:setCollidable(false)
-			elseif heightValue < TerrainType.SAND then
-				tile:setTerrainType(TerrainType.SAND)
-			elseif heightValue < TerrainType.GRASS then
-				tile:setTerrainType(TerrainType.GRASS)
-			elseif heightValue < TerrainType.FOREST	then
-				tile:setTerrainType(TerrainType.FOREST)
-			elseif heightValue < TerrainType.ROCK then
-				tile:setTerrainType(TerrainType.ROCK)
-			else
-				tile:setTerrainType(TerrainType.SNOW)				
+			do -- normalize tile heights to range 0 .. 1
+				local heightValue = self._heightData:getValue(x, y)
+				local heightMin = self._heightData:getMin()
+				local heightMax = self._heightData:getMax()
+				heightValue = normalize(heightValue, heightMin, heightMax)
+				tile:setHeightValue(heightValue)
 			end
 
-			do
+			do -- set terrain type based on tile height value
+				local heightValue = tile:getHeightValue()
+				if heightValue < TerrainType.DEEP_WATER then
+					tile:setTerrainType(TerrainType.DEEP_WATER)
+					tile:setCollidable(false)
+				elseif heightValue < TerrainType.SHALLOW_WATER then
+					tile:setTerrainType(TerrainType.SHALLOW_WATER)
+					tile:setCollidable(false)
+				elseif heightValue < TerrainType.SAND then
+					tile:setTerrainType(TerrainType.SAND)
+				elseif heightValue < TerrainType.GRASS then
+					tile:setTerrainType(TerrainType.GRASS)
+				elseif heightValue < TerrainType.FOREST	then
+					tile:setTerrainType(TerrainType.FOREST)
+				elseif heightValue < TerrainType.ROCK then
+					tile:setTerrainType(TerrainType.ROCK)
+				else
+					tile:setTerrainType(TerrainType.SNOW)
+				end
+			end
+
+			do -- adjust heat based on terrain, e.g. mountains are colder
 				local terrainType = tile:getTerrainType()
 				local heatValue = self._heatData:getValue(x, y)
+				local heightValue = tile:getHeightValue()
 				if terrainType == TerrainType.FOREST then
 					self._heatData:setValue(x, y, heatValue - 0.10 * heightValue)
 				elseif terrainType == TerrainType.ROCK then
@@ -222,14 +227,14 @@ local function loadTiles(self)
 				end
 			end
 
-			do
+			do -- set the tile heat value
 				local heatValue = self._heatData:getValue(x, y)
 				local heatMin = self._heatData:getMin()
 				local heatMax = self._heatData:getMax()
 				tile:setHeatValue(normalize(heatValue, heatMin, heatMax))
 			end
 
-			do
+			do -- set heat type
 				local heatValue = tile:getHeatValue()
 				if heatValue < HeatType.COLDEST then
 					tile:setHeatType(HeatType.COLDEST)
@@ -246,8 +251,12 @@ local function loadTiles(self)
 				end
 			end
 
-			local moistureValue = self._moistureData:getValue(x, y)
-			tile:setMoistureValue(moistureValue)
+			do -- moisture
+				local moistureValue = self._moistureData:getValue(x, y)
+				tile:setMoistureValue(moistureValue)
+			end
+
+			self._tiles[y][x] = tile
 		end
 	end
 end

@@ -88,6 +88,14 @@ function Tile:setMoistureValue(value)
 	self._moistureValue = math.min(math.max(value, 0.0), 1.0)
 end
 
+function Tile:getMoistureType()
+	return self._moistureType
+end
+
+function Tile:setMoistureType(value)
+	self._moistureType = math.min(math.max(value, 0.0), 1.0)
+end
+
 function Tile:getTerrainType()
 	return self._terraintType
 end

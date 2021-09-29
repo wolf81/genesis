@@ -235,6 +235,40 @@ local function loadTiles(self)
 				end
 			end
 
+			do -- adjust moisture based on height
+				local terrainType = tile:getTerrainType()
+				local moistureValue = self._moistureData:getValue(x, y)
+				local heightValue = tile:getHeightValue()
+				
+				if terrainType == TerrainType.DEEP_WATER then
+					self._moistureData:setValue(x, y, moistureValue + 8 * heightValue)
+				elseif terrainType == TerrainType.SHALLOW_WATER then
+					self._moistureData:setValue(x, y, moistureValue + 3 * heightValue)
+				elseif terrainType == TerrainType.SAND then
+					self._moistureData:setValue(x, y, moistureValue + 0.2 * heightValue)
+				end
+			end
+
+			do -- moisture
+				local moistureValue = self._moistureData:getValue(x, y)
+
+				tile:setMoistureValue(moistureValue)
+
+				if moistureValue < MoistureType.DRYER then
+					tile:setMoistureType(MoistureType.DRYEST)
+				elseif moistureValue < MoistureType.DRY then
+					tile:setMoistureType(MoistureType.DRYER)
+				elseif moistureValue < MoistureType.WET then
+					tile:setMoistureType(MoistureType.DRY)
+				elseif moistureValue < MoistureType.WETTER then
+					tile:setMoistureType(MoistureType.WET)
+				elseif moistureValue < MoistureType.WETTEST then
+					tile:setMoistureType(MoistureType.WETTER)
+				else
+					tile:setMoistureType(MoistureType.WETTEST)
+				end
+			end
+
 			do -- set the tile heat value
 				local heatValue = self._heatData:getValue(x, y)
 				local heatMin = self._heatData:getMin()

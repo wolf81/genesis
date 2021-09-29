@@ -60,6 +60,18 @@ MoistureType = {
 	WETTEST = 0.9,
 
 	getColor = function(moistureType)
-		return { 0.0, 0.5, 0.5, 1.0 }
+		if moistureType == MoistureType.DRYEST then
+			return { 1.0, 139/255, 17/255, 1.0 }
+		elseif moistureType == MoistureType.DRYER then
+			return { 245/255, 245/255, 23/255, 1.0 }
+		elseif moistureType == MoistureType.DRY then
+			return { 80/255, 1.0, 0.0, 1.0 }
+		elseif moistureType == MoistureType.WET then
+			return { 85/255, 1.0, 1.0, 1.0 }
+		elseif moistureType == MoistureType.WETTER then
+			return { 20/255, 70/255, 1.0, 1.0 }
+		elseif moistureType == MoistureType.WETTEST then
+			return { 0.0, 0.0, 100/255, 1.0 }
+		end
 	end
 }

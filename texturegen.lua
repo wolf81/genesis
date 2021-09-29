@@ -74,7 +74,8 @@ function TextureGen:generateMoistureMap(width, height, tiles)
 		for y = 0, height - 1 do
 			for x = 0, width - 1 do
 				local tile = tiles[y][x]
-				local color = { 0.5, 0.5, 0.5, 1.0 }
+				local moistureType = tile:getMoistureType()
+				local color = MoistureType.getColor(moistureType)
 
 				if tile:getBitmask() ~= 15 then
 					color = { color[1] * 0.4, color[2] * 0.4, color[3] * 0.4, 1 }

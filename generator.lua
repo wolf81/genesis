@@ -102,30 +102,30 @@ end
 local function initialize(self)
 	local lacunarity = 2.0
 
-	local fractalBrownianMotion = function(octaves, f, x, y, z, w)
-		local r = 0.0
-		local amplitude = 0.5
+	local fractalBrownianMotion = function(octaves, f, a, x, y, z, w)
+		local val = 0.0
+		local ca = 0.5
 		local gain = 0.5
 
 		for _ = 1, octaves do
-			r = r + amplitude * love.math.noise(f * x, f * y, f * z, f * w)
+			val = val + love.math.noise(f * x, f * y, f * z, f * w) * ca
 			f = f * lacunarity
-			amplitude = amplitude * gain
+			ca = ca * a
 		end
 
-		return r
+		return val
 	end
 
 	self._heightMap = function(x, y, z, w)
-		return fractalBrownianMotion(6, 1.25, x, y, z, w)
+		return fractalBrownianMotion(6, 1.25, 0.5, x, y, z, w)
 	end
 
 	self._heatMap = function(x, y, z, w)
-		return fractalBrownianMotion(4, 3.0, x, y, z, w)
+		return fractalBrownianMotion(4, 3.0, 0.5, x, y, z, w)
 	end
 
 	self._moistureMap = function(x, y, z, w)
-		return fractalBrownianMotion(4, 3.0, x, y, z, w)
+		return fractalBrownianMotion(4, 3.0, 0.5, x, y, z, w)
 	end
 end
 

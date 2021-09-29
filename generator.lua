@@ -100,10 +100,10 @@ local function updateBitmasks(self)
 end
 
 local function initialize(self)
-	local fractalBrownianMotion = function(n, f, a, l, g, x, y, z, w)
+	local fractalBrownianMotion = function(n, f, a, x, y, z, w)
 		local val = 0.0
-		local ca = g
-		local cf = l
+		local ca = 0.5
+		local cf = 2.0
 
 		for _ = 1, n do
 			val = val + love.math.noise(f * x, f * y, f * z, f * w) * a
@@ -115,15 +115,15 @@ local function initialize(self)
 	end
 
 	self._heightMap = function(x, y, z, w)
-		return fractalBrownianMotion(6, 1.25, 0.5, 2.0, 0.5, x, y, z, w)
+		return fractalBrownianMotion(6, 1.25, 0.5, x, y, z, w)
 	end
 
 	self._heatMap = function(x, y, z, w)
-		return fractalBrownianMotion(4, 3.0, 0.5, 2.0, 0.5, x, y, z, w)
+		return fractalBrownianMotion(4, 3.0, 0.5, x, y, z, w)
 	end
 
 	self._moistureMap = function(x, y, z, w)
-		return fractalBrownianMotion(4, 3.0, 0.5, 2.0, 0.5, x, y, z, w)
+		return fractalBrownianMotion(4, 3.0, 0.5, x, y, z, w)
 	end
 end
 
@@ -134,6 +134,16 @@ local function getData(self)
 
 	local sx = math.random(self._width)
 	local sy = math.random(self._height)
+
+	local f = function(t, b, c, d)
+		t = t / d
+		if t < 1.0 then
+			return c / 2 * t * t * t * t * t + b
+		else
+			t = t - 2
+			return c / 2 * (t * t * t * t * t + 2) + b
+		end
+	end
 
 	for y = 0, self._height - 1 do
 		for x = 0, self._width - 1 do
@@ -154,9 +164,9 @@ local function getData(self)
 			self._heightData:setValue(x, y, heightValue)
 
 			local heatValue = self._heatMap(nx, ny, nz, nw)
-			local h = self._height - 1
+			local h = self._height
 			local factor = 0.5 - math.abs((y - h / 2) / h)
-			self._heatData:setValue(x, y, heatValue * factor)
+			self._heatData:setValue(x, y, factor + heightValue)
 
 			local moistureValue = self._moistureMap(nx, ny, nz, nw)
 			self._moistureData:setValue(x, y, moistureValue)

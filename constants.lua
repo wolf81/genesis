@@ -1,9 +1,9 @@
 HeatType = {
-	COLDEST = 0.05,
-	COLDER = 0.18,
-	COLD = 0.4,
-	WARM = 0.6,
-	WARMER = 0.8,
+	COLDEST = 0.15,
+	COLDER = 0.30,
+	COLD = 0.45,
+	WARM = 0.60,
+	WARMER = 0.75,
 	WARMEST = 1.0,
 
 	getColor = function(heatType)

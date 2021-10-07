@@ -4,6 +4,7 @@ local MapData = require 'mapdata'
 local TextureGen = require 'texturegen'
 local Tile = require 'tile'
 local TileGroup = require 'tilegroup'
+local Noise = require 'noise'
 
 local Generator = {}
 Generator.__index = Generator
@@ -100,31 +101,9 @@ local function updateBitmasks(self)
 end
 
 local function initialize(self)
-	local fractalBrownianMotion = function(n, f, a, x, y, z, w)
-		local val = 0.0
-		local ca = 0.5
-		local cf = 2.0
-
-		for _ = 1, n do
-			val = val + love.math.noise(f * x, f * y, f * z, f * w) * a
-			f = f * cf
-			a = a * ca
-		end
-
-		return val
-	end
-
-	self._heightMap = function(x, y, z, w)
-		return fractalBrownianMotion(6, 1.25, 0.5, x, y, z, w)
-	end
-
-	self._heatMap = function(x, y, z, w)
-		return fractalBrownianMotion(4, 3.0, 0.5, x, y, z, w)
-	end
-
-	self._moistureMap = function(x, y, z, w)
-		return fractalBrownianMotion(4, 3.0, 0.5, x, y, z, w)
-	end
+	self._heightMap = Noise.generate(self._n, 1.6)
+	self._heatMap = Noise.generate(self._n, 0.5)
+	self._moistureMap = Noise.generate(self._n, 2.0)
 end
 
 local function getData(self)
@@ -132,43 +111,17 @@ local function getData(self)
 	self._heatData = MapData(self._width, self._height)
 	self._moistureData = MapData(self._width, self._height)
 
-	local sx = math.random(self._width)
-	local sy = math.random(self._height)
-
-	local f = function(t, b, c, d)
-		t = t / d
-		if t < 1.0 then
-			return c / 2 * t * t * t * t * t + b
-		else
-			t = t - 2
-			return c / 2 * (t * t * t * t * t + 2) + b
-		end
-	end
-
 	for y = 0, self._height - 1 do
 		for x = 0, self._width - 1 do
-			local x1, x2 = 0, 2
-			local y1, y2 = 0, 2
-			local dx = x2 - x1
-			local dy = y2 - y1
-
-			local s = x / self._width
-			local t = y / self._height
-
-			local nx = x1 + math.cos(s * 2 * math.pi) * dx / (2 * math.pi) + sx
-			local ny = y1 + math.cos(t * 2 * math.pi) * dy / (2 * math.pi) + sy
-			local nz = x1 + math.sin(s * 2 * math.pi) * dx / (2 * math.pi) + sx
-			local nw = y1 + math.sin(t * 2 * math.pi) * dy / (2 * math.pi) + sy
-
-			local heightValue = self._heightMap(nx, ny, nz, nw)
+			local heightValue = self._heightMap[x][y]		
 			self._heightData:setValue(x, y, heightValue)
 
-			local heatValue = self._heatMap(nx, ny, nz, nw)
+			local heatValue = self._heatMap[x][y]
 			local h = self._height - 1
 			local factor = 0.5 - math.abs(y - h / 2) / h
-			self._heatData:setValue(x, y, factor + heatValue)
+			self._heatData:setValue(x, y, factor + heatValue)			
 
-			local moistureValue = self._moistureMap(nx, ny, nz, nw)
+			local moistureValue = self._moistureMap[x][y]
 			self._moistureData:setValue(x, y, moistureValue)
 		end
 	end
@@ -316,8 +269,13 @@ local function updateNeighbours(self)
 	end
 end
 
-function Generator:new(width, height)
+function Generator:new(n)	
+	local width = 2 ^ n
+	local height = 2 ^ n
+	print(width, height)
+
 	return setmetatable({
+		_n = n,
 		_width = width,
 		_height = height,
 		_tiles = {},

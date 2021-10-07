@@ -12,13 +12,13 @@ local function printData(data)
 	print(s)
 end
 
-local function diamondSquare(data, n, seed, roughness)
-	data[0][0] = seed
-	data[0][n - 1] = seed
-	data[n - 1][0] = seed
-	data[n - 1][n - 1] = seed
+local function diamondSquare(data, n, roughness, seed)
+	data[0][0] = seed or math.random()
+	data[0][n - 1] = seed or math.random()
+	data[n - 1][0] = seed or math.random()
+	data[n - 1][n - 1] = seed or math.random()
 
-	printData(data)
+	--printData(data)
 
 	local h = roughness
 
@@ -76,7 +76,7 @@ local function diamondSquare(data, n, seed, roughness)
 		sideLength = sideLength / 2
 		h = h / 2
 
-		print('h', h)
+		--print('h', h)
 	end
 end
 

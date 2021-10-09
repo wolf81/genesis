@@ -21,6 +21,7 @@ local function resetAllSources(self)
 end
 
 local function multiGet(self, x, y)
+	print('multiGet')
 	local value = 1.00
 	x = x * self._frequency
 	y = y * self._frequency
@@ -75,15 +76,22 @@ function ImplicitFractal:get2D(x, y)
 
 	if self._type == FractalType.FRACTIONALBROWNIANMOTION then
 		error('not implemented')
+		-- v = fractionalBrownianMotionGet(self, x, y)
 	elseif self._type == FractalType.RIDGEDMULTI then
 		error('not implemented')
+		-- v = ridgedMultiGet(self, x, y)
 	elseif self._type == FractalType.BILLOW then
 		error('not implemented')
+		-- v = billowGet(self, x, y)
 	elseif self._type == FractalType.MULTI then
 		v = multiGet(self, x, y)
 	elseif self._type == FractalType.HYBRIDMULTI then
 		error('not implemented')
-	else error('invalid type: ', self._type) end
+		-- v = hybridMultiGet(self, x, y)
+	else 
+		error('not implemented')
+		-- v = fractionalBrownianMotionGet(self, x, y)
+	end
 
 	return clamp(v, -1.0, 1.0)
 end

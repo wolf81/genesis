@@ -171,74 +171,6 @@ local function setBasisType(self, value)
 	setMagicNumbers(self, self._basisType)
 end
 
---[[
-public BasisType BasisType
-{
-    get { return this.basisType; }
-    set
-    {
-        this.basisType = value;
-        switch (this.basisType)
-        {
-            case BasisType.VALUE:
-                this.noise2D = Noise.ValueNoise;
-                this.noise3D = Noise.ValueNoise;
-                this.noise4D = Noise.ValueNoise;
-                this.noise6D = Noise.ValueNoise;
-                break;
-            case BasisType.GRADIENT:
-                this.noise2D = Noise.GradientNoise;
-                this.noise3D = Noise.GradientNoise;
-                this.noise4D = Noise.GradientNoise;
-                this.noise6D = Noise.GradientNoise;
-                break;
-            case BasisType.GRADIENTVALUE:
-                this.noise2D = Noise.GradientValueNoise;
-                this.noise3D = Noise.GradientValueNoise;
-                this.noise4D = Noise.GradientValueNoise;
-                this.noise6D = Noise.GradientValueNoise;
-                break;
-            case BasisType.WHITE:
-                this.noise2D = Noise.WhiteNoise;
-                this.noise3D = Noise.WhiteNoise;
-                this.noise4D = Noise.WhiteNoise;
-                this.noise6D = Noise.WhiteNoise;
-                break;
-            case BasisType.SIMPLEX:
-                this.noise2D = Noise.SimplexNoise;
-                this.noise3D = Noise.SimplexNoise;
-                this.noise4D = Noise.SimplexNoise;
-                this.noise6D = Noise.SimplexNoise;
-                break;
-
-            default:
-                this.noise2D = Noise.GradientNoise;
-                this.noise3D = Noise.GradientNoise;
-                this.noise4D = Noise.GradientNoise;
-                this.noise6D = Noise.GradientNoise;
-                break;
-        }
-        SetMagicNumbers(this.basisType);
-    }
-}
-
-public InterpolationType InterpolationType
-{
-    get { return this.interpolationType; }
-    set
-    {
-        this.interpolationType = value;
-        switch (this.interpolationType)
-        {
-            case InterpolationType.NONE: this.interpolator = Noise.NoInterpolation; break;
-            case InterpolationType.LINEAR: this.interpolator = Noise.LinearInterpolation; break;
-            case InterpolationType.CUBIC: this.interpolator = Noise.HermiteInterpolation; break;
-            default: this.interpolator = Noise.QuinticInterpolation; break;
-        }
-    }
-}
-]]
-
 local function setSeed(self, value)
 	self._seed = value
 
@@ -301,7 +233,7 @@ end
 function ImplicitBasisFunction:get2D(x, y)
 	local nx = x * self._cos2D - y * self._sin2D
 	local ny = y * self._cos2D + x * self._sin2D
-	return 0
+	return self._noise2D(nx, ny, self._seed, self._interpolator)
 end
 
 return setmetatable(ImplicitBasisFunction, {

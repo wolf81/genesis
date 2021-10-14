@@ -10,6 +10,11 @@ local FNV_32_PRIME = 0x01000193
 local FNV_32_INIT = 2166136261 
 local FNV_MASK_8 = bit.lshift(1, 8) - 1 -- (1 << 8) - 1;
 
+local F2 = 0.36602540378443864676372317075294
+local G2 = 0.21132486540518711774542560974902
+local F3 = 1.0 / 3.0
+local G3 = 1.0 / 6.0
+
 Noise.MAX_SOURCES = 20
 
 Noise.QuinticInterpolation = function(t)
@@ -84,6 +89,10 @@ local function internalValueNoise2D(x, y, ix, iy, seed)
 	return noise * 2.0 - 1.0
 end
 
+local function arrayDot(arr, a, b)
+	return a * arr[1] + b * arr[2]
+end
+
 local function internalGradientNoise2D(x, y, ix, iy, seed)
 	local hash = Noise.HashCoordinates2D(ix, iy, seed)
 	print('hash', hash)
@@ -94,6 +103,73 @@ local function internalGradientNoise2D(x, y, ix, iy, seed)
 
 	return (dx + gx + dy + gy)
 end
+
+Noise.SimplexNoise2D = function(x, y, seed, interp)
+	print('SimplexNoise2D', x, y, seed)
+
+	local s = (x + y) * F2
+	local i = math.floor(x + s)
+	local j = math.floor(y + s)
+
+	local t = (i + j) * G2
+	local X0 = i - t
+	local Y0 = j - t
+	local x0 = x - X0
+	local y0 = y - Y0
+
+	local i1, j1
+	if x0 > y0 then 
+		i1, j1 = 1, 0
+	else 
+		i1, j1 = 0, 1
+	end
+
+	local x1 = x0 - i1 + G2
+	local y1 = y0 - j1 + G2
+	local x2 = x0 - 1.0 + 2.0 * G2
+	local y2 = y0 - 1.0 + 2.0 * G2
+
+	local h0 = Noise.HashCoordinates2D(i, j, seed)
+	local h1 = Noise.HashCoordinates2D(i + i1, j + j1, seed)
+	local h2 = Noise.HashCoordinates2D(i + 1, j + 1, seed)
+
+	local h0x, h0y = unpack(NoiseLookupTable.Gradient2D[h0])
+	local h1x, h1y = unpack(NoiseLookupTable.Gradient2D[h1])
+	local h2x, h2y = unpack(NoiseLookupTable.Gradient2D[h2])
+
+	local g0 = { h0x, h0y }
+	local g1 = { h1x, h1y }
+	local g2 = { h2x, h2y }
+
+	local n0, n1, n2
+	
+	local t0 = 0.5 - x0 * x0 - y0 * y0
+	if t0 < 0 then n0 = 0 
+	else
+		t0 = t0 * t0
+		n0 = t0 * t0 * arrayDot(g0, x0, y0)
+	end
+
+	local t1 = 0.5 - x1 * x1 - y1 * y1
+	if t1 < 0 then n1 = 0
+	else
+		t1 = t1 * t1
+		n1 = t1 * t1 * arrayDot(g1, x1, y1)
+	end
+
+	local t2 = 0.5 - x2 * x2 - y2 * y2
+	if t2 < 0 then n2 = 0
+	else
+		t2 = t2 * t2
+		n2 = t2 * t2 * arrayDot(g2, x2, y2)
+	end
+
+	return (70.0 * (n0 + n1 + n2)) * 1.42188695 + 0.001054489
+end
+
+Noise.SimplexNoise3D = function() error('not implemented') end
+Noise.SimplexNoise4D = function() error('not implemented') end
+Noise.SimplexNoise6D = function() error('not implemented') end
 
 Noise.GradientNoise2D = function(x, y, seed, interp)
 	print('GradientNoise2D', x, y, seed)

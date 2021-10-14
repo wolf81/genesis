@@ -1,8 +1,10 @@
 local Generator = require 'generator'
 local TextureGen = require 'texturegen'
 
-local Fractal = require 'accidental/implicit_fractal'
+local ImplicitFractal = require 'accidental/implicit_fractal'
 require 'accidental/enums'
+
+local Noise = require 'accidental/noise'
 
 -- show live output in console, don't wait for app to close
 io.stdout:setvbuf("no")
@@ -16,7 +18,8 @@ local heightMap = nil
 local heatMap = nil
 local moistureMap = nil
 
-local width, height = 0, 0
+local width, height = 10, 10
+local points = {}
 
 function love.load()
 	love.window.setTitle('Genesis')
@@ -27,7 +30,7 @@ function love.load()
 	local frequency = 1.25
 	local seed = math.random() * 100
 
-	local heightMap = Fractal(
+	local heightMap = ImplicitFractal(
 		FractalType.MULTI, 
 		BasisType.SIMPLEX, 
 		InterpolationType.QUINTIC, 
@@ -36,8 +39,21 @@ function love.load()
 		seed
 	)
 
-	local x = heightMap:get2D(1, 1)
-	print(x)
+	local v1 = Noise.SimplexNoise2D(0, 0, 300)
+	local v2 = Noise.SimplexNoise2D(50, 322, 300)
+	local v3 = Noise.SimplexNoise2D(-53, 15, 300)
+	print(v1, v2, v3)
+
+
+	--[[
+	for x = 0, width do
+		for y = 0, height do
+			local c = heightMap:get2D(x, y)
+			print(c)
+			points[#points + 1] = {x, y, c, c, c, 1.0 }
+		end
+	end
+	--]]
 
 	--[[
 	local generator = Generator(mapSize)
@@ -52,6 +68,8 @@ function love.load()
 end
 
 function love.draw()
+
+	love.graphics.points(points)
 	--[[
 	local scale = 0.75
 

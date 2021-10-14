@@ -122,6 +122,8 @@ private void SetMagicNumbers(BasisType type)
 local function setBasisType(self, value)
 	self._basisType = value
 
+	print('set basis type', value)
+
 	if self._basisType == BasisType.VALUE then
 		error('not implemented')
 		--[[
@@ -131,14 +133,11 @@ local function setBasisType(self, value)
         this.noise6D = Noise.ValueNoise;
 		]]
 	elseif self._basisType == BasisType.GRADIENT then
-		error('not implemented')
-		--[[
-        this.noise2D = Noise.GradientNoise;
-        this.noise3D = Noise.GradientNoise;
-        this.noise4D = Noise.GradientNoise;
-        this.noise6D = Noise.GradientNoise;
-		]]
-	elseif self._basisType == GRADIENTVALUE then
+        self._noise2D = Noise.GradientNoise2D
+        self._noise3D = Noise.GradientNoise3D
+        self._noise4D = Noise.GradientNoise4D
+        self._noise6D = Noise.GradientNoise6D
+	elseif self._basisType == BasisType.GRADIENTVALUE then
 		error('not implemented')
 		--[[
         this.noise2D = Noise.GradientValueNoise;
@@ -146,7 +145,7 @@ local function setBasisType(self, value)
         this.noise4D = Noise.GradientValueNoise;
         this.noise6D = Noise.GradientValueNoise;
 		]]
-	elseif self._basisType == WHITE then
+	elseif self._basisType == BasisType.WHITE then
 		error('not implemented')
 		--[[
         this.noise2D = Noise.WhiteNoise;
@@ -154,14 +153,11 @@ local function setBasisType(self, value)
         this.noise4D = Noise.WhiteNoise;
         this.noise6D = Noise.WhiteNoise;
         ]]		
-	elseif self._basisType == SIMPLEX then
-		error('not implemented')
-		--[[
-        this.noise2D = Noise.SimplexNoise;
-        this.noise3D = Noise.SimplexNoise;
-        this.noise4D = Noise.SimplexNoise;
-        this.noise6D = Noise.SimplexNoise;		
-		]]
+	elseif self._basisType == BasisType.SIMPLEX then
+        self._noise2D = Noise.SimplexNoise2D
+        self._noise3D = Noise.SimplexNoise3D
+        self._noise4D = Noise.SimplexNoise4D
+        self._noise6D = Noise.SimplexNoise6D		
 	else 
 		self._noise2D = Noise.GradientNoise2D
 		self._noise3D = Noise.GradientNoise3D

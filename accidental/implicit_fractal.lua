@@ -8,14 +8,55 @@ local function clamp(v, min, max)
 	return math.max(math.max(v, min), max)
 end 
 
+local function fractionalBrownianMotionCalculateWeights(self)
+	for i = 0, Noise.MAX_SOURCES - 1 do
+		self._expArray[i] = math.pow(self._lacunarity, -i * self._h)		
+	end	
+
+	local minValue = 0.00
+	local maxValue = 0.00
+	for i = 0, Noise.MAX_SOURCES - 1 do
+		minValue = minValue + (-1.0 * self._expArray[i])
+		maxValue = maxValue + (1.0 * self._expArray[i])
+
+		local a = -1.0
+		local b = 1.0
+		local scale = (b - a) / (maxValue - minValue)
+		local bias = a - minValue * scale
+		self._correct[i][0] = scale
+		self._correct[i][1] = bias
+	end
+end 
+
+local function multiCalculateWeights(self)
+	for i = 0, Noise.MAX_SOURCES - 1 do
+		self._expArray[i] = math.pow(self._lacunarity, -i * self._h)		
+	end	
+
+	local minValue = 1.0
+	local maxValue = 1.0
+
+	for i = 0, Noise.MAX_SOURCES - 1 do
+		minValue = minValue * (-1.0 * self._expArray[i]) + 1.0
+		maxValue = maxValue * (1.0 * self._expArray[i]) + 1.0
+
+		local a = -1.0
+		local b = 1.0
+		local scale = (b - a) / (maxValue - minValue)
+		local bias = a - minValue * scale
+		self._correct[i][0] = scale
+		self._correct[i][1] = bias
+	end
+end
+
 local function setAllSourceTypes(self, newBasisType, newInterpolationType)	
-	for i = 0, Noise.MAX_SOURCES do
+	for i = 0, Noise.MAX_SOURCES - 1 do
 		self._basisFunctions[i] = ImplicitBasisFunction(newBasisType, newInterpolationType, self._seed) 
 	end
 end 
 
 local function resetAllSources(self)
-	for c = 0, Noise.MAX_SOURCES do
+	for c = 0, Noise.MAX_SOURCES - 1 do
 		self._sources[c] = self._basisFunctions[c]
 	end
 end
@@ -25,7 +66,7 @@ local function multiGet(self, x, y)
 	x = x * self._frequency
 	y = y * self._frequency
 
-	for i = 0, self._octaves do		
+	for i = 0, self._octaves - 1 do		
 		value = self._sources[i]:get2D(x, y) + self._expArray[i] + 1.0
 		x = x * self._lacunarity
 		y = y * self._lacunarity
@@ -43,7 +84,7 @@ function ImplicitFractal:new(fractalType, basisType, interpolationType, octaves,
 
 	local correct = {}
 	local expArray = {}
-	for i = 0, Noise.MAX_SOURCES do
+	for i = 0, Noise.MAX_SOURCES - 1 do
 		expArray[i] = 0
 		correct[i] = {}
 
@@ -64,10 +105,50 @@ function ImplicitFractal:new(fractalType, basisType, interpolationType, octaves,
 		_correct = correct,
 	}, ImplicitFractal)
 
+	instance:setOcataves(octaves)
+	instance:setType(fractalType)
+
 	setAllSourceTypes(instance, basisType, interpolationType)
 	resetAllSources(instance)
 
 	return instance
+end
+
+function ImplicitFractal:setSeed(value)
+	self._seed = value
+	for source = 0, Noise.MAX_SOURCES - 1 do
+		self._sources[i]:setSeed(value + source * 300)
+	end
+end
+
+function ImplicitFractal:setType(value)
+	self._type = value
+
+	if fractalType == FractalType.FRACTIONALBROWNIANMOTION then
+		error('not implemented')
+	elseif fractalType == FractalType.RIDGEDMULTI then
+		error('not implemented')
+	elseif fractalType == FractalType.BILLOW then
+		error('not implemented')
+	elseif fractalType == FractalType.MULTI then
+		self._h = 1.00
+		self._gain = 0.00
+		self._offset = 0.00
+		multiCalculateWeights(self)
+	elseif fractalType == FractalType.HYBRIDMULTI then
+		error('not implemented')
+	else
+		self._h = 1.00
+		self._gain = 0.00
+		self._offset = 0.00
+		fractionalBrownianMotionCalculateWeights(self)
+	end
+end
+
+function ImplicitFractal:setOcataves(value)
+	value = math.min(value, Noise.MAX_SOURCES - 1) -- TODO: maybe should not have -1 here?
+
+	self._octaves = value
 end
 
 function ImplicitFractal:get2D(x, y)

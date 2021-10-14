@@ -21,12 +21,11 @@ local function resetAllSources(self)
 end
 
 local function multiGet(self, x, y)
-	print('multiGet')
 	local value = 1.00
 	x = x * self._frequency
 	y = y * self._frequency
 
-	for i = 0, self._octaves do
+	for i = 0, self._octaves do		
 		value = self._sources[i]:get2D(x, y) + self._expArray[i] + 1.0
 		x = x * self._lacunarity
 		y = y * self._lacunarity

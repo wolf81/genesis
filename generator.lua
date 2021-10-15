@@ -4,7 +4,8 @@ local MapData = require 'mapdata'
 local TextureGen = require 'texturegen'
 local Tile = require 'tile'
 local TileGroup = require 'tilegroup'
-local Noise = require 'noise'
+local ImplicitFractal = require 'accidental/implicit_fractal'
+local Noise = require 'accidental/noise'
 
 local Generator = {}
 Generator.__index = Generator
@@ -101,9 +102,21 @@ local function updateBitmasks(self)
 end
 
 local function initialize(self)
-	self._heightMap = Noise.generate(self._n, 1.6)
-	self._heatMap = Noise.generate(self._n, 0.5)
-	self._moistureMap = Noise.generate(self._n, 2.0)
+	local octaves = 6
+	local frequency = 1.25
+	local seed = math.random()
+
+	self._heightMap = ImplicitFractal(
+		FractalType.MULTI, 
+		BasisType.SIMPLEX, 
+		InterpolationType.QUINTIC, 
+		octaves, 
+		frequency, 
+		seed
+	)
+	-- Noise.generate(self._n, 1.6)
+	self._heatMap = self._heightMap -- Noise.generate(self._n, 0.5)
+	self._moistureMap = self._heightMap -- Noise.generate(self._n, 2.0)
 end
 
 local function getData(self)
@@ -113,15 +126,15 @@ local function getData(self)
 
 	for y = 0, self._height - 1 do
 		for x = 0, self._width - 1 do
-			local heightValue = self._heightMap[x][y]		
+			local heightValue = self._heightMap:get2D(x, y) -- [x][y]		
 			self._heightData:setValue(x, y, heightValue)
 
-			local heatValue = self._heatMap[x][y]
+			local heatValue = self._heatMap:get2D(x, y) -- [x][y]
 			local h = self._height - 1
 			local factor = 0.5 - math.abs(y - h / 2) / h
 			self._heatData:setValue(x, y, factor + heatValue)			
 
-			local moistureValue = self._moistureMap[x][y]
+			local moistureValue = self._moistureMap:get2D(x, y) -- [x][y]
 			self._moistureData:setValue(x, y, moistureValue)
 		end
 	end
@@ -270,8 +283,8 @@ local function updateNeighbours(self)
 end
 
 function Generator:new(n)	
-	local width = 2 ^ n
-	local height = 2 ^ n
+	local width = n
+	local height = n
 	print(width, height)
 
 	return setmetatable({

@@ -4,13 +4,15 @@ local TextureGen = require 'texturegen'
 local ImplicitFractal = require 'accidental/implicit_fractal'
 require 'accidental/enums'
 
+local Noise = require 'accidental/noise'
+
 -- show live output in console, don't wait for app to close
 io.stdout:setvbuf("no")
 
 math.randomseed(os.time())
 love.math.setRandomSeed(os.time())
 
-local mapSize = 128
+local mapSize = 5
 
 local heightMap = nil
 local heatMap = nil
@@ -24,6 +26,12 @@ function love.load()
 	love.window.setTitle('Genesis')
 
 	local _ = love.window.setMode(1280, 800, {})
+
+	local v1 = Noise.HashCoordinates2D(0, 0, 300)
+	local v2 = Noise.HashCoordinates2D(1, 1, 300)
+	local v3 = Noise.HashCoordinates2D(0, 2, 300)
+	print(v1, v2, v3)
+	print()
 
 	--[[
 	local heightMap = ImplicitFractal(

@@ -114,12 +114,17 @@ Noise.SimplexNoise2D = function(x, y, seed, interp)
 	local y1 = y0 - j1 + G2
 	local x2 = x0 - 1.0 + 2.0 * G2
 	local y2 = y0 - 1.0 + 2.0 * G2
-	--print(x, y, s, t)
-	--print(i, j, i + i1, j + j1, i + 1, j + 1)
+--[[	print(
+		string.format("%.2f", i), string.format("%.2f", j), 
+		string.format("%.2f", i + i1), string.format("%.2f", j + j1),
+		string.format("%.2f", i + 1), string.format("%.2f", j + 1)
+		)
+--]]	--print(i, j, i + i1, j + j1, i + 1, j + 1)
 
 	local h0 = Noise.HashCoordinates2D(i, j, seed)
 	local h1 = Noise.HashCoordinates2D(i + i1, j + j1, seed)
 	local h2 = Noise.HashCoordinates2D(i + 1, j + 1, seed)
+	print(h0, h1, h2)
 
 	local g0 = NoiseLookupTable.Gradient2D[h0]
 	local g1 = NoiseLookupTable.Gradient2D[h1]

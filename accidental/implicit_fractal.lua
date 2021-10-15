@@ -5,7 +5,7 @@ local ImplicitFractal = {}
 ImplicitFractal.__index = ImplicitFractal
 
 local function clamp(v, min, max)
-	return math.max(math.max(v, min), max)
+	return math.min(math.max(v, min), max)
 end 
 
 local function fractionalBrownianMotionCalculateWeights(self)
@@ -37,8 +37,8 @@ local function multiCalculateWeights(self)
 	local maxValue = 1.0
 
 	for i = 0, Noise.MAX_SOURCES - 1 do
-		minValue = minValue * (-1.0 * self._expArray[i]) + 1.0
-		maxValue = maxValue * (1.0 * self._expArray[i]) + 1.0
+		minValue = minValue * (-1.0 * self._expArray[i] + 1.0)
+		maxValue = maxValue * (1.0 * self._expArray[i] + 1.0)
 
 		local a = -1.0
 		local b = 1.0
@@ -67,7 +67,7 @@ local function multiGet(self, x, y)
 	y = y * self._frequency
 
 	for i = 0, self._octaves - 1 do		
-		value = self._sources[i]:get2D(x, y) + self._expArray[i] + 1.0
+		value = value * (self._sources[i]:get2D(x, y) * self._expArray[i] + 1.0)
 		x = x * self._lacunarity
 		y = y * self._lacunarity
 	end
@@ -80,7 +80,7 @@ local function multiGet(self, x, y)
 end
 
 function ImplicitFractal:new(fractalType, basisType, interpolationType, octaves, frequency, seed)
-	print('new ImplicitFractal')
+	print('new ImplicitFractal', seed)
 
 	local correct = {}
 	local expArray = {}
@@ -98,7 +98,7 @@ function ImplicitFractal:new(fractalType, basisType, interpolationType, octaves,
 		_octaves = octaves,
 		_frequency = frequency,
 		_lacunarity = 2.00,
-		_type = fractalType or FractalType.FRACTIONALBROWNIANMOTION,
+		_type = nil,
 		_basisFunctions = {},
 		_sources = {},
 		_expArray = expArray,
@@ -106,7 +106,7 @@ function ImplicitFractal:new(fractalType, basisType, interpolationType, octaves,
 	}, ImplicitFractal)
 
 	instance:setOcataves(octaves)
-	instance:setType(fractalType)
+	instance:setType(fractalType or FractalType.FRACTIONALBROWNIANMOTION)
 
 	setAllSourceTypes(instance, basisType, interpolationType)
 	resetAllSources(instance)
@@ -124,18 +124,18 @@ end
 function ImplicitFractal:setType(value)
 	self._type = value
 
-	if fractalType == FractalType.FRACTIONALBROWNIANMOTION then
+	if value == FractalType.FRACTIONALBROWNIANMOTION then
 		error('not implemented')
-	elseif fractalType == FractalType.RIDGEDMULTI then
+	elseif value == FractalType.RIDGEDMULTI then
 		error('not implemented')
-	elseif fractalType == FractalType.BILLOW then
+	elseif value == FractalType.BILLOW then
 		error('not implemented')
-	elseif fractalType == FractalType.MULTI then
+	elseif value == FractalType.MULTI then
 		self._h = 1.00
 		self._gain = 0.00
 		self._offset = 0.00
 		multiCalculateWeights(self)
-	elseif fractalType == FractalType.HYBRIDMULTI then
+	elseif value == FractalType.HYBRIDMULTI then
 		error('not implemented')
 	else
 		self._h = 1.00
@@ -151,7 +151,7 @@ function ImplicitFractal:setOcataves(value)
 	self._octaves = value
 end
 
-function ImplicitFractal:get2D(x, y)
+function ImplicitFractal:get2D(x, y)	
 	local v = nil
 
 	if self._type == FractalType.FRACTIONALBROWNIANMOTION then
@@ -163,7 +163,7 @@ function ImplicitFractal:get2D(x, y)
 	elseif self._type == FractalType.BILLOW then
 		error('not implemented')
 		-- v = billowGet(self, x, y)
-	elseif self._type == FractalType.MULTI then
+	elseif self._type == FractalType.MULTI then	
 		v = multiGet(self, x, y)
 	elseif self._type == FractalType.HYBRIDMULTI then
 		error('not implemented')

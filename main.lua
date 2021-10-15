@@ -18,7 +18,9 @@ local heightMap = nil
 local heatMap = nil
 local moistureMap = nil
 
-local width, height = 10, 10
+local width, height = 100, 100
+local minValue, maxValue = 0.0, -1.0
+
 local points = {}
 
 function love.load()
@@ -28,7 +30,7 @@ function love.load()
 
 	local octaves = 6
 	local frequency = 1.25
-	local seed = math.random() * 100
+	local seed = math.random()
 
 	local heightMap = ImplicitFractal(
 		FractalType.MULTI, 
@@ -39,21 +41,35 @@ function love.load()
 		seed
 	)
 
-	local v1 = Noise.SimplexNoise2D(0, 0, 300)
-	local v2 = Noise.SimplexNoise2D(50, 322, 300)
-	local v3 = Noise.SimplexNoise2D(-53, 15, 300)
-	print(v1, v2, v3)
+	--local v1 = Noise.SimplexNoise2D(0, 0, 300)
+	--local v2 = Noise.SimplexNoise2D(50, 322, 300)
+	--local v3 = Noise.SimplexNoise2D(-53, 15, 300)
+	--print(v1, v2, v3)
 
+	local s = ''
 
-	--[[
-	for x = 0, width do
-		for y = 0, height do
+	for x = 0, width - 1 do
+		for y = 0, height - 1 do
 			local c = heightMap:get2D(x, y)
-			print(c)
-			points[#points + 1] = {x, y, c, c, c, 1.0 }
+			if c < minValue then minValue = c end
+			if c > maxValue then maxValue = c end
+
+			points[#points + 1] = { 10 + x, 10 + y, c + 0.5, c + 0.5, c + 0.5, 1.0 }
+
+			s = s .. string.format('%.2f\t', c)
 		end
+		s = s .. '\n'
+	end	
+
+	print(s)
+
+--[[	for _, point in ipairs(points) do
+		local c = (point[3] - minValue) / (maxValue - minValue)
+		point[3] = c
+		point[4] = c
+		point[5] = c
 	end
-	--]]
+--]]	--]]
 
 	--[[
 	local generator = Generator(mapSize)
@@ -68,7 +84,7 @@ function love.load()
 end
 
 function love.draw()
-
+	love.graphics.scale(5, 5)
 	love.graphics.points(points)
 	--[[
 	local scale = 0.75

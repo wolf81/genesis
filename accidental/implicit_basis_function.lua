@@ -1,20 +1,22 @@
 local Noise = require 'accidental/noise'
 
+local msin, mcos, mpi = math.sin, math.cos, math.pi
+
 local ImplicitBasisFunction = {}
 ImplicitBasisFunction.__index = ImplicitBasisFunction
 
 local function setRotationAngle(self, x, y, z, angle)
-	self._rotationMatrix[0][0] = 1 + (1 - math.cos(angle)) * (x * x - 1)
-	self._rotationMatrix[1][0] = -z * math.sin(angle) + (1 - math.cos(angle)) * x * y
-	self._rotationMatrix[2][0] = y * math.sin(angle) + (1 - math.cos(angle)) * x * z
+	self._rotationMatrix[0][0] = 1 + (1 - mcos(angle)) * (x * x - 1)
+	self._rotationMatrix[1][0] = -z * msin(angle) + (1 - mcos(angle)) * x * y
+	self._rotationMatrix[2][0] = y * msin(angle) + (1 - mcos(angle)) * x * z
 
-	self._rotationMatrix[0][1] = z * math.sin(angle) + (1 - math.cos(angle)) * x * y
-	self._rotationMatrix[1][1] = 1 + (1 - math.cos(angle)) * (y * y - 1)
-	self._rotationMatrix[2][1] = -x * math.sin(angle) + (1 - math.cos(angle)) * y * z
+	self._rotationMatrix[0][1] = z * msin(angle) + (1 - mcos(angle)) * x * y
+	self._rotationMatrix[1][1] = 1 + (1 - mcos(angle)) * (y * y - 1)
+	self._rotationMatrix[2][1] = -x * msin(angle) + (1 - mcos(angle)) * y * z
 
-	self._rotationMatrix[0][2] = -y * math.sin(angle) + (1 - math.cos(angle)) * x * z
-	self._rotationMatrix[1][2] = x * math.sin(angle) + (1 - math.cos(angle)) * y * z
-	self._rotationMatrix[2][2] = 1 + (1 - math.cos(angle)) * (z * z - 1)
+	self._rotationMatrix[0][2] = -y * msin(angle) + (1 - mcos(angle)) * x * z
+	self._rotationMatrix[1][2] = x * msin(angle) + (1 - mcos(angle)) * y * z
+	self._rotationMatrix[2][2] = 1 + (1 - mcos(angle)) * (z * z - 1)
 end
 
 local function setInterpolationType(self, value)
@@ -122,8 +124,6 @@ private void SetMagicNumbers(BasisType type)
 local function setBasisType(self, value)
 	self._basisType = value
 
-	print('set basis type', value)
-
 	if self._basisType == BasisType.VALUE then
 		error('not implemented')
 		--[[
@@ -169,26 +169,23 @@ end
 
 local function setSeed(self, value)
 	self._seed = value
+	math.randomseed(value)
 
-	local function nextRandom() return math.random() * value end
-
-	local ax = nextRandom()
-	local ay = nextRandom()
-	local az = nextRandom()
+	local ax = math.random()
+	local ay = math.random()
+	local az = math.random()
 	local len = math.sqrt(ax * ax + ay * ay + az * az)
 	ax = ax / len
 	ay = ay / len
 	az = az / len
 
-	setRotationAngle(self, ax, ay, az, nextRandom() * math.pi * 2.0)
-	local angle = nextRandom() * math.pi * 2.0
-	self._cos2D = math.cos(angle)
-	self._sin2D = math.sin(angle)
+	setRotationAngle(self, ax, ay, az, math.random() * mpi * 2.0)
+	local angle = math.random() * mpi * 2.0
+	self._cos2D = mcos(angle)
+	self._sin2D = msin(angle)
 end
 
 function ImplicitBasisFunction:new(basisType, interpolationType, seed)
-	print('new ImplicitBasisFunction')
-
 	local rotationMatrix = {}
 	for i = 0, 3 do
 		rotationMatrix[i] = {}
@@ -229,6 +226,8 @@ end
 function ImplicitBasisFunction:get2D(x, y)
 	local nx = x * self._cos2D - y * self._sin2D
 	local ny = y * self._cos2D + x * self._sin2D
+
+	--print('=>', nx, ny)
 	return self._noise2D(nx, ny, self._seed, self._interpolator)
 end
 

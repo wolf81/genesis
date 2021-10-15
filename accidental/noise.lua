@@ -3,6 +3,8 @@ local ffi = require'ffi'
 
 local NoiseLookupTable = require 'accidental/noise_lookup_table'
 
+local mfloor = math.floor
+
 local Noise = {}
 Noise.__index = Noise
 
@@ -20,21 +22,6 @@ Noise.MAX_SOURCES = 20
 Noise.QuinticInterpolation = function(t)
 	return t * t * t * (t * (t * 6 - 15) + 10)
 end
-
-function luaInfo()
-	local info = "Lua version: " .. _VERSION .. "\n"
-	info = info .. "LuaJIT version: "
-
-	if (jit) then
-		info = info .. jit.version
-	else
-		info = info .. "this is not LuaJIT"
-	end
-
-	return info
-end
-
-print(luaInfo())
 
 -- The "new" FNV-1A hashing
 local function FNV32Buffer(data, size_in_bytes)
@@ -105,17 +92,16 @@ local function internalGradientNoise2D(x, y, ix, iy, seed)
 end
 
 Noise.SimplexNoise2D = function(x, y, seed, interp)
-	print('SimplexNoise2D', x, y, seed)
+	--print('SimplexNoise2D', x, y, seed)
 
 	local s = (x + y) * F2
-	local i = math.floor(x + s)
-	local j = math.floor(y + s)
+	local i = mfloor(x + s)
+	local j = mfloor(y + s)
+	--print(i, j, x, y, s)
 
 	local t = (i + j) * G2
-	local X0 = i - t
-	local Y0 = j - t
-	local x0 = x - X0
-	local y0 = y - Y0
+	local x0 = x - (i - t)
+	local y0 = y - (j - t)
 
 	local i1, j1
 	if x0 > y0 then 
@@ -128,18 +114,16 @@ Noise.SimplexNoise2D = function(x, y, seed, interp)
 	local y1 = y0 - j1 + G2
 	local x2 = x0 - 1.0 + 2.0 * G2
 	local y2 = y0 - 1.0 + 2.0 * G2
+	--print(x, y, s, t)
+	--print(i, j, i + i1, j + j1, i + 1, j + 1)
 
 	local h0 = Noise.HashCoordinates2D(i, j, seed)
 	local h1 = Noise.HashCoordinates2D(i + i1, j + j1, seed)
 	local h2 = Noise.HashCoordinates2D(i + 1, j + 1, seed)
 
-	local h0x, h0y = unpack(NoiseLookupTable.Gradient2D[h0])
-	local h1x, h1y = unpack(NoiseLookupTable.Gradient2D[h1])
-	local h2x, h2y = unpack(NoiseLookupTable.Gradient2D[h2])
-
-	local g0 = { h0x, h0y }
-	local g1 = { h1x, h1y }
-	local g2 = { h2x, h2y }
+	local g0 = NoiseLookupTable.Gradient2D[h0]
+	local g1 = NoiseLookupTable.Gradient2D[h1]
+	local g2 = NoiseLookupTable.Gradient2D[h2]
 
 	local n0, n1, n2
 	

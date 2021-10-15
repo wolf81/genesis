@@ -12,7 +12,7 @@ io.stdout:setvbuf("no")
 math.randomseed(os.time())
 love.math.setRandomSeed(os.time())
 
-local mapSize = 5
+local mapSize = 10
 
 local heightMap = nil
 local heatMap = nil
@@ -30,8 +30,8 @@ function love.load()
 	local v1 = Noise.HashCoordinates2D(0, 0, 300)
 	local v2 = Noise.HashCoordinates2D(1, 1, 300)
 	local v3 = Noise.HashCoordinates2D(0, 2, 300)
-	print(v1, v2, v3)
-	print()
+	--print(v1, v2, v3)
+	--print()
 
 	--[[
 	local heightMap = ImplicitFractal(

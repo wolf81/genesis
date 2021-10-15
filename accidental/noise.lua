@@ -91,17 +91,25 @@ local function internalGradientNoise2D(x, y, ix, iy, seed)
 	return (dx + gx + dy + gy)
 end
 
+function sign(n)
+	return n < 0 and -1 or n > 0 and 1 or n
+end
+
 Noise.SimplexNoise2D = function(x, y, seed, interp)
 	--print('SimplexNoise2D', x, y, seed)
+
+	if x == -0.00 then x = x - 0.0001 end
+	if y == -0.00 then y = y - 0.0001 end
 
 	local s = (x + y) * F2
 	local i = mfloor(x + s)
 	local j = mfloor(y + s)
-	--print(i, j, x, y, s)
+	--print(i + j)
 
 	local t = (i + j) * G2
 	local x0 = x - (i - t)
 	local y0 = y - (j - t)
+	--print(string.format("%.2f", x), string.format("%.2f", y), string.format("%.2f", s), string.format("%.2f", t))
 
 	local i1, j1
 	if x0 > y0 then 
@@ -124,7 +132,7 @@ Noise.SimplexNoise2D = function(x, y, seed, interp)
 	local h0 = Noise.HashCoordinates2D(i, j, seed)
 	local h1 = Noise.HashCoordinates2D(i + i1, j + j1, seed)
 	local h2 = Noise.HashCoordinates2D(i + 1, j + 1, seed)
-	print(h0, h1, h2)
+	--print(h0, h1, h2)
 
 	local g0 = NoiseLookupTable.Gradient2D[h0]
 	local g1 = NoiseLookupTable.Gradient2D[h1]

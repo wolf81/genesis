@@ -124,17 +124,17 @@ local function getData(self)
 	self._heatData = MapData(self._width, self._height)
 	self._moistureData = MapData(self._width, self._height)
 
-	for y = 0, self._height - 1 do
-		for x = 0, self._width - 1 do
+	for x = 0, self._width - 1 do
+		for y = 0, self._height - 1 do
 			local heightValue = self._heightMap:get2D(x, y) -- [x][y]		
 			self._heightData:setValue(x, y, heightValue)
 
-			local heatValue = self._heatMap:get2D(x, y) -- [x][y]
+			local heatValue = heightValue -- self._heatMap:get2D(x, y) -- [x][y]
 			local h = self._height - 1
 			local factor = 0.5 - math.abs(y - h / 2) / h
 			self._heatData:setValue(x, y, factor + heatValue)			
 
-			local moistureValue = self._moistureMap:get2D(x, y) -- [x][y]
+			local moistureValue = heightValue -- self._moistureMap:get2D(x, y) -- [x][y]
 			self._moistureData:setValue(x, y, moistureValue)
 		end
 	end

@@ -24,9 +24,9 @@ HeatType = {
 }
 
 TerrainType = {
-	DEEP_WATER = 0.4,
-	SHALLOW_WATER = 0.6,
-	SAND = 0.65,
+	DEEP_WATER = 0.2,
+	SHALLOW_WATER = 0.4,
+	SAND = 0.5,
 	GRASS = 0.7,
 	FOREST = 0.8,
 	ROCK = 0.9,

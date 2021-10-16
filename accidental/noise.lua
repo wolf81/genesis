@@ -3,8 +3,6 @@ local ffi = require'ffi'
 
 local NoiseLookupTable = require 'accidental/noise_lookup_table'
 
-local mfloor = math.floor
-
 local Noise = {}
 Noise.__index = Noise
 
@@ -19,8 +17,33 @@ local G3 = 1.0 / 6.0
 
 Noise.MAX_SOURCES = 20
 
+   local _sign_helper = ffi.new("union { double d; uint64_t ul; int64_t l; }[1]")
+    local function sign(num)
+        -- to get access to the bit representation of double
+        _sign_helper[0].d = num
+
+        -- reinterpret it as ulong to access the sign bit
+        -- 1. move the bit down to the first bit
+        -- 2. multiply by -2 to move the range from 0/1 to 0/-2
+        -- 4. add 1 to reduce the range to -1/1 
+
+        -- one test version for NaN handling (might be faster, did not test.)
+        -- return num ~= num and num or (tonumber(bit.rshift(_sign_helper[0].ul, 63)) * -2 + 1)
+        
+        -- branchless version: num - num will always be 0 except for nan.
+        return (tonumber(bit.rshift(_sign_helper[0].ul, 63)) * -2 + 1) * ((num - num + 1) / 1)
+    end
+
 Noise.QuinticInterpolation = function(t)
 	return t * t * t * (t * (t * 6 - 15) + 10)
+end
+
+local function fastfloor(x)
+	if x > 0 then
+		return tonumber(ffi.cast('int', x))
+	else
+		return tonumber(ffi.cast('int', x)-1)
+	end
 end
 
 -- The "new" FNV-1A hashing
@@ -91,25 +114,19 @@ local function internalGradientNoise2D(x, y, ix, iy, seed)
 	return (dx + gx + dy + gy)
 end
 
-function sign(n)
-	return n < 0 and -1 or n > 0 and 1 or n
-end
-
 Noise.SimplexNoise2D = function(x, y, seed, interp)
 	--print('SimplexNoise2D', x, y, seed)
-
-	if x == -0.00 then x = x - 0.0001 end
-	if y == -0.00 then y = y - 0.0001 end
+	--print(x, y, sign(x), sign(y))
 
 	local s = (x + y) * F2
-	local i = mfloor(x + s)
-	local j = mfloor(y + s)
+	local i = fastfloor(x + s)
+	local j = fastfloor(y + s)
 	--print(i + j)
 
 	local t = (i + j) * G2
 	local x0 = x - (i - t)
 	local y0 = y - (j - t)
-	--print(string.format("%.2f", x), string.format("%.2f", y), string.format("%.2f", s), string.format("%.2f", t))
+	--print(string.format("%.2f", x), string.format("%.2f", y), string.format("%.2f", i), string.format("%.2f", j), string.format("%.2f", s), string.format("%.2f", t))
 
 	local i1, j1
 	if x0 > y0 then 

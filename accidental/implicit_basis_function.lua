@@ -224,11 +224,14 @@ function ImplicitBasisFunction:new(basisType, interpolationType, seed)
 end
 
 function ImplicitBasisFunction:get2D(x, y)
+	return love.math.noise(x, y)
+
+	--[[
 	local nx = x * self._cos2D - y * self._sin2D
 	local ny = y * self._cos2D + x * self._sin2D
 
-	--print('=>', nx, ny)
 	return self._noise2D(nx, ny, self._seed, self._interpolator)
+	--]]	
 end
 
 return setmetatable(ImplicitBasisFunction, {

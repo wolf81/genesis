@@ -13,7 +13,7 @@ io.stdout:setvbuf("no")
 math.randomseed(os.time())
 love.math.setRandomSeed(os.time())
 
-local mapSize = 512
+local mapSize = 600
 
 local heightMap = nil
 local heatMap = nil
@@ -40,18 +40,18 @@ function love.load()
 
 	local vmin, vmax = 1.0, 0.0
 
-	local fractal = Fractal(6, 200, 1, 1000)
-	local map = fractal:generate(mapSize, mapSize)
+	local fractal = Fractal(6, 0.4, 10, 50000)
+	local map = fractal:generate2(mapSize, mapSize)
 
 	local s = ''
 	for x = 0, mapSize - 1 do
 		for y = 0, mapSize - 1 do
-			local v = map[x][y]
+			local v = 1.0 - map[x][y]
 
 			local color = colorMap[7]
-			if v < 0.2 then color = colorMap[1]
-			elseif v < 0.4 then color = colorMap[2]
-			elseif v < 0.5 then color = colorMap[3]
+			if v < 0.4 then color = colorMap[1]
+			elseif v < 0.6 then color = colorMap[2]
+			elseif v < 0.63 then color = colorMap[3]
 			elseif v < 0.7 then color = colorMap[4]
 			elseif v < 0.8 then color = colorMap[5]
 			elseif v < 0.9 then color = colorMap[6]

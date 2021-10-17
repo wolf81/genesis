@@ -9,6 +9,15 @@ local size = 8
 
 local maps = {}
 
+local faceOffsets = {
+	{ ox = 1, oy = 0 },
+	{ ox = 0, oy = 1 },
+	{ ox = 1, oy = 1 },
+	{ ox = 2, oy = 1 },
+	{ ox = 3, oy = 1 },
+	{ ox = 1, oy = 2 },
+}
+
 local function printMap(map)
 	local s = ''
 	for x = 0, map.w do
@@ -42,11 +51,13 @@ end
 
 function love.draw()
 	for i, map in ipairs(maps) do
+		local ox, oy = faceOffsets[i].ox, faceOffsets[i].oy
+
 		for x = 0, map.w do
 			for y = 0, map.h do
 				local v = map[x][y]
-				local xi = x + (map.ox * map.w) + (map.ox * 2)
-				local yi = y + (map.oy * map.h) + (map.oy * 2)
+				local xi = x + (ox * map.w) + (ox * 2) + 0.5
+				local yi = y + (oy * map.h) + (oy * 2) + 0.5
 
 				love.graphics.setColor(v, v, v, 1.0)
 				love.graphics.points(xi, yi)

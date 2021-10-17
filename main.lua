@@ -7,7 +7,7 @@ math.randomseed(os.time())
 -- show live output in console, don't wait for app to close
 io.stdout:setvbuf("no")
 
-local size = 2
+local size = 4
 local map = nil
 
 function love.load()
@@ -17,7 +17,7 @@ function love.load()
 
 	local vmin, vmax = 1.0, 0.0
 
-	map = DiamondSquare.create(2 ^ size, 2 ^ size)
+	map = DiamondSquare.create(2)
 
 	local s = ''
 	for x = 0, map.w do

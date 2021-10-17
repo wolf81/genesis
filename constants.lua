@@ -70,7 +70,7 @@ MoistureType = {
 			return { 85/255, 1.0, 1.0, 1.0 }
 		elseif moistureType == MoistureType.WETTER then
 			return { 20/255, 70/255, 1.0, 1.0 }
-		elseif moistureType == MoistureType.WETTEST then
+		else -- moistureType == MoistureType.WETTEST then
 			return { 0.0, 0.0, 100/255, 1.0 }
 		end
 	end

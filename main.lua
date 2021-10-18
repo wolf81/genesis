@@ -86,6 +86,7 @@ function love.load()
 					map[j][0] = maps[3][j][map.h]
 					map[0][j] = maps[2][map.w - j][map.h]
 					map[map.w][j] = maps[4][j][map.h]
+					map[j][map.h] = maps[5][map.w - j][map.h]
 				end
 			end			
 		end

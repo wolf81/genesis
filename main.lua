@@ -22,7 +22,7 @@ local function printMap(map)
 	local s = ''
 	for x = 0, map.w do
 		for y = 0, map.h do
-			local v = map[x][y]
+			local v = map[y][x]
 			s = s .. string.format('%.2f\t', v)
 		end
 		s = s .. '\n'
@@ -34,8 +34,8 @@ local function normalizeMap(map)
     -- normalize values in range 0.0 - 1.0
     for x = 0, map.w do        
         for y = 0, map.h do
-            local v = map[x][y]
-            map[x][y] = (v - map.min) / (map.max - map.min)
+            local v = map[y][x]
+            map[y][x] = (v - map.min) / (map.max - map.min)
         end
     end
 end
@@ -60,8 +60,15 @@ function love.load()
 			f = function(map)
 				for j = 0, map.w do
 					map[j][0] = maps[1][j][map.h]
+					map[0][j] = maps[2][map.w][j]
 				end
 			end			
+		elseif i == 4 then
+			f = function(map)
+				for j = 0, map.h do
+					map[0][j] = maps[3][map.w][j]
+				end
+			end						
 		end
 
 		map = DiamondSquare.create(size, f)
@@ -87,8 +94,8 @@ function love.draw()
 		for x = 0, map.w do
 			for y = 0, map.h do
 				local v = map[x][y]
-				local xi = x + (ox * map.w) + (ox * 2) + 0.5
-				local yi = y + (oy * map.h) + (oy * 2) + 0.5
+				local xi = x + (ox * map.w) --[[+ (ox * 2)--]] + 0.5
+				local yi = y + (oy * map.h) --[[+ (oy * 2)--]] + 0.5
 
 				love.graphics.setColor(v, v, v, 1.0)
 				love.graphics.points(xi, yi)

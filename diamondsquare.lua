@@ -14,15 +14,6 @@ local function random(magnitude)
     return (math.random() - 0.5) * magnitude
 end 
 
--- Find power of two sufficient for size
-local function pot(size)
-    local pot = 2
-    while true do
-        if size <= pot then return pot end
-        pot = 2*pot
-    end
-end
-
 -- Create a table with 0 to n zero values
 local function tcreate(n)
     local t = {}
@@ -35,32 +26,32 @@ end
 local function square(map, x, y, d, f)
     local sum, num = 0, 0
     if 0 <= x-d then
-        if   0 <= y-d   then sum, num = sum + map[x-d][y-d], num + 1 end
-        if y+d <= map.h then sum, num = sum + map[x-d][y+d], num + 1 end
+        if   0 <= y-d   then sum, num = sum + map[y-d][x-d], num + 1 end
+        if y+d <= map.h then sum, num = sum + map[y+d][x-d], num + 1 end
     end
     if x+d <= map.w then
-        if   0 <= y-d   then sum, num = sum + map[x+d][y-d], num + 1 end
-        if y+d <= map.h then sum, num = sum + map[x+d][y+d], num + 1 end
+        if   0 <= y-d   then sum, num = sum + map[y-d][x+d], num + 1 end
+        if y+d <= map.h then sum, num = sum + map[y+d][x+d], num + 1 end
     end
-    map[x][y] = sum/num + random(d)
+    map[y][x] = sum/num + random(d)
 end
 
 -- Diamond step
 -- Sets map[x][y] from diamond of radius d using height function f
 local function diamond(map, x, y, d, f)
     local sum, num = 0, 0
-    if   0 <= x-d   then sum, num = sum + map[x-d][y], num + 1 end
-    if x+d <= map.w then sum, num = sum + map[x+d][y], num + 1 end
-    if   0 <= y-d   then sum, num = sum + map[x][y-d], num + 1 end
-    if y+d <= map.h then sum, num = sum + map[x][y+d], num + 1 end
-    map[x][y] = sum/num + random(d)
+    if   0 <= x-d   then sum, num = sum + map[y][x-d], num + 1 end
+    if x+d <= map.w then sum, num = sum + map[y][x+d], num + 1 end
+    if   0 <= y-d   then sum, num = sum + map[y-d][x], num + 1 end
+    if y+d <= map.h then sum, num = sum + map[y+d][x], num + 1 end
+    map[y][x] = sum/num + random(d)
 end
 
 local function printMap(map)
     local s = ''
     for x = 0, map.w do
         for y = 0, map.h do
-            local v = map[x][y]
+            local v = map[y][x]
             s = s .. string.format('%.2f\t', v)
         end
         s = s .. '\n'
@@ -78,11 +69,10 @@ local function diamondsquare(size, f)
     for c = 0, size do map[c] = tcreate(size) end
     -- seed four corners
     local d = size
-    local v1, v2, v3, v4 = random(d), random(d), random(d), random(d)
-    map[0][0] = v1
-    map[0][d] = v2
-    map[d][0] = v3
-    map[d][d] = v4
+    map[0][0] = random(d)
+    map[0][d] = random(d)
+    map[d][0] = random(d)
+    map[d][d] = random(d)
     d = d/2
 
     -- call initializer function
@@ -90,10 +80,9 @@ local function diamondsquare(size, f)
 
     -- perform square and diamond steps
     while 1 <= d do
-
         for x = d, map.w-1, 2*d do
             for y = d, map.h-1, 2*d do
-                if isnan(map[x][y]) then
+                if isnan(map[y][x]) then
                     square(map, x, y, d, f)
                 end
             end
@@ -101,7 +90,7 @@ local function diamondsquare(size, f)
 
         for x = d, map.w-1, 2*d do
             for y = 0, map.h, 2*d do
-                if isnan(map[x][y]) then
+                if isnan(map[y][x]) then
                     diamond(map, x, y, d, f)
                 end
             end
@@ -109,7 +98,7 @@ local function diamondsquare(size, f)
 
         for x = 0, map.w, 2*d do
             for y = d, map.h-1, 2*d do
-                if isnan(map[x][y]) then
+                if isnan(map[y][x]) then
                     diamond(map, x, y, d, f)
                 end
             end
@@ -123,7 +112,7 @@ local function diamondsquare(size, f)
     local vmax = -math.huge
     for x = 0, map.w do
         for y = 0, map.h do
-            local v = map[x][y]
+            local v = map[y][x]
             vmin = min(v, vmin)
             vmax = max(v, vmax)
         end

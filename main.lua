@@ -6,6 +6,7 @@ math.randomseed(os.time())
 io.stdout:setvbuf("no")
 
 local size = 7
+local colorize = true
 
 local maps = {}
 
@@ -25,7 +26,7 @@ local function getTerrainColor(v)
 		return { 0.0, 0.0, 0.5, 1.0 }
 	elseif v < 0.6 then return 
 		{ 25/255, 25/255, 150/255, 1.0 }
-	elseif v < 0.62 then return 
+	elseif v < 0.61 then return 
 		{ 240/255, 240/255, 64/255, 1.0 } 
 	elseif v < 0.7 then return 
 		{ 50/255, 220/255, 20/255, 1.0 }
@@ -143,8 +144,7 @@ function love.draw()
 		for x = 0, map.w do
 			for y = 0, map.h do
 				local v = map[x][y]
-				local c = { v, v, v, 1.0 }
-				c = getTerrainColor(v)
+				local c = colorize and getTerrainColor(v) or { v, v, v, 1.0 }
 
 				local xi = x + (ox * map.w) --[[+ (ox * 2)--]] + 0.5
 				local yi = y + (oy * map.h) --[[+ (oy * 2)--]] + 0.5
@@ -159,5 +159,9 @@ end
 function love.keypressed(key, code)
     if key == 'g' then
     	generate()
+    end
+
+    if key == 'c' then
+    	colorize = not colorize
     end
 end

@@ -9,13 +9,15 @@ local size = 8
 
 local maps = {}
 
-local faceOffsets = {
-	{ ox = 1, oy = 0 },
-	{ ox = 0, oy = 1 },
-	{ ox = 1, oy = 1 },
-	{ ox = 2, oy = 1 },
-	{ ox = 3, oy = 1 },
-	{ ox = 1, oy = 2 },
+local faceInfo = {
+	min = math.huge,
+	max = -math.huge,
+
+	offsets = {
+					{ 1, 0 },
+		{ 0, 1 }, 	{ 1, 1 },	{ 2, 1 },	{ 3, 1 },
+					{ 1, 2 },
+	}
 }
 
 local function printMap(map)
@@ -35,7 +37,7 @@ local function normalizeMap(map)
     for x = 0, map.w do        
         for y = 0, map.h do
             local v = map[y][x]
-            map[y][x] = (v - map.min) / (map.max - map.min)
+            map[y][x] = (v - faceInfo.min) / (faceInfo.max - faceInfo.min)
         end
     end
 end
@@ -73,6 +75,9 @@ function love.load()
 
 		map = DiamondSquare.create(size, f)
 
+		faceInfo.min = math.min(faceInfo.min, map.min)
+		faceInfo.max = math.max(faceInfo.max, map.max)
+
 		maps[#maps + 1] = map
 
 		map.ox = (i - 1) % 4
@@ -89,7 +94,7 @@ end
 
 function love.draw()
 	for i, map in ipairs(maps) do
-		local ox, oy = faceOffsets[i].ox, faceOffsets[i].oy
+		local ox, oy = unpack(faceInfo.offsets[i])
 
 		for x = 0, map.w do
 			for y = 0, map.h do

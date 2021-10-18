@@ -69,8 +69,25 @@ function love.load()
 			f = function(map)
 				for j = 0, map.h do
 					map[0][j] = maps[3][map.w][j]
+					map[j][0] = maps[1][map.w][map.w - j]
 				end
-			end						
+			end					
+		elseif i == 5 then
+			f = function(map)
+				for j = 0, map.h do
+					map[0][j] = maps[4][map.w][j]
+					map[j][0] = maps[1][map.w - j][0]
+					map[map.w][j] = maps[2][0][j]
+				end
+			end
+		elseif i == 6 then
+			f = function(map)
+				for j = 0, map.w do
+					map[j][0] = maps[3][j][map.h]
+					map[0][j] = maps[2][map.w - j][map.h]
+					map[map.w][j] = maps[4][j][map.h]
+				end
+			end			
 		end
 
 		map = DiamondSquare.create(size, f)

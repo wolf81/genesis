@@ -30,6 +30,16 @@ local function printMap(map)
 	print(s)
 end
 
+local function normalizeMap(map)
+    -- normalize values in range 0.0 - 1.0
+    for x = 0, map.w do        
+        for y = 0, map.h do
+            local v = map[x][y]
+            map[x][y] = (v - map.min) / (map.max - map.min)
+        end
+    end
+end
+
 function love.load()
 	love.window.setTitle('Genesis')
 
@@ -38,7 +48,24 @@ function love.load()
 	local vmin, vmax = 1.0, 0.0
 
 	for i = 1, 6 do
-		map = DiamondSquare.create(size)
+		local f = nil
+
+		if i == 2 then
+			f = function(map)
+				for j = 0, map.h do
+					map[j][0] = maps[1][0][j]
+				end
+			end
+		elseif i == 3 then
+			f = function(map)
+				for j = 0, map.w do
+					map[j][0] = maps[1][j][map.h]
+				end
+			end			
+		end
+
+		map = DiamondSquare.create(size, f)
+
 		maps[#maps + 1] = map
 
 		map.ox = (i - 1) % 4
@@ -47,6 +74,10 @@ function love.load()
 		--printMap(map)
 	end
 
+	for i = 1, 6 do
+		normalizeMap(maps[i])
+		--printMap(maps[i])
+	end
 end
 
 function love.draw()

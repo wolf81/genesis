@@ -43,8 +43,6 @@ local function square(map, x, y, d, f)
         if y+d <= map.h then sum, num = sum + map[x+d][y+d], num + 1 end
     end
     map[x][y] = sum/num + random(d)
-
-    return map[x][y]
 end
 
 -- Diamond step
@@ -56,8 +54,18 @@ local function diamond(map, x, y, d, f)
     if   0 <= y-d   then sum, num = sum + map[x][y-d], num + 1 end
     if y+d <= map.h then sum, num = sum + map[x][y+d], num + 1 end
     map[x][y] = sum/num + random(d)
+end
 
-    return map[x][y]
+local function printMap(map)
+    local s = ''
+    for x = 0, map.w do
+        for y = 0, map.h do
+            local v = map[x][y]
+            s = s .. string.format('%.2f\t', v)
+        end
+        s = s .. '\n'
+    end 
+    print(s)
 end
 
 -- Diamond square algorithm generates cloud/plasma fractal heightmap
@@ -77,59 +85,58 @@ local function diamondsquare(size, f)
     map[d][d] = v4
     d = d/2
 
-    local vmin = math.huge
-    local vmax = -math.huge + 1
-    local values = { v1, v2, v3, v4 }
-    for _, v in ipairs(values) do
-        vmin = math.min(vmin, v)
-        vmax = math.max(vmax, v)
-    end
+    -- call initializer function
+    f(map)
 
     -- perform square and diamond steps
     while 1 <= d do
 
         for x = d, map.w-1, 2*d do
             for y = d, map.h-1, 2*d do
-                local v = square(map, x, y, d, f)
-                vmin = min(v, vmin)
-                vmax = max(v, vmax)
+                if isnan(map[x][y]) then
+                    square(map, x, y, d, f)
+                end
             end
         end
 
         for x = d, map.w-1, 2*d do
             for y = 0, map.h, 2*d do
-                local v = diamond(map, x, y, d, f)
-                vmin = min(v, vmin)
-                vmax = max(v, vmax)
+                if isnan(map[x][y]) then
+                    diamond(map, x, y, d, f)
+                end
             end
         end
 
         for x = 0, map.w, 2*d do
             for y = d, map.h-1, 2*d do
-                local v = diamond(map, x, y, d, f)
-                vmin = min(v, vmin)
-                vmax = max(v, vmax)
+                if isnan(map[x][y]) then
+                    diamond(map, x, y, d, f)
+                end
             end
         end
         
         d = d/2
     end
 
-    -- normalize values
-    for x = 0, map.w do        
+    -- find min and max values
+    local vmin = math.huge
+    local vmax = -math.huge
+    for x = 0, map.w do
         for y = 0, map.h do
             local v = map[x][y]
-            map[x][y] = (v - vmin) / (vmax - vmin)
+            vmin = min(v, vmin)
+            vmax = max(v, vmax)
         end
     end
+
+    map.max = vmax
+    map.min = vmin
 
     return map
 end
 
--- Create a heightmap using the specified height function (or default)
--- map[x][y] where x from 0 to map.w and y from 0 to map.h
 function DiamondSquare.create(size, f)
-    return diamondsquare(2 ^ size)
+    return diamondsquare(2 ^ size, f or function(map) end)
 end
 
 return DiamondSquare

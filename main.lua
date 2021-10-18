@@ -21,7 +21,7 @@ local faceInfo = {
 }
 
 local function getTerrainColor(v)
-	if v < 0.4 then 
+	if v < 0.35 then 
 		return { 0.0, 0.0, 0.5, 1.0 }
 	elseif v < 0.6 then return 
 		{ 25/255, 25/255, 150/255, 1.0 }
@@ -29,9 +29,9 @@ local function getTerrainColor(v)
 		{ 240/255, 240/255, 64/255, 1.0 } 
 	elseif v < 0.7 then return 
 		{ 50/255, 220/255, 20/255, 1.0 }
-	elseif v < 0.8 then return 
+	elseif v < 0.88 then return 
 		{ 16/255, 160/255, 0.0, 1.0 }
-	elseif v < 0.9 then return 
+	elseif v < 0.98 then return 
 		{ 0.5, 0.5, 0.5, 1.0 }
 	else return 
 		{ 1.0, 1.0, 1.0, 1.0 }
@@ -55,6 +55,7 @@ local function normalizeMap(map, min, max)
     for x = 0, map.w do        
         for y = 0, map.h do
             local v = map[y][x]
+            v = math.max(math.min(v, max), min)
             map[y][x] = (v - min) / (max - min)
         end
     end

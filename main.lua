@@ -20,6 +20,24 @@ local faceInfo = {
 	}
 }
 
+local function getTerrainColor(v)
+	if v < 0.4 then 
+		return { 0.0, 0.0, 0.5, 1.0 }
+	elseif v < 0.6 then return 
+		{ 25/255, 25/255, 150/255, 1.0 }
+	elseif v < 0.62 then return 
+		{ 240/255, 240/255, 64/255, 1.0 } 
+	elseif v < 0.7 then return 
+		{ 50/255, 220/255, 20/255, 1.0 }
+	elseif v < 0.8 then return 
+		{ 16/255, 160/255, 0.0, 1.0 }
+	elseif v < 0.9 then return 
+		{ 0.5, 0.5, 0.5, 1.0 }
+	else return 
+		{ 1.0, 1.0, 1.0, 1.0 }
+	end
+end
+
 local function printMap(map)
 	local s = ''
 	for x = 0, map.w do
@@ -118,15 +136,8 @@ function love.draw()
 			for y = 0, map.h do
 				local v = map[x][y]
 				local c = { v, v, v, 1.0 }
-				if v < 0.4 then c = { 0.0, 0.0, 0.5, 1.0 }
-				elseif v < 0.6 then c = { 25/255, 25/255, 150/255, 1.0 }
-				elseif v < 0.62 then c = { 240/255, 240/255, 64/255, 1.0 } 
-				elseif v < 0.7 then c = { 50/255, 220/255, 20/255, 1.0 }
-				elseif v < 0.8 then c = { 16/255, 160/255, 0.0, 1.0 }
-				elseif v < 0.9 then c = { 0.5, 0.5, 0.5, 1.0 }
-				else c = { 1.0, 1.0, 1.0, 1.0 }
-				end
-				--if v < 
+				c = getTerrainColor(v)
+
 				local xi = x + (ox * map.w) --[[+ (ox * 2)--]] + 0.5
 				local yi = y + (oy * map.h) --[[+ (oy * 2)--]] + 0.5
 

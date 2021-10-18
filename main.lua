@@ -60,10 +60,8 @@ local function normalizeMap(map)
     end
 end
 
-function love.load()
-	love.window.setTitle('Genesis')
-
-	local _ = love.window.setMode(1280, 800, {})
+local function generate()
+	maps = {}
 
 	local vmin, vmax = 1.0, 0.0
 
@@ -125,10 +123,20 @@ function love.load()
 	for i = 1, 6 do
 		normalizeMap(maps[i])
 		--printMap(maps[i])
-	end
+	end	
+end
+
+function love.load()
+	love.window.setTitle('Genesis')
+
+	local _ = love.window.setMode(1280, 800, {})
+
+	generate()
 end
 
 function love.draw()
+	if #maps < 6 then return end
+
 	for i, map in ipairs(maps) do
 		local ox, oy = unpack(faceInfo.offsets[i])
 
@@ -146,4 +154,10 @@ function love.draw()
 			end
 		end
 	end
+end
+
+function love.keypressed(key, code)
+    if key == 'g' then
+    	generate()
+    end
 end

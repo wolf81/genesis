@@ -12,6 +12,7 @@ local maps = {}
 local size = 8
 local colorize = false
 local invert = false
+local mapType = 1
 
 local faceInfo = {
 	-- drawing offsets for each face when applied to a cube
@@ -100,8 +101,11 @@ local function generate()
 			end			
 		end
 
-		-- maps[#maps + 1] = NoiseMap.create(size, f)
-		maps[#maps + 1] = GradientMap.create(size, i == 1 or i == 6)
+		if mapType == 1 then
+			maps[#maps + 1] = NoiseMap.create(size, f)
+		else
+			maps[#maps + 1] = GradientMap.create(size, i == 1 or i == 6)
+		end
 	end
 
 	-- calculate average minimum & maximum
@@ -160,5 +164,10 @@ function love.keypressed(key, code)
 
     if key == 'i' then
     	invert = not invert
+    end
+
+    if key == 't' then
+    	mapType = (mapType + 1) % 2
+    	generate()
     end
 end

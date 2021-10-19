@@ -1,4 +1,5 @@
-local DiamondSquare = require 'diamondsquare'
+local NoiseMap = require 'noisemap'
+local GradientMap = require 'gradientmap'
 
 math.randomseed(os.time())
 
@@ -8,8 +9,9 @@ io.stdout:setvbuf("no")
 local maps = {}
 
 -- config
-local size = 7
-local colorize = true
+local size = 8
+local colorize = false
+local invert = false
 
 local faceInfo = {
 	-- drawing offsets for each face when applied to a cube
@@ -36,18 +38,6 @@ local function getTerrainColor(v)
 	else return 
 		{ 1.0, 1.0, 1.0, 1.0 }
 	end
-end
-
-local function printMap(map)
-	local s = ''
-	for x = 0, map.w do
-		for y = 0, map.h do
-			local v = map[y][x]
-			s = s .. string.format('%.2f\t', v)
-		end
-		s = s .. '\n'
-	end	
-	print(s)
 end
 
 local function normalizeMap(map, min, max)
@@ -110,9 +100,8 @@ local function generate()
 			end			
 		end
 
-		maps[#maps + 1] = DiamondSquare.create(size, f)
-
-		--printMap(map)
+		-- maps[#maps + 1] = NoiseMap.create(size, f)
+		maps[#maps + 1] = GradientMap.create(size, { 0.5, 0.5 })
 	end
 
 	-- calculate average minimum & maximum
@@ -127,7 +116,6 @@ local function generate()
 	-- normalize map values in 0.0 ... 1.0 range
 	for i = 1, 6 do
 		normalizeMap(maps[i], min, max)
-		--printMap(maps[i])
 	end	
 end
 
@@ -148,6 +136,7 @@ function love.draw()
 		for x = 0, map.w do
 			for y = 0, map.h do
 				local v = map[x][y]
+				if invert then v = 1 - v end
 				local c = colorize and getTerrainColor(v) or { v, v, v, 1.0 }
 
 				local xi = x + (ox * map.w) + 0.5
@@ -167,5 +156,9 @@ function love.keypressed(key, code)
 
     if key == 'c' then
     	colorize = not colorize
+    end
+
+    if key == 'i' then
+    	invert = not invert
     end
 end

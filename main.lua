@@ -101,7 +101,7 @@ local function generate()
 		end
 
 		-- maps[#maps + 1] = NoiseMap.create(size, f)
-		maps[#maps + 1] = GradientMap.create(size, { 0.5, 0.5 })
+		maps[#maps + 1] = GradientMap.create(size, i == 1 or i == 6)
 	end
 
 	-- calculate average minimum & maximum

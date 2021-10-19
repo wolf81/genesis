@@ -69,6 +69,15 @@ local function diamondSquare(size, f)
     -- call initializer function
     f(map)
 
+    --[[
+    for y = 0, map.h do
+        for x = 0, map.w do
+            map[y][x] = love.math.noise(x / d, y / d, 1)    
+        end
+    end
+    --]]
+
+    ----[[
     -- perform square and diamond steps
     while 1 <= d do
         local d2 = 2 * d
@@ -99,6 +108,7 @@ local function diamondSquare(size, f)
         
         d = d/2
     end
+    --]]
 
     -- find min and max values
     local vmin, vmax = getMinMaxValues(map)

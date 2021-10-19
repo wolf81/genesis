@@ -23,6 +23,22 @@ local faceInfo = {
 	}
 }
 
+local function getTemperatureColor(v)
+	if v < 0.15 then
+		return { 0.0, 1.0, 1.0, 1.0 }
+	elseif v < 0.30 then
+		return { 170/255, 1.0, 1.0, 1.0 }
+	elseif v < 0.45 then
+		return { 0.0, 229/255, 133/255, 1.0 }
+	elseif v < 0.60 then
+		return { 1.0, 1.0, 100/255, 1.0 }
+	elseif v < 0.75 then
+		return { 1.0, 100/255, 0.0, 1.0 }
+	elseif v < 0.80 then
+		return { 241/255, 12/255, 0.0, 1.0 }
+	end
+end
+
 local function getTerrainColor(v)
 	if v < 0.35 then 
 		return { 0.0, 0.0, 0.5, 1.0 }

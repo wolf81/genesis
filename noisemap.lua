@@ -1,127 +1,116 @@
 require 'utility'
 
+local min, max = math.min, math.max
+
+-- based on: https://ronvalstar.nl/creating-tileable-noise-maps
+
 local NoiseMap = {}
+NoiseMap.__index = NoiseMap
 
-local min, max, huge = math.min, math.max, math.huge
+local function fBm(x, y, z, frequency, amplitude)
+	local gain = 0.5
+	local lacunarity = 2.0
 
-local function random(scale)
-    return (math.random() - 0.5) * scale
-end 
+	local v = 0
+	local f = frequency
+	local a = amplitude
 
-local function getMinMaxValues(map)
-    local vmin = huge
-    local vmax = -huge
-    for x = 0, map.w do
-        for y = 0, map.h do
-            local v = map[y][x]
-            vmin = min(v, vmin)
-            vmax = max(v, vmax)
-        end
-    end
+	for i = 0, 8 do
+		v = v + a * love.math.noise(x * f, y * f, z * f)
+		f = f * lacunarity
+		a = a * gain
+	end
 
-    return vmin, vmax
+	return v
 end
 
--- Square step
--- Sets map[x][y] from square of radius d using height function f
-local function square(map, x, y, d, f)
-    local sum, num = 0, 0
-    if 0 <= x - d then
-        if 0 <= y - d then sum, num = sum + map[y - d][x - d], num + 1 end
-        if y + d <= map.h then sum, num = sum + map[y + d][x - d], num + 1 end
-    end
-    if x + d <= map.w then
-        if 0 <= y - d then sum, num = sum + map[y - d][x + d], num + 1 end
-        if y + d <= map.h then sum, num = sum + map[y + d][x + d], num + 1 end
-    end
-    map[y][x] = sum / num + random(d)
+local function simplex(size)
+	local map = {}
+
+	local vmin = math.huge
+	local vmax = -math.huge
+
+	local hsize = size / 2
+	local aa, bb, cc = 0, 0, 0 -- seed values
+
+	for face = 1, 6 do
+		map[face] = {}
+		for x = 0, size - 1 do
+			map[face][x] = {}
+			for y = 0, size - 1 do
+				local a = -hsize + x + 0.5
+				local b = -hsize + y + 0.5
+				local c = -hsize
+
+				local dab = math.sqrt(a * a + b * b)
+				local dabc = math.sqrt(dab * dab + c * c)
+				local drds = 0.5 * dabc
+				local v = 1.0
+
+				a = a / drds
+				b = b / drds
+				c = c / drds
+
+				local noisePos = {
+					{  a,  b,  c },
+					{ -c,  b,  a },
+					{ -a,  b, -c },
+					{  c,  b, -a },
+					{  a,  c, -b },
+					{  a, -c,  b },
+				}
+
+				local value = fBm(
+					aa + noisePos[face][1], 
+					bb + noisePos[face][2],
+					cc + noisePos[face][3],
+					0.5,
+					0.5
+				)
+
+				map[face][x][y] = value
+
+				vmin = math.min(vmin, value)
+				vmax = math.max(vmax, value)
+			end
+		end
+	end
+
+	-- normalize to 0.0 ... 1.0 range
+	for face = 1, 6 do
+		for x = 0, size - 1 do
+			for y = 0, size - 1 do
+				local v = map[face][x][y]
+				map[face][x][y] = (v - vmin) / (vmax - vmin)
+			end
+		end		
+	end
+
+	-- printArray2(map)
+
+	return map, vmin, vmax
 end
 
--- Diamond step
--- Sets map[x][y] from diamond of radius d using height function f
-local function diamond(map, x, y, d, f)
-    local sum, num = 0, 0
-    if 0 <= x-d then sum, num = sum + map[y][x - d], num + 1 end
-    if x + d <= map.w then sum, num = sum + map[y][x + d], num + 1 end
-    if 0 <= y-d then sum, num = sum + map[y - d][x], num + 1 end
-    if y + d <= map.h then sum, num = sum + map[y + d][x], num + 1 end
-    map[y][x] = sum / num + random(d)
+function NoiseMap:new(size, seed)
+	local size = 2 ^ size + 1
+	local map, vmin, vmax = simplex(size)
+
+	return setmetatable({
+		_map = map,
+		_min = vmin,
+		_max = vmax,
+		_size = size,
+	}, NoiseMap)
 end
 
--- Diamond square algorithm generates cloud/plasma fractal heightmap
--- http://en.wikipedia.org/wiki/Diamond-square_algorithm
--- Size must be power of two
--- Height function f must look like f(map, x, y, d, h) and return h'
-local function diamondSquare(size, f)
-    -- create 2d array
-    local map = newArray2(size + 1, size + 1, nan)
-    map.w = size
-    map.h = size
-
-    -- seed four corners
-    local d = size
-    map[0][0] = random(d)
-    map[0][d] = random(d)
-    map[d][0] = random(d)
-    map[d][d] = random(d)
-    d = d/2
-
-    -- call initializer function
-    f(map)
-
-    --[[
-    for y = 0, map.h do
-        for x = 0, map.w do
-            map[y][x] = love.math.noise(x / d, y / d, 1)    
-        end
-    end
-    --]]
-
-    ----[[
-    -- perform square and diamond steps
-    while 1 <= d do
-        local d2 = 2 * d
-
-        for y = d, map.h - 1, d2 do
-            for x = d, map.w - 1, d2 do
-                if isnan(map[y][x]) then
-                    square(map, x, y, d, f)
-                end
-            end
-        end
-
-        for y = 0, map.h, d2 do
-            for x = d, map.w - 1, d2 do
-                if isnan(map[y][x]) then
-                    diamond(map, x, y, d, f)
-                end
-            end
-        end
-
-        for y = d, map.h - 1, d2 do
-            for x = 0, map.w, d2 do
-                if isnan(map[y][x]) then
-                    diamond(map, x, y, d, f)
-                end
-            end
-        end
-        
-        d = d/2
-    end
-    --]]
-
-    -- find min and max values
-    local vmin, vmax = getMinMaxValues(map)
-    map.max = vmax
-    map.min = vmin
-
-    --printArray2(map)
-
-    return map
+function NoiseMap:getValue(face, x, y)
+	return self._map[face][x][y]
 end
 
-function NoiseMap.create(size, f)
-    return diamondSquare(2 ^ size, f or function(map) end)
+function NoiseMap:getSize()
+	return self._size, self._size
 end
 
-return NoiseMap
+return setmetatable(NoiseMap, {
+	__call = NoiseMap.new
+})

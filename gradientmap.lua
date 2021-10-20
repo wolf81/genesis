@@ -1,56 +1,84 @@
 local GradientMap = {}
+GradientMap.__index = GradientMap
 
-local function gradient(size, iscenter)
-    local map = newArray2(size + 1, size + 1, nan)
-    map.w = size
-    map.h = size
+local function gradient(size)
+    local map = {}
 
-    local half = map.h / 2 
+    local hsize = math.floor(size / 2)
 
-    if not iscenter then
-	    for y = 0, map.h do
-	    	for x = 0, map.w do
-	    		if y < half then
-	    			map[x][y] = 1.0 - y / half
-	    		else
-	    			map[x][y] = ((y - half) / half)
-	    		end
+    for face = 1, 6 do
+    	map[face] = {}
 
-	    		map[x][y] = map[x][y] * 0.5
-	    	end
-	    end
-	else
-	    local ox, oy = half, half
-	    for n = half, 0, -1 do
-	    	local d = half - n
+    	if face < 5 then
+		    for x = 0, size - 1 do
+	    		map[face][x] = {}
+	    		for y = 0, size - 1 do
+		    		if y < hsize then
+		    			map[face][x][y] = 1.0 - y / hsize
+		    		else
+		    			map[face][x][y] = ((y - hsize) / hsize)
+		    		end
 
-	    	local y1, y2 = half - d, half + d
-	    	local x1, x2 = half - d, half + d
+		    		map[face][x][y] = map[face][x][y] * 0.5
+		    	end
+		    end
+		else
+			for x = 0, size - 1 do
+				map[face][x] = {}
+				for y = 0, size - 1 do
+					map[face][x][y] = 0
+				end
+			end
 
-	    	local v = ((half - d) / half * 0.5) + 0.5
+	    	local ox, oy = hsize, hsize
+		    for n = hsize, 0, -1 do
+		    	local d = hsize - n
 
-	    	for x = x1, x2 do
-	    		map[x][y1] = v
-	    		map[x][y2] = v
-	    	end
+		    	local y1, y2 = hsize - d, hsize + d
+		    	local x1, x2 = hsize - d, hsize + d
 
-	    	for y = y1 + 1, y2 - 1 do
-	    		map[x1][y] = v
-	    		map[x2][y] = v
-	    	end
-	    end
+		    	local v = ((hsize - d) / hsize * 0.5) + 0.5
+
+		    	for x = x1, x2 do
+		    		map[face][x][y1] = v
+		    		map[face][x][y2] = v
+		    	end
+
+		    	for y = y1, y2 do
+		    		map[face][x1][y] = v
+		    		map[face][x2][y] = v
+		    	end
+		    end			
+    	end
     end
 
     map.min = 0.0
     map.max = 1.0
 
-    -- printArray2(map)
+    -- for i = 1, 6 do
+    -- 	printArray2(map[i])
+    -- end
 
     return map
 end
 
-function GradientMap.create(size, iscenter)
-    return gradient(2 ^ size, iscenter)
+function GradientMap:new(size)
+	local size = 2 ^ size + 1
+
+	return setmetatable({
+		_size = size,
+		_map = gradient(size)
+	}, GradientMap)
 end
 
-return GradientMap
+function GradientMap:getSize()
+	return self._size, self._size
+end
+
+function GradientMap:getValue(face, x, y)
+	return self._map[face][x][y]
+end
+
+return setmetatable(GradientMap, {
+	__call = GradientMap.new
+})

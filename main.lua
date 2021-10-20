@@ -1,14 +1,12 @@
 local NoiseMap = require 'noisemap'
-local NoiseMap2 = require 'noisemap2'
 local GradientMap = require 'gradientmap'
-local GradientMap2 = require 'gradientmap2'
 
 math.randomseed(os.time())
 
 -- show live output in console, don't wait for app to close
 io.stdout:setvbuf("no")
 
-local maps = {}
+local map = {}
 
 -- config
 local size = 7
@@ -34,7 +32,7 @@ local function getTemperatureColor(v)
 		return { 1.0, 1.0, 100/255, 1.0 }
 	elseif v < 0.75 then
 		return { 1.0, 100/255, 0.0, 1.0 }
-	elseif v < 0.80 then
+	else
 		return { 241/255, 12/255, 0.0, 1.0 }
 	end
 end
@@ -58,11 +56,14 @@ local function getTerrainColor(v)
 end
 
 local function generate()
-	maps = {}
+	map = {}
 
-	local seed = math.random()
-
-	maps['h'] = NoiseMap2(size, seed)
+	if mapType == 1 then
+		local seed = math.random()
+		map = NoiseMap(size, seed)
+	else
+		map = GradientMap(size)
+	end
 end
 
 function love.load()
@@ -74,29 +75,31 @@ function love.load()
 end
 
 function love.draw()
-	for i, map in pairs(maps) do
-		for face = 1, 6 do
-			local ox, oy = unpack(faceInfo.offsets[face])
-			local w, h = map:getSize()
+	local getColor = function(v) return { v, v, v, 1.0 } end
 
-			for x = 0, w - 1 do
-				for y = 0, h - 1 do
-					local v = map:getValue(face, x, y)
-
-					if invert then v = 1 - v end
-					local c = colorize and getTerrainColor(v) or { v, v, v, 1.0 }
-
-					local xi = x + (ox * w) + 0.5
-					local yi = y + (oy * h) + 0.5
-
-					love.graphics.setColor(c)
-					love.graphics.points(xi, yi)					
-				end
-			end
-
-		end
+	if colorize then
+		getColor = mapType == 1 and getTerrainColor or getTemperatureColor
 	end
 
+	for face = 1, 6 do
+		local ox, oy = unpack(faceInfo.offsets[face])
+		local w, h = map:getSize()
+
+		for x = 0, w - 1 do
+			for y = 0, h - 1 do
+				local v = map:getValue(face, x, y)
+
+				if invert then v = 1 - v end
+				local c = getColor(v)
+
+				local xi = x + (ox * w) + 0.5
+				local yi = y + (oy * h) + 0.5
+
+				love.graphics.setColor(c)
+				love.graphics.points(xi, yi)					
+			end
+		end
+	end
 end
 
 function love.keypressed(key, code)
@@ -114,6 +117,7 @@ function love.keypressed(key, code)
 
     if key == 't' then
     	mapType = (mapType + 1) % 2
+
     	generate()
     end
 end

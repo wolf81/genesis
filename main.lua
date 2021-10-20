@@ -1,5 +1,6 @@
 local NoiseMap = require 'noisemap'
 local GradientMap = require 'gradientmap'
+local CombineMap = require 'combinemap'
 
 math.randomseed(os.time())
 
@@ -59,7 +60,9 @@ local function generate()
 	if mapType == 1 then
 		map = NoiseMap(size, math.random() * 100)
 	else
-		map = GradientMap(size)
+		local map1 = NoiseMap(size, math.random() * 100)
+		local map2 = GradientMap(size)
+		map = CombineMap(map1, map2)
 	end
 end
 

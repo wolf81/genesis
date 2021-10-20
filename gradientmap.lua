@@ -3,31 +3,30 @@ local Map = require 'map'
 local GradientMap = {}
 GradientMap.__index = Map
 
---[[
-local function square(size) 
-    local map = {}
+local function squareGradient(size) 
+    local values = {}
 
     local hsize = math.floor(size / 2)
 
     for face = 1, 6 do
-    	map[face] = {}
+    	values[face] = {}
 
     	if face < 5 then
 		    for x = 0, size - 1 do
-	    		map[face][x] = {}
+	    		values[face][x] = {}
 	    		for y = 0, size - 1 do
 	    			local v = (y < hsize and 
 	    				1.0 - y / hsize or 
 	    				(y - hsize) / hsize
 	    			)
-		    		map[face][x][y] = 1.0 - (v * 0.5)
+		    		values[face][x][y] = 1.0 - (v * 0.5)
 		    	end
 		    end
 		else
 			for x = 0, size - 1 do
-				map[face][x] = {}
+				values[face][x] = {}
 				for y = 0, size - 1 do
-					map[face][x][y] = 0
+					values[face][x][y] = 0
 				end
 			end
 
@@ -41,27 +40,22 @@ local function square(size)
 		    	local v = 0.5 - ((hsize - d) / hsize * 0.5)
 
 		    	for x = x1, x2 do
-		    		map[face][x][y1] = v
-		    		map[face][x][y2] = v
+		    		values[face][x][y1] = v
+		    		values[face][x][y2] = v
 		    	end
 
 		    	for y = y1, y2 do
-		    		map[face][x1][y] = v
-		    		map[face][x2][y] = v
+		    		values[face][x1][y] = v
+		    		values[face][x2][y] = v
 		    	end
 		    end			
     	end
     end
 
-    -- for i = 1, 6 do
-    -- 	printArray2(map[i])
-    -- end
-
-    return map
+    return values
 end
---]]
 
-local function gradient(size)
+local function radialGradient(size)
 	local values = {}
 
 	local vmin = math.huge
@@ -108,8 +102,8 @@ end
 function GradientMap:new(size)
 	local size = 2 ^ size + 1
 
-	local values = gradient(size) 
-	local super = Map:new(values)
+	local values = radialGradient(size) 
+	local super = Map(values)
 
 	return setmetatable(super, GradientMap)
 end

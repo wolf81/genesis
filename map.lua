@@ -14,7 +14,8 @@ Map.normalize = function(values, vmin, vmax)
 	return values
 end
 
-function Map:new(values)	
+function Map:new(values)
+	-- TODO: add assertions, maybe for 3D array (?)
 	return setmetatable({
 		_size = #values[1],
 		_values = values,

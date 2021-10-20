@@ -1,3 +1,5 @@
+require 'utility'
+
 local mmin, mmax = math.min, math.max
 
 local Map = require 'map'
@@ -92,10 +94,9 @@ local function radialGradient(size)
 		end
 	end
 
-	-- normalize to 0.0 ... 1.0 range
-	-- values = Map.normalize(values, vmin, vmax)
-
-	-- printArray2(map)
+	-- for i = 1, 6 do
+	-- 	printArray2(values[i])		
+	-- end
 
 	return values, min, max
 end
@@ -104,7 +105,7 @@ function GradientMap:new(size)
 	local size = 2 ^ size + 1
 
 	local values, min, max = radialGradient(size) 
-	local super = Map(values, min, max)
+	local super = Map(values, size, min, max)
 
 	return setmetatable(super, GradientMap)
 end

@@ -10,9 +10,8 @@ io.stdout:setvbuf("no")
 local map = {}
 
 -- config
-local size = 7
+local size = 8
 local colorize = false
-local invert = false
 local mapType = 1
 
 local faceInfo = {
@@ -22,7 +21,8 @@ local faceInfo = {
 	}
 }
 
-local function getTemperatureColor(v)
+local function getTemperatureColor(tile)
+	local v = tile:getValue()
 	if v < 0.15 then
 		return { 0.0, 1.0, 1.0, 1.0 }
 	elseif v < 0.30 then
@@ -38,21 +38,23 @@ local function getTemperatureColor(v)
 	end
 end
 
-local function getTerrainColor(v)
-	if v < 0.3 then 
+local function getTerrainColor(tile)
+	local t = tile:getTerrainType()
+
+	if t == 1 then
+		return { 1.0, 1.0, 1.0, 1.0 }
+	elseif t == 2 then
+		return { 0.5, 0.5, 0.5, 1.0 }
+	elseif t == 3 then
+		return { 16/255, 160/255, 0.0, 1.0 }
+	elseif t == 4 then
+		return { 50/255, 220/255, 20/255, 1.0 }
+	elseif t == 5 then
+		return { 240/255, 240/255, 64/255, 1.0 }
+	elseif t == 6 then
+		return { 25/255, 25/255, 150/255, 1.0 }
+	else 
 		return { 0.0, 0.0, 0.5, 1.0 }
-	elseif v < 0.6 then return 
-		{ 25/255, 25/255, 150/255, 1.0 }
-	elseif v < 0.62 then return 
-		{ 240/255, 240/255, 64/255, 1.0 } 
-	elseif v < 0.7 then return 
-		{ 50/255, 220/255, 20/255, 1.0 }
-	elseif v < 0.8 then return 
-		{ 16/255, 160/255, 0.0, 1.0 }
-	elseif v < 0.9 then return 
-		{ 0.5, 0.5, 0.5, 1.0 }
-	else return 
-		{ 1.0, 1.0, 1.0, 1.0 }
 	end
 end
 
@@ -75,7 +77,10 @@ function love.load()
 end
 
 function love.draw()
-	local getColor = function(v) return { v, v, v, 1.0 } end
+	local getColor = function(t) 
+		local v = t:getValue()
+		return { v, v, v, 1.0 } 
+	end
 
 	if colorize then
 		getColor = mapType == 1 and getTerrainColor or getTemperatureColor
@@ -87,10 +92,15 @@ function love.draw()
 
 		for x = 0, w - 1 do
 			for y = 0, h - 1 do
-				local v = map:getTile(face, x, y):getValue()
+				local tile = map:getTile(face, x, y)
 
-				if invert then v = 1 - v end
-				local c = getColor(v)
+				local c = getColor(tile)
+
+				if tile:getBitmask() ~= 15 then
+					c[1] = c[1] * 0.4
+					c[2] = c[2] * 0.4
+					c[3] = c[3] * 0.4
+				end
 
 				local xi = x + (ox * w) + 0.5
 				local yi = y + (oy * h) + 0.5
@@ -109,10 +119,6 @@ function love.keypressed(key, code)
 
     if key == 'c' then
     	colorize = not colorize
-    end
-
-    if key == 'i' then
-    	invert = not invert
     end
 
     if key == 't' then

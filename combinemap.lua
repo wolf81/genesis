@@ -1,5 +1,7 @@
 local mmin, mmax = math.min, math.max
 
+require 'utility'
+
 local Map = require 'map'
 
 local CombineMap = {}
@@ -33,12 +35,18 @@ local function multiply(maps)
 		end
 	end
 
+	-- for i = 1, 6 do
+	-- 	printArray2(values[i])		
+	-- end
+
 	return values, min, max
 end
 
 function CombineMap:new(...)
-	local values, min, max = multiply({ ... })
-	local super = Map(values, min, max)
+	local maps = {...}
+	local size = maps[1]:getSize()
+	local values, min, max = multiply(maps)
+	local super = Map(values, size, min, max)
 
 	return setmetatable(super, CombineMap)
 end

@@ -83,7 +83,7 @@ function NoiseMap:new(size, seed)
 	local size = 2 ^ size + 1
 
 	local values, min, max = noise(size, seed or 0)
-	local super = Map(values, min, max)
+	local super = Map(values, size, min, max)
 
 	return setmetatable(super, NoiseMap)
 end

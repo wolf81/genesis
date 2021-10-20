@@ -1,3 +1,5 @@
+local Tile = require 'tile'
+
 local Map = {}
 Map.__index = Map
 
@@ -14,11 +16,34 @@ Map.normalize = function(values, vmin, vmax)
 	return values
 end
 
-function Map:new(values)
+local function loadTiles(values, min, max)
+	local tiles = {}
+
+	local size = #values[1]
+	
+	for face = 1, 6 do
+		tiles[face] = {}
+
+		for x = 0, size - 1 do
+			tiles[face][x] = {}
+
+			for y = 0, size - 1 do
+				local value = values[face][x][y]
+				value = (value - min) / (max - min)
+				tiles[face][x][y] = Tile(face, x, y, value)
+			end
+		end
+	end
+
+	return tiles
+end
+
+function Map:new(values, min, max)
+	local tiles = loadTiles(values, min, max)
 	-- TODO: add assertions, maybe for 3D array (?)
 	return setmetatable({
 		_size = #values[1],
-		_values = values,
+		_tiles = loadTiles(values, min, max),
 	}, Map)
 end
 
@@ -26,8 +51,8 @@ function Map:getSize()
 	return self._size, self._size
 end
 
-function Map:getValue(face, x, y)
-	return self._values[face][x][y]
+function Map:getTile(face, x, y)
+	return self._tiles[face][x][y]
 end
 
 return setmetatable(Map, {

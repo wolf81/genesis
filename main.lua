@@ -87,7 +87,7 @@ function love.draw()
 
 		for x = 0, w - 1 do
 			for y = 0, h - 1 do
-				local v = map:getValue(face, x, y)
+				local v = map:getTile(face, x, y):getValue()
 
 				if invert then v = 1 - v end
 				local c = getColor(v)

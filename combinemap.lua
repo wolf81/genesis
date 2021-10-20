@@ -1,3 +1,5 @@
+local mmin, mmax = math.min, math.max
+
 local Map = require 'map'
 
 local CombineMap = {}
@@ -9,6 +11,8 @@ local function multiply(maps)
 
 	local values = {}
 
+	local min, max = math.huge, -math.huge
+
 	for face = 1, 6 do
 		values[face] = {}
 
@@ -18,19 +22,23 @@ local function multiply(maps)
 			for y = 0, h - 1 do
 				local v = 0
 				for i = 1, mapCount do
-					v = v + maps[i]:getValue(face, x, y)
+					v = v + maps[i]:getTile(face, x, y):getValue()
 				end
-				values[face][x][y] = v / mapCount
+				v = v / mapCount				
+				values[face][x][y] = v
+
+				min = mmin(min, v)
+				max = mmax(max, v)
 			end
 		end
 	end
 
-	return values
+	return values, min, max
 end
 
 function CombineMap:new(...)
-	local values = multiply({ ... })
-	local super = Map(values)
+	local values, min, max = multiply({ ... })
+	local super = Map(values, min, max)
 
 	return setmetatable(super, CombineMap)
 end

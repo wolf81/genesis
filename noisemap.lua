@@ -1,6 +1,6 @@
-local Map = require 'map'
+local mmin, mmax = math.min, math.max
 
-local min, max = math.min, math.max
+local Map = require 'map'
 
 -- based on: https://ronvalstar.nl/creating-tileable-noise-maps
 
@@ -27,8 +27,7 @@ end
 local function noise(size, seed)
 	local values = {}
 
-	local vmin = math.huge
-	local vmax = -math.huge
+	local min, max = math.huge, -math.huge
 
 	local hsize = size / 2
 	local aa, bb, cc = seed % 173, seed % 71, seed % 17 -- seed values
@@ -69,24 +68,22 @@ local function noise(size, seed)
 
 				values[face][x][y] = value
 
-				vmin = math.min(vmin, value)
-				vmax = math.max(vmax, value)
+				min = mmin(min, value)
+				max = mmax(max, value)
 			end
 		end
 	end
 
-	values = Map.normalize(values, vmin, vmax)
-
 	-- printArray2(map)
 
-	return values
+	return values, min, max
 end
 
 function NoiseMap:new(size, seed)
 	local size = 2 ^ size + 1
 
-	local values = noise(size, seed or 0)
-	local super = Map(values)
+	local values, min, max = noise(size, seed or 0)
+	local super = Map(values, min, max)
 
 	return setmetatable(super, NoiseMap)
 end

@@ -1,3 +1,5 @@
+local mmin, mmax = math.min, math.max
+
 local Map = require 'map'
 
 local GradientMap = {}
@@ -52,14 +54,13 @@ local function squareGradient(size)
     	end
     end
 
-    return values
+    return values, 0.0, 1.0
 end
 
 local function radialGradient(size)
 	local values = {}
 
-	local vmin = math.huge
-	local vmax = -math.huge
+	local min, max = math.huge, -math.huge
 
 	local hsize = size / 2
 
@@ -85,25 +86,25 @@ local function radialGradient(size)
 
 				values[face][x][y] = value
 
-				vmin = math.min(vmin, value)
-				vmax = math.max(vmax, value)
+				min = mmin(min, value)
+				max = mmax(max, value)
 			end
 		end
 	end
 
 	-- normalize to 0.0 ... 1.0 range
-	values = Map.normalize(values, vmin, vmax)
+	-- values = Map.normalize(values, vmin, vmax)
 
 	-- printArray2(map)
 
-	return values   
+	return values, min, max
 end
 
 function GradientMap:new(size)
 	local size = 2 ^ size + 1
 
-	local values = radialGradient(size) 
-	local super = Map(values)
+	local values, min, max = radialGradient(size) 
+	local super = Map(values, min, max)
 
 	return setmetatable(super, GradientMap)
 end

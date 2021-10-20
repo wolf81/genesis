@@ -24,7 +24,7 @@ local function fBm(x, y, z, frequency, amplitude)
 	return v
 end
 
-local function simplex(size)
+local function noise(size)
 	local map = {}
 
 	local vmin = math.huge
@@ -93,7 +93,7 @@ end
 
 function NoiseMap:new(size, seed)
 	local size = 2 ^ size + 1
-	local map, vmin, vmax = simplex(size)
+	local map, vmin, vmax = noise(size)
 
 	return setmetatable({
 		_map = map,

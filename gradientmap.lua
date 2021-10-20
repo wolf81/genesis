@@ -13,13 +13,11 @@ local function gradient(size)
 		    for x = 0, size - 1 do
 	    		map[face][x] = {}
 	    		for y = 0, size - 1 do
-		    		if y < hsize then
-		    			map[face][x][y] = 1.0 - y / hsize
-		    		else
-		    			map[face][x][y] = ((y - hsize) / hsize)
-		    		end
-
-		    		map[face][x][y] = map[face][x][y] * 0.5
+	    			local v = (y < hsize and 
+	    				1.0 - y / hsize or 
+	    				(y - hsize) / hsize
+	    			)
+		    		map[face][x][y] = 1.0 - (v * 0.5)
 		    	end
 		    end
 		else
@@ -37,7 +35,7 @@ local function gradient(size)
 		    	local y1, y2 = hsize - d, hsize + d
 		    	local x1, x2 = hsize - d, hsize + d
 
-		    	local v = ((hsize - d) / hsize * 0.5) + 0.5
+		    	local v = 0.5 - ((hsize - d) / hsize * 0.5)
 
 		    	for x = x1, x2 do
 		    		map[face][x][y1] = v
@@ -51,9 +49,6 @@ local function gradient(size)
 		    end			
     	end
     end
-
-    map.min = 0.0
-    map.max = 1.0
 
     -- for i = 1, 6 do
     -- 	printArray2(map[i])

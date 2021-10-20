@@ -45,7 +45,6 @@ local function noise(size)
 				local dab = math.sqrt(a * a + b * b)
 				local dabc = math.sqrt(dab * dab + c * c)
 				local drds = 0.5 * dabc
-				local v = 1.0
 
 				a = a / drds
 				b = b / drds

@@ -1,7 +1,8 @@
 local GradientMap = {}
 GradientMap.__index = GradientMap
 
-local function gradient(size)
+--[[
+local function square(size) 
     local map = {}
 
     local hsize = math.floor(size / 2)
@@ -55,6 +56,58 @@ local function gradient(size)
     -- end
 
     return map
+end
+--]]
+
+local function gradient(size)
+	local map = {}
+
+	local vmin = math.huge
+	local vmax = -math.huge
+
+	local hsize = size / 2
+
+	for face = 1, 6 do
+		map[face] = {}
+		for x = 0, size - 1 do
+			map[face][x] = {}
+			for y = 0, size - 1 do
+				local a = -hsize + x + 0.5
+				local b = -hsize + y + 0.5
+				local c = -hsize
+
+				local dab = math.sqrt(a * a + b * b)
+				local dabc = math.sqrt(dab * dab + c * c)
+				local drds = 0.5 * dabc
+
+				b = b / drds
+				c = c / drds
+
+				local gradientPos = { b, b, b, b, c, -c }
+
+				local value = math.cos(gradientPos[face])
+
+				map[face][x][y] = value
+
+				vmin = math.min(vmin, value)
+				vmax = math.max(vmax, value)
+			end
+		end
+	end
+
+	-- normalize to 0.0 ... 1.0 range
+	for face = 1, 6 do
+		for x = 0, size - 1 do
+			for y = 0, size - 1 do
+				local v = map[face][x][y]
+				map[face][x][y] = (v - vmin) / (vmax - vmin)
+			end
+		end		
+	end
+
+	-- printArray2(map)
+
+	return map   
 end
 
 function GradientMap:new(size)

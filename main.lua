@@ -1,4 +1,5 @@
 local NoiseMap = require 'noisemap'
+local NoiseMap2 = require 'noisemap2'
 local GradientMap = require 'gradientmap'
 
 math.randomseed(os.time())
@@ -15,12 +16,18 @@ local invert = false
 local mapType = 1
 
 local faceInfo = {
+	offsets = {
+		{ 0, 1 }, { 1, 1 }, { 2, 1 }, { 3, 1 },	{ 0, 0 }, { 0, 2 },
+	}
+
+	--[[
 	-- drawing offsets for each face when applied to a cube
 	offsets = {
-					{ 1, 0 },
+					{ 1, 1 },
 		{ 0, 1 }, 	{ 1, 1 },	{ 2, 1 },	{ 3, 1 },
 					{ 1, 2 },
 	}
+	--]]
 }
 
 local function getTemperatureColor(v)
@@ -59,9 +66,11 @@ end
 
 local function normalizeMap(map, min, max)
     -- normalize values in range 0.0 ... 1.0
-    for x = 0, map.w do        
-        for y = 0, map.h do
+    -- print('wh', map.w, map.h)
+    for x = 0, map.w - 1 do        
+        for y = 0, map.h - 1 do
             local v = map[y][x]
+            -- print('->', y, x, v)
             v = math.max(math.min(v, max), min)
             map[y][x] = (v - min) / (max - min)
         end
@@ -118,7 +127,8 @@ local function generate()
 		end
 
 		if mapType == 1 then
-			maps[#maps + 1] = NoiseMap.create(size, f)
+			--maps[#maps + 1] = NoiseMap.create(size, f)
+			maps[#maps + 1] = NoiseMap2.create(size, i)
 		else
 			maps[#maps + 1] = GradientMap.create(size, i == 1 or i == 6)
 		end
@@ -126,7 +136,7 @@ local function generate()
 
 	-- calculate average minimum & maximum
 	local min, max = 0, 0
-	for _, map in ipairs(maps) do
+	for i, map in ipairs(maps) do
 		min = min + map.min
 		max = max + map.max
 	end
@@ -153,8 +163,8 @@ function love.draw()
 	for i, map in ipairs(maps) do
 		local ox, oy = unpack(faceInfo.offsets[i])
 
-		for x = 0, map.w do
-			for y = 0, map.h do
+		for x = 0, map.w - 1 do
+			for y = 0, map.h - 1 do
 				local v = map[x][y]
 				if invert then v = 1 - v end
 				local c = colorize and getTerrainColor(v) or { v, v, v, 1.0 }

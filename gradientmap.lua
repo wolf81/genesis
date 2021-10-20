@@ -1,5 +1,7 @@
+local Map = require 'map'
+
 local GradientMap = {}
-GradientMap.__index = GradientMap
+GradientMap.__index = Map
 
 --[[
 local function square(size) 
@@ -60,7 +62,7 @@ end
 --]]
 
 local function gradient(size)
-	local map = {}
+	local values = {}
 
 	local vmin = math.huge
 	local vmax = -math.huge
@@ -68,9 +70,9 @@ local function gradient(size)
 	local hsize = size / 2
 
 	for face = 1, 6 do
-		map[face] = {}
+		values[face] = {}
 		for x = 0, size - 1 do
-			map[face][x] = {}
+			values[face][x] = {}
 			for y = 0, size - 1 do
 				local a = -hsize + x + 0.5
 				local b = -hsize + y + 0.5
@@ -87,7 +89,7 @@ local function gradient(size)
 
 				local value = math.cos(gradientPos[face])
 
-				map[face][x][y] = value
+				values[face][x][y] = value
 
 				vmin = math.min(vmin, value)
 				vmax = math.max(vmax, value)
@@ -96,35 +98,20 @@ local function gradient(size)
 	end
 
 	-- normalize to 0.0 ... 1.0 range
-	for face = 1, 6 do
-		for x = 0, size - 1 do
-			for y = 0, size - 1 do
-				local v = map[face][x][y]
-				map[face][x][y] = (v - vmin) / (vmax - vmin)
-			end
-		end		
-	end
+	values = Map.normalize(values, vmin, vmax)
 
 	-- printArray2(map)
 
-	return map   
+	return values   
 end
 
 function GradientMap:new(size)
 	local size = 2 ^ size + 1
 
-	return setmetatable({
-		_size = size,
-		_map = gradient(size)
-	}, GradientMap)
-end
+	local values = gradient(size) 
+	local super = Map:new(values)
 
-function GradientMap:getSize()
-	return self._size, self._size
-end
-
-function GradientMap:getValue(face, x, y)
-	return self._map[face][x][y]
+	return setmetatable(super, GradientMap)
 end
 
 return setmetatable(GradientMap, {

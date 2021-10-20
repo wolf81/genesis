@@ -56,11 +56,8 @@ local function getTerrainColor(v)
 end
 
 local function generate()
-	map = {}
-
 	if mapType == 1 then
-		local seed = math.random()
-		map = NoiseMap(size, seed)
+		map = NoiseMap(size, math.random() * 100)
 	else
 		map = GradientMap(size)
 	end

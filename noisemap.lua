@@ -1,11 +1,11 @@
-require 'utility'
+local Map = require 'map'
 
 local min, max = math.min, math.max
 
 -- based on: https://ronvalstar.nl/creating-tileable-noise-maps
 
 local NoiseMap = {}
-NoiseMap.__index = NoiseMap
+NoiseMap.__index = Map
 
 local function fBm(x, y, z, frequency, amplitude)
 	local gain = 0.5
@@ -24,19 +24,19 @@ local function fBm(x, y, z, frequency, amplitude)
 	return v
 end
 
-local function noise(size)
-	local map = {}
+local function noise(size, seed)
+	local values = {}
 
 	local vmin = math.huge
 	local vmax = -math.huge
 
 	local hsize = size / 2
-	local aa, bb, cc = 0, 0, 0 -- seed values
+	local aa, bb, cc = seed % 173, seed % 71, seed % 17 -- seed values
 
 	for face = 1, 6 do
-		map[face] = {}
+		values[face] = {}
 		for x = 0, size - 1 do
-			map[face][x] = {}
+			values[face][x] = {}
 			for y = 0, size - 1 do
 				local a = -hsize + x + 0.5
 				local b = -hsize + y + 0.5
@@ -67,7 +67,7 @@ local function noise(size)
 					0.5
 				)
 
-				map[face][x][y] = value
+				values[face][x][y] = value
 
 				vmin = math.min(vmin, value)
 				vmax = math.max(vmax, value)
@@ -75,32 +75,20 @@ local function noise(size)
 		end
 	end
 
-	-- normalize to 0.0 ... 1.0 range
-	for face = 1, 6 do
-		for x = 0, size - 1 do
-			for y = 0, size - 1 do
-				local v = map[face][x][y]
-				map[face][x][y] = (v - vmin) / (vmax - vmin)
-			end
-		end		
-	end
+	values = Map.normalize(values, vmin, vmax)
 
 	-- printArray2(map)
 
-	return map
+	return values
 end
 
 function NoiseMap:new(size, seed)
 	local size = 2 ^ size + 1
 
-	return setmetatable({
-		_map = noise(size),
-		_size = size,
-	}, NoiseMap)
-end
+	local values = noise(size, seed or 0)
+	local super = Map(values)
 
-function NoiseMap:getValue(face, x, y)
-	return self._map[face][x][y]
+	return setmetatable(super, NoiseMap)
 end
 
 function NoiseMap:getSize()

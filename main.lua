@@ -1,6 +1,7 @@
 local NoiseMap = require 'noisemap'
 local NoiseMap2 = require 'noisemap2'
 local GradientMap = require 'gradientmap'
+local GradientMap2 = require 'gradientmap2'
 
 math.randomseed(os.time())
 
@@ -10,24 +11,16 @@ io.stdout:setvbuf("no")
 local maps = {}
 
 -- config
-local size = 8
+local size = 7
 local colorize = false
 local invert = false
 local mapType = 1
 
 local faceInfo = {
-	offsets = {
-		{ 0, 1 }, { 1, 1 }, { 2, 1 }, { 3, 1 },	{ 0, 0 }, { 0, 2 },
-	}
-
-	--[[
 	-- drawing offsets for each face when applied to a cube
 	offsets = {
-					{ 1, 1 },
-		{ 0, 1 }, 	{ 1, 1 },	{ 2, 1 },	{ 3, 1 },
-					{ 1, 2 },
+		{ 1, 1 }, { 2, 1 }, { 3, 1 }, { 0, 1 },	{ 1, 0 }, { 1, 2 },
 	}
-	--]]
 }
 
 local function getTemperatureColor(v)
@@ -47,106 +40,29 @@ local function getTemperatureColor(v)
 end
 
 local function getTerrainColor(v)
-	if v < 0.35 then 
+	if v < 0.3 then 
 		return { 0.0, 0.0, 0.5, 1.0 }
 	elseif v < 0.6 then return 
 		{ 25/255, 25/255, 150/255, 1.0 }
-	elseif v < 0.61 then return 
+	elseif v < 0.62 then return 
 		{ 240/255, 240/255, 64/255, 1.0 } 
 	elseif v < 0.7 then return 
 		{ 50/255, 220/255, 20/255, 1.0 }
-	elseif v < 0.88 then return 
+	elseif v < 0.8 then return 
 		{ 16/255, 160/255, 0.0, 1.0 }
-	elseif v < 0.98 then return 
+	elseif v < 0.9 then return 
 		{ 0.5, 0.5, 0.5, 1.0 }
 	else return 
 		{ 1.0, 1.0, 1.0, 1.0 }
 	end
 end
 
-local function normalizeMap(map, min, max)
-    -- normalize values in range 0.0 ... 1.0
-    -- print('wh', map.w, map.h)
-    for x = 0, map.w - 1 do        
-        for y = 0, map.h - 1 do
-            local v = map[y][x]
-            -- print('->', y, x, v)
-            v = math.max(math.min(v, max), min)
-            map[y][x] = (v - min) / (max - min)
-        end
-    end
-end
-
 local function generate()
 	maps = {}
 
-	local vmin, vmax = 1.0, 0.0
+	local seed = math.random()
 
-	-- generate 6 maps, 1 for each face of a cube
-	for i = 1, 6 do
-		local f = nil
-
-		-- use initializer functions to stitch maps together
-		if i == 2 then
-			f = function(map)
-				for j = 0, map.h do
-					map[j][0] = maps[1][0][j]
-				end
-			end
-		elseif i == 3 then
-			f = function(map)
-				for j = 0, map.w do
-					map[j][0] = maps[1][j][map.h]
-					map[0][j] = maps[2][map.w][j]
-				end
-			end			
-		elseif i == 4 then
-			f = function(map)
-				for j = 0, map.h do
-					map[0][j] = maps[3][map.w][j]
-					map[j][0] = maps[1][map.w][map.w - j]
-				end
-			end					
-		elseif i == 5 then
-			f = function(map)
-				for j = 0, map.h do
-					map[0][j] = maps[4][map.w][j]
-					map[j][0] = maps[1][map.w - j][0]
-					map[map.w][j] = maps[2][0][j]
-				end
-			end
-		elseif i == 6 then
-			f = function(map)
-				for j = 0, map.w do
-					map[j][0] = maps[3][j][map.h]
-					map[0][j] = maps[2][map.w - j][map.h]
-					map[map.w][j] = maps[4][j][map.h]
-					map[j][map.h] = maps[5][map.w - j][map.h]
-				end
-			end			
-		end
-
-		if mapType == 1 then
-			--maps[#maps + 1] = NoiseMap.create(size, f)
-			maps[#maps + 1] = NoiseMap2.create(size, i)
-		else
-			maps[#maps + 1] = GradientMap.create(size, i == 1 or i == 6)
-		end
-	end
-
-	-- calculate average minimum & maximum
-	local min, max = 0, 0
-	for i, map in ipairs(maps) do
-		min = min + map.min
-		max = max + map.max
-	end
-	min = min / #maps
-	max = max / #maps
-
-	-- normalize map values in 0.0 ... 1.0 range
-	for i = 1, 6 do
-		normalizeMap(maps[i], min, max)
-	end	
+	maps['h'] = NoiseMap2(size, seed)
 end
 
 function love.load()
@@ -158,25 +74,29 @@ function love.load()
 end
 
 function love.draw()
-	if #maps < 6 then return end
+	for i, map in pairs(maps) do
+		for face = 1, 6 do
+			local ox, oy = unpack(faceInfo.offsets[face])
+			local w, h = map:getSize()
 
-	for i, map in ipairs(maps) do
-		local ox, oy = unpack(faceInfo.offsets[i])
+			for x = 0, w - 1 do
+				for y = 0, h - 1 do
+					local v = map:getValue(face, x, y)
 
-		for x = 0, map.w - 1 do
-			for y = 0, map.h - 1 do
-				local v = map[x][y]
-				if invert then v = 1 - v end
-				local c = colorize and getTerrainColor(v) or { v, v, v, 1.0 }
+					if invert then v = 1 - v end
+					local c = colorize and getTerrainColor(v) or { v, v, v, 1.0 }
 
-				local xi = x + (ox * map.w) + 0.5
-				local yi = y + (oy * map.h) + 0.5
+					local xi = x + (ox * w) + 0.5
+					local yi = y + (oy * h) + 0.5
 
-				love.graphics.setColor(c)
-				love.graphics.points(xi, yi)
+					love.graphics.setColor(c)
+					love.graphics.points(xi, yi)					
+				end
 			end
+
 		end
 	end
+
 end
 
 function love.keypressed(key, code)

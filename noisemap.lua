@@ -88,17 +88,14 @@ local function noise(size)
 
 	-- printArray2(map)
 
-	return map, vmin, vmax
+	return map
 end
 
 function NoiseMap:new(size, seed)
 	local size = 2 ^ size + 1
-	local map, vmin, vmax = noise(size)
 
 	return setmetatable({
-		_map = map,
-		_min = vmin,
-		_max = vmax,
+		_map = noise(size),
 		_size = size,
 	}, NoiseMap)
 end

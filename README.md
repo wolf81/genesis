@@ -1,5 +1,8 @@
 # GENESIS
 
+*"In the beginning God created the heaven and the earth."*
+	- The Bible, Genesis 1 verse 1
+
 Genesis is a Lua / LÖVE2D based world generator. My goals with Genesis are:
 
 * To have a library that can be easily integrated into games

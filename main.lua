@@ -65,7 +65,7 @@ end
 
 local function generate()
 	local size = 2 ^ scale + 1
-	genesis:generate(size, math.random() * 171)
+	genesis:generate(size, math.random())
 end
 
 function love.load()

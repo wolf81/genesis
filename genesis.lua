@@ -208,10 +208,11 @@ end
 function Genesis:generate(size, seed)
 	self._size = size
 
-	getData(self, seed)
+	-- get values for height map, heat map, moisture map
+	getData(self, seed or math.random())
 
-	loadTiles(self, seed)
-
+	-- generate the tile map
+	loadTiles(self)
 	updateNeighbours(self)
 	updateBitmasks(self)
 end

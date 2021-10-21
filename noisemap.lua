@@ -1,4 +1,4 @@
-local mmin, mmax = math.min, math.max
+local mmin, mmax, msqrt = math.min, math.max, math.sqrt
 local Map = require 'map'
 
 -- based on: https://ronvalstar.nl/creating-tileable-noise-maps
@@ -40,8 +40,8 @@ local function noise(size, seed)
 				local b = -hsize + y + 0.5
 				local c = -hsize
 
-				local dab = math.sqrt(a * a + b * b)
-				local dabc = math.sqrt(dab * dab + c * c)
+				local dab = msqrt(a * a + b * b)
+				local dabc = msqrt(dab * dab + c * c)
 				local drds = 0.5 * dabc
 
 				a = a / drds

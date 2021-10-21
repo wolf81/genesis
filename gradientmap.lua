@@ -1,4 +1,4 @@
-local mmin, mmax = math.min, math.max
+local mmin, mmax, msqrt, mcos = math.min, math.max, math.sqrt, math.cos
 local Map = require 'map'
 
 local GradientMap = {}
@@ -72,8 +72,8 @@ local function radialGradient(size)
 				local b = -hsize + y + 0.5
 				local c = -hsize
 
-				local dab = math.sqrt(a * a + b * b)
-				local dabc = math.sqrt(dab * dab + c * c)
+				local dab = msqrt(a * a + b * b)
+				local dabc = msqrt(dab * dab + c * c)
 				local drds = 0.5 * dabc
 
 				b = b / drds
@@ -81,7 +81,7 @@ local function radialGradient(size)
 
 				local gradientPos = { b, b, b, b, c, -c }
 
-				local value = math.cos(gradientPos[face])
+				local value = mcos(gradientPos[face])
 
 				values[face][x][y] = value
 

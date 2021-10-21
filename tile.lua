@@ -1,18 +1,9 @@
+require 'constants'
+
 local bbor = bit.bor
 
 local Tile = {}
 Tile.__index = Tile
-
-Tile.MASK_EQ_TOP = bit.lshift(1, 0)
-Tile.MASK_EQ_LEFT = bit.lshift(1, 1)
-Tile.MASK_EQ_RIGHT = bit.lshift(1, 2)
-Tile.MASK_EQ_BOTTOM = bit.lshift(1, 3)
-Tile.MASK_EQ_ALL = bit.bor(
-	Tile.MASK_EQ_TOP, 
-	Tile.MASK_EQ_LEFT, 
-	Tile.MASK_EQ_RIGHT, 
-	Tile.MASK_EQ_BOTTOM
-)
 
 function Tile:new(face, x, y, heightValue, heatValue, moistureValue)	
 	return setmetatable({
@@ -122,19 +113,19 @@ function Tile:updateBitmask()
 	local bitmask = 0
 
 	if self:getTop():getHeightType() == self._heightType then
-		bitmask = bbor(bitmask, Tile.MASK_EQ_TOP)
+		bitmask = bbor(bitmask, TileFlags.EQ_TOP)
 	end
 
 	if self:getLeft():getHeightType() == self._heightType then
-		bitmask = bbor(bitmask, Tile.MASK_EQ_LEFT)
+		bitmask = bbor(bitmask, TileFlags.EQ_LEFT)
 	end
 
 	if self:getRight():getHeightType() == self._heightType then
-		bitmask = bbor(bitmask, Tile.MASK_EQ_RIGHT)
+		bitmask = bbor(bitmask, TileFlags.EQ_RIGHT)
 	end
 
 	if self:getBottom():getHeightType() == self._heightType then
-		bitmask = bbor(bitmask, Tile.MASK_EQ_BOTTOM)
+		bitmask = bbor(bitmask, TileFlags.EQ_BOTTOM)
 	end
 
 	self._bitmask = bitmask

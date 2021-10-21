@@ -1,8 +1,6 @@
 local mmin, mmax, msqrt = math.min, math.max, math.sqrt
 local Map = require 'map'
 
--- based on: https://ronvalstar.nl/creating-tileable-noise-maps
-
 local NoiseMap = {}
 NoiseMap.__index = Map
 

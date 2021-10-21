@@ -4,16 +4,27 @@ Tile.__index = Tile
 function Tile:new(face, x, y, heightValue, heatValue)	
 	return setmetatable({
 		_position = { face, x, y },
+		-- values
 		_heightValue = heightValue or 0.0,
 		_heatValue = heatValue or 0.0,
-		-- neighbour tiles
+		-- adjacent tiles
 		_left = nil,
 		_right = nil,
 		_top = nil,
 		_bottom = nil,
+		-- tile info
 		_terrainType = 0,
+		_heatType = 0,
 		_bitmask = 0,
 	}, Tile)	
+end
+
+function Tile:getHeatType()
+	return self._heatType
+end
+
+function Tile:setHeatType(v)
+	self._heatType = v
 end
 
 function Tile:getTerrainType()

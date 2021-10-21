@@ -27,6 +27,16 @@ local function getTerrainType(heightValue)
 	end	
 end 
 
+local function getHeatType(heatValue)
+	if heatValue >= 0.75 then return 1 -- warmest
+	elseif heatValue >= 0.60 then return 2 -- warmer
+	elseif heatValue >= 0.45 then return 3 -- warm
+	elseif heatValue >= 0.30 then return 4 -- cold
+	elseif heatValue >= 0.15 then return 5 -- colder
+	else return 6 -- coldest
+	end
+end
+
 local function getTop(self, tile)
 	local size = self._size
 
@@ -148,6 +158,7 @@ local function loadTiles(self, seed)
 				end
 
 				tile:setHeatValue(heatValue)
+				tile:setHeatType(getHeatType(heatValue))
 
 				tiles[face][x][y] = tile
 			end

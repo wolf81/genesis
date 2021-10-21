@@ -1,6 +1,3 @@
-local NoiseMap = require 'noisemap'
-local GradientMap = require 'gradientmap'
-local CombineMap = require 'combinemap'
 local Generator = require 'generator'
 
 require 'functions'
@@ -24,22 +21,14 @@ local faceInfo = {
 	}
 }
 
-local function getTemperatureColor(tile)
-	local v = tile:getHeatValue()
-	if v < 0.15 then
-		return { 0.0, 1.0, 1.0, 1.0 }
-	elseif v < 0.30 then
-		return { 170/255, 1.0, 1.0, 1.0 }
-	elseif v < 0.45 then
-		return { 0.0, 229/255, 133/255, 1.0 }
-	elseif v < 0.60 then
-		return { 1.0, 1.0, 100/255, 1.0 }
-	elseif v < 0.75 then
-		return { 1.0, 100/255, 0.0, 1.0 }
-	else
-		return { 241/255, 12/255, 0.0, 1.0 }
-	end
-end
+local heatColorMap = {
+	[1] = { 241/255, 12/255, 0.0, 1.0 },
+	[2] = { 1.0, 100/255, 0.0, 1.0 },
+	[3] = { 1.0, 1.0, 100/255, 1.0 },
+	[4] = { 0.0, 229/255, 133/255, 1.0 },
+	[5] = { 170/255, 1.0, 1.0, 1.0 },
+	[6] = { 0.0, 1.0, 1.0, 1.0 }
+}
 
 local terrainColorMap = {
 	[1] = { 1.0, 1.0, 1.0, 1.0 },
@@ -51,10 +40,14 @@ local terrainColorMap = {
 	[7] = { 0.0, 0.0, 0.5, 1.0 },
 }
 
+local function getTemperatureColor(tile)
+	local t = tile:getHeatType()
+	return heatColorMap[t] or { 1.0, 0.0, 1.0, 1.0 }
+end
+
 local function getTerrainColor(tile)
 	local t = tile:getTerrainType()
-	local c = terrainColorMap[t]
-	return c or {1.0, 0.0, 0.0, 0.0}
+	return terrainColorMap[t] or { 1.0, 0.0, 1.0, 1.0 }
 end
 
 local function generate()
@@ -72,16 +65,17 @@ end
 function love.draw()
 	local w, h = generator:getSize()
 
+	local getColor = mapType == 1 and getTerrainColor or getTemperatureColor
+
 	for face = 1, 6 do
 		local ox, oy = unpack(faceInfo.offsets[face])
 
 		for x = 0, w - 1 do
 			for y = 0, h - 1 do
-				local tile = generator:getTile(face, x, y)
+				local tile = generator:getTile(face, x, y)			
+				local c = getColor(tile)
 
-				local c = mapType == 1 and getTerrainColor(tile) or getTemperatureColor(tile)
-
-				-- draw borders around land terrain
+				-- draw borders around different types of land terrain
 				if tile:getBitmask() ~= 15 and tile:getTerrainType() < 6 then
 					c = { lerp(c[1], 0.0, 0.4), lerp(c[2], 0.0, 0.4), lerp(c[3], 0.0, 0.4), 1.0 }
 				end
@@ -97,11 +91,12 @@ function love.draw()
 end
 
 function love.keypressed(key, code)
+	-- generate a new random terrain
     if key == 'g' then
     	generate()
     end
 
-
+    -- toggle between heightmap and heatmap
     if key == 't' then
     	mapType = (mapType + 1) % 2
     end

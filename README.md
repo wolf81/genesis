@@ -110,7 +110,7 @@ values are suitable for drawing terrain in a solid color.
 Another useful function for figuring out if an adjacent tile has the same terrain type is the `getBitmask()` function. The `Tile` class contains some mask constants. In order to check if all adjacent tiles are of same height type as current tile, we can check as follows:
 
 ```lua
-bit.band(tile:getBitmask(), Tile.MASK_EQ_ALL) ~= Tile.MASK_EQ_ALL
+bit.band(tile:getBitmask(), Tile.MASK_EQ_ALL) == Tile.MASK_EQ_ALL
 ```
 	
 # FURTHER READING

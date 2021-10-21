@@ -49,10 +49,9 @@ local function getMoistureType(moistureValue)
 	end
 end
 
-local function getTop(self, tile)
+local function getTop(self, face, x, y)
 	local size = self._size
 
-	local face, x, y = tile:getPosition()
 	if y > 0 then
 		return self:getTile(face, x, y - 1)
 	else 
@@ -63,10 +62,9 @@ local function getTop(self, tile)
 	end
 end
 
-local function getLeft(self, tile)
+local function getLeft(self, face, x, y)
 	local size = self._size
 
-	local face, x, y = tile:getPosition()
 	if x > 0 then
 		return self:getTile(face, x - 1, y)
 	else
@@ -77,10 +75,9 @@ local function getLeft(self, tile)
 	end
 end
 
-local function getRight(self, tile)
+local function getRight(self, face, x, y)
 	local size = self._size
 
-	local face, x, y = tile:getPosition()
 	if x < size - 1 then
 		return self:getTile(face, x + 1, y)
 	else
@@ -91,10 +88,9 @@ local function getRight(self, tile)
 	end
 end
 
-local function getBottom(self, tile)
+local function getBottom(self, face, x, y)
 	local size = self._size
 
-	local face, x, y = tile:getPosition()
 	if y < size - 1 then
 		return self:getTile(face, x, y + 1)
 	else
@@ -112,10 +108,10 @@ local function updateNeighbours(self)
 		for x = 0, size - 1 do
 			for y = 0, size - 1 do
 				local tile = self._tiles[face][x][y]
-				tile:setTop(getTop(self, tile))
-				tile:setLeft(getLeft(self, tile))
-				tile:setRight(getRight(self, tile))
-				tile:setBottom(getBottom(self, tile))
+				tile:setTop(getTop(self, face, x, y))
+				tile:setLeft(getLeft(self, face, x, y))
+				tile:setRight(getRight(self, face, x, y))
+				tile:setBottom(getBottom(self, face, x, y))
 			end
 		end
 	end

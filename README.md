@@ -32,7 +32,7 @@ the cube, like the height, heat and moisture values.
 
 # API
 
-## GENESIS
+## Genesis
 
 The API is still a work-in-progress and as such, subject to change. With that 
 said what follows is a short description of the API at time of writing.
@@ -53,7 +53,7 @@ genesis:generate(size, math.random())
 ```
 
 It's possible to request the width and the height of the map. Since each face 
-map is a square, the width and height will be equal. 
+map is a square, the width and height will be equal. The 
 
 ```lua
 local w, h = genesis:getSize()
@@ -84,7 +84,7 @@ for face = 1, 6 do
 end
 ```
 
-## TILE
+## Tile
 
 With regards to a `Tile` I won't explain every function, just the most important 
 ones.
@@ -101,11 +101,17 @@ tile:getMoistureType() -- get an integer indicating the moisture type
 ```
 
 The `get___Value()` functions will return values in 0.0 to 1.0 range. These 
-values are more suitable for rendering smooth color changes. 
+values are suitable for rendering terrain with smooth color changes (e.g. grayscale rendering). 
 
 The `get___Type()` functions will return integer values 0 or greater. 0 means 
 the type is undefined. Values 1 and greater indicate a distinct type. These 
-values are more suitable for drawing terrain in a solid color.
+values are suitable for drawing terrain in a solid color.
+
+Another useful function for figuring out if an adjacent tile has the same terrain type is the `getBitmask()` function. The `Tile` class contains some mask constants. In order to check if all adjacent tiles are of same height type as current tile, we can check as follows:
+
+```lua
+bit.band(tile:getBitmask(), Tile.MASK_EQ_ALL) ~= Tile.MASK_EQ_ALL
+```
 	
 # FURTHER READING
 

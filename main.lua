@@ -1,4 +1,7 @@
 local Genesis = require 'genesis'
+local Tile = require 'tile'
+
+local bband = bit.band
 
 require 'functions'
 
@@ -93,8 +96,7 @@ function love.draw()
 				local tile = genesis:getTile(face, x, y)			
 				local c = getColor(tile)
 
-				-- draw borders around different types of land terrain
-				if tile:getBitmask() ~= 15 and tile:getHeightType() < 6 then
+				if bband(tile:getBitmask(), Tile.MASK_EQ_ALL) ~= Tile.MASK_EQ_ALL and tile:getHeightType() < 6 then
 					c = { lerp(c[1], 0.0, 0.4), lerp(c[2], 0.0, 0.4), lerp(c[3], 0.0, 0.4), 1.0 }
 				end
 

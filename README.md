@@ -41,7 +41,7 @@ In order to create a world, we first need to create an instance of the Genesis
 class:
 
 ```lua
-local genesis = Genesis()
+local genesis = Genesis() --> returns a new Genesis instance
 ```
 
 To generate a new map, just call the `generate` function with a size and 
@@ -49,22 +49,24 @@ optionally a seed value. When using the same seed value, the same map will be
 created. In no seed value is supplied, a random seed will be used.
 
 ```lua
-genesis:generate(size, math.random())
+genesis:generate(100) --> generates a map of 6 x 100 x 100
 ```
 
-It's possible to request the width and the height of the map. Since each face 
-map is a square, the width and height will be equal. The 
+It's possible to request the width and the height of a face of the map. Since 
+each face map is a square, the width and height will be equal. 
 
 ```lua
-local w, h = genesis:getSize()
+local w, h = genesis:getSize() --> returns 100 x 100
+
+local s = genesis:getSize() --> returns 100
 ```
 
-After a map is generated, it is possible to request tiles based on face, x- and 
-y-coordinates. The x and y coordinates are 0 indexed while the faces are indexed
-from 1 to 6 (I might need to align this in the future).
+After a map is generated, it is possible to request tiles based on face number, 
+x- and y-coordinates. The x and y coordinates are 0 indexed while the faces are 
+indexed from 1 to 6 (I might need to align this in the future).
 
 ```lua
-local tile = genesis:getTile(1, 0, 3) 
+local tile = genesis:getTile(1, 0, 3) --> returns Tile object
 ```
 
 The above code retrieves the tile for face 1, x coordinate 0, y coordinate 3.
@@ -90,24 +92,28 @@ With regards to a `Tile` I won't explain every function, just the most important
 ones.
 
 ```lua
-tile:getHeightValue() -- get normalized value indicating height level
-tile:getHeightType() -- get an integer indicating the height type
+tile:getHeightValue() --> gets a value indicating height level, e.g. 0.95
+tile:getHeightType() --> gets an integer indicating the height type, e.g. 3
 
-tile:getHeatValue() -- get normalized value indicating heat level
-tile:getHeatType() -- get an integer indicating the heat type
+tile:getHeatValue() --> gets a value indicating heat level, e.g. 0.33
+tile:getHeatType() --> gets an integer indicating the heat type, e.g. 4
 
-tile:getMoistureValue() -- get normalized value indicating moisture level
-tile:getMoistureType() -- get an integer indicating the moisture type
+tile:getMoistureValue() --> gets a value indicating moisture level, e.g. 0.17
+tile:getMoistureType() --> gets an integer indicating the moisture type, e.g. 5
 ```
 
-The `get___Value()` functions will return values in 0.0 to 1.0 range. These 
-values are suitable for rendering terrain with smooth color changes (e.g. grayscale rendering). 
+The `get___Value()` functions will return normalized values in 0.0 to 1.0 range. 
+These values are suitable for rendering terrain with smooth color changes (e.g. 
+grayscale rendering). 
 
 The `get___Type()` functions will return integer values 0 or greater. 0 means 
 the type is undefined. Values 1 and greater indicate a distinct type. These 
 values are suitable for drawing terrain in a solid color.
 
-Another useful function for figuring out if an adjacent tile has the same terrain type is the `getBitmask()` function. The `Tile` class contains some mask constants. In order to check if all adjacent tiles are of same height type as current tile, we can check as follows:
+Another useful function for figuring out if an adjacent tile has the same 
+terrain type is the `getBitmask()` function. The `Tile` class contains some mask 
+constants. In order to check if all adjacent tiles are of same height type as 
+current tile, we can check as follows:
 
 ```lua
 bit.band(tile:getBitmask(), Tile.MASK_EQ_ALL) == Tile.MASK_EQ_ALL

@@ -6,15 +6,15 @@ local Map = require 'map'
 local NoiseMap = {}
 NoiseMap.__index = Map
 
-local function fBm(x, y, z, frequency, amplitude)
+local function fBm(x, y, z, octaves, frequency, amplitude)
 	local gain = 0.5
 	local lacunarity = 2.0
 
 	local v = 0
-	local f = frequency
-	local a = amplitude
+	local f = frequency or 1.25
+	local a = amplitude or 0.5
 
-	for i = 0, 8 do
+	for i = 0, octaves do
 		v = v + a * love.math.noise(x * f, y * f, z * f)
 		f = f * lacunarity
 		a = a * gain
@@ -23,7 +23,7 @@ local function fBm(x, y, z, frequency, amplitude)
 	return v
 end
 
-local function noise(size, seed)
+local function noise(size, seed, octaves, frequency)
 	local values = {}
 
 	local min, max = math.huge, -math.huge
@@ -61,8 +61,8 @@ local function noise(size, seed)
 					aa + noisePos[face][1], 
 					bb + noisePos[face][2],
 					cc + noisePos[face][3],
-					0.5,
-					0.5
+					octaves,
+					frequency
 				)
 
 				values[face][x][y] = value
@@ -76,8 +76,8 @@ local function noise(size, seed)
 	return values, min, max
 end
 
-function NoiseMap:new(size, seed)
-	local values, min, max = noise(size, seed or 0)
+function NoiseMap:new(size, seed, octaves, frequency)
+	local values, min, max = noise(size, seed or 0, octaves or 4, frequency or 1.25)
 	local super = Map(values, size, min, max)
 
 	return setmetatable(super, NoiseMap)

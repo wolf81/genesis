@@ -1,20 +1,22 @@
 local Tile = {}
 Tile.__index = Tile
 
-function Tile:new(face, x, y, heightValue, heatValue)	
+function Tile:new(face, x, y, heightValue, heatValue, moistureValue)	
 	return setmetatable({
 		_position = { face, x, y },
 		-- values
 		_heightValue = heightValue or 0.0,
 		_heatValue = heatValue or 0.0,
+		_moistureValue = moistureValue or 0.0,
 		-- adjacent tiles
 		_left = nil,
 		_right = nil,
 		_top = nil,
 		_bottom = nil,
 		-- tile info
-		_terrainType = 0,
+		_heightType = 0,
 		_heatType = 0,
+		_moistureType = 0,
 		_bitmask = 0,
 	}, Tile)	
 end
@@ -27,12 +29,20 @@ function Tile:setHeatType(v)
 	self._heatType = v
 end
 
-function Tile:getTerrainType()
-	return self._terrainType
+function Tile:getHeightType()
+	return self._heightType
 end
 
-function Tile:setTerrainType(v)
-	self._terrainType = v
+function Tile:setHeightType(v)
+	self._heightType = v
+end
+
+function Tile:getMoistureType()
+	return self._moistureType
+end
+
+function Tile:setMoistureType(v)
+	self._moistureType = v
 end
 
 function Tile:getHeightValue()
@@ -45,6 +55,14 @@ end
 
 function Tile:setHeatValue(v)
 	self._heatValue = v
+end
+
+function Tile:getMoistureValue()
+	return self._moistureValue
+end
+
+function Tile:setMoistureValue(v)
+	self._moistureValue = v
 end
 
 function Tile:setLeft(t)
@@ -90,19 +108,19 @@ end
 function Tile:updateBitmask()
 	local count = 0
 
-	if self:getTop():getTerrainType() == self:getTerrainType() then
+	if self:getTop():getHeightType() == self._heightType then
 		count = count + 1		
 	end
 
-	if self:getLeft():getTerrainType() == self:getTerrainType() then
+	if self:getLeft():getHeightType() == self._heightType then
 		count = count + 2		
 	end
 
-	if self:getRight():getTerrainType() == self:getTerrainType() then
+	if self:getRight():getHeightType() == self._heightType then
 		count = count + 4		
 	end
 
-	if self:getBottom():getTerrainType() == self:getTerrainType() then
+	if self:getBottom():getHeightType() == self._heightType then
 		count = count + 8
 	end
 

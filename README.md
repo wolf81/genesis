@@ -12,7 +12,7 @@ Genesis is a Lua / LÖVE2D based world generator. My goals with Genesis are:
 # FURTHER READING
 
 The Genesis source code is based on a variety of ideas and posts found on the 
-internet. For reference I will add the most important links here:
+internet. For reference I've added the most important links here.
 
 * [Procedurally Generating Wrapping World Maps in Unity C#][0]
 * [Wraparound square tile maps on a sphere][1]

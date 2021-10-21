@@ -3,6 +3,8 @@ local NoiseMap = require 'noisemap'
 local GradientMap = require 'gradientmap'
 local CombineMap = require 'combinemap'
 
+local mmin = math.min
+
 local Generator = {}
 Generator.__index = Generator
 
@@ -16,7 +18,7 @@ local neighbourFaceMap = {
 	[6] = { 1, 4, 2, 3 },
 }
 
-local function getTerrainType(heightValue)
+local function getHeightType(heightValue)
 	if heightValue >= 0.9 then return 1 -- snow
 	elseif heightValue >= 0.8 then return 2 -- mountain
 	elseif heightValue >= 0.7 then return 3 -- forest
@@ -34,6 +36,16 @@ local function getHeatType(heatValue)
 	elseif heatValue >= 0.30 then return 4 -- cold
 	elseif heatValue >= 0.15 then return 5 -- colder
 	else return 6 -- coldest
+	end
+end
+
+local function getMoistureType(moistureValue)
+	if moistureValue >= 0.9 then return 1 -- wettest
+	elseif moistureValue >= 0.8 then return 2 -- wetter
+	elseif moistureValue >= 0.6 then return 3 -- wet
+	elseif moistureValue >= 0.4 then return 4 -- dry
+	elseif moistureValue >= 0.27 then return 5 -- dryer
+	else return 6 -- dryest
 	end
 end
 
@@ -122,15 +134,20 @@ local function updateBitmasks(self)
 	end	
 end 
 
-local function getData(self)
-	self._heightMap = NoiseMap(self._size, math.random() * 100)
+local function getData(self, seed)
+	if seed < 1.0 then seed = seed * 256 end
+
+	self._heightMap = NoiseMap(self._size, seed % 128, 6, 0.5)
+	
 	self._heatMap = CombineMap(self._size, 
-		NoiseMap(self._size, math.random() * 100), 
-		GradientMap(self._size)
+		NoiseMap(self._size, seed % 64), 
+		GradientMap(self._size, 4, 3.0)
 	)
+
+	self._moistureMap = NoiseMap(self._size, seed % 32, 4, 2.0)
 end
 
-local function loadTiles(self, seed)
+local function loadTiles(self)
 	local tiles = {}
 
 	for face = 1, 6 do 
@@ -140,25 +157,38 @@ local function loadTiles(self, seed)
 			tiles[face][x] = {}
 
 			for y = 0, self._size - 1 do
+				-- set height value & type
 				local heightValue, min, max = self._heightMap:getValue(face, x, y)
 				heightValue = (heightValue - min) / (max - min)
 
-				local tile = Tile(face, x, y, heightValue)			
-				tile:setTerrainType(getTerrainType(heightValue))
+				local tile = Tile(face, x, y, heightValue)
+				local heightType = getHeightType(heightValue)
+				tile:setHeightType(heightType)
 
+				-- set heat value & type
 				local heatValue = self._heatMap:getValue(face, x, y)
-				if tile:getTerrainType() == 3 then
+				if heightType == 3 then
 					heatValue = heatValue - heightValue * 0.1
-				elseif tile:getTerrainType() == 2 then
+				elseif heightType == 2 then
 					heatValue = heatValue - heightValue * 0.25
-				elseif tile:getTerrainType() == 1 then
+				elseif heightType == 1 then
 					heatValue = heatValue - heightValue * 0.4
 				else
 					heatValue = heatValue + heightValue * 0.01
 				end
-
 				tile:setHeatValue(heatValue)
 				tile:setHeatType(getHeatType(heatValue))
+
+				-- set moisture value & type
+				local moistureValue, min, max = self._moistureMap:getValue(face, x, y)
+				moistureValue = (moistureValue - min) / (max - min)
+				if heightType == 7 then moistureValue = mmin(moistureValue + 8 * heightValue, 1.0)
+				elseif heightType == 6 then moistureValue = mmin(moistureValue + 3 * heightValue, 1.0)
+				elseif heightType == 5 then moistureValue = mmin(moistureValue + 1 * heightValue, 1.0)
+				end
+
+				tile:setMoistureValue(moistureValue)
+				tile:setMoistureType(getMoistureType(moistureValue))
 
 				tiles[face][x][y] = tile
 			end
@@ -178,7 +208,7 @@ end
 function Generator:generate(size, seed)
 	self._size = 2 ^ size + 1
 
-	getData(self)
+	getData(self, seed)
 
 	loadTiles(self, seed)
 

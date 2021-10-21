@@ -9,7 +9,6 @@ io.stdout:setvbuf("no")
 
 -- config
 local size = 8
-local colorize = false
 local mapType = 1
 
 local generator = Generator()
@@ -30,7 +29,7 @@ local heatColorMap = {
 	[6] = { 0.0, 1.0, 1.0, 1.0 }
 }
 
-local terrainColorMap = {
+local heightColorMap = {
 	[1] = { 1.0, 1.0, 1.0, 1.0 },
 	[2] = { 0.5, 0.5, 0.5, 1.0 },
 	[3] = { 16/255, 160/255, 0.0, 1.0 },
@@ -40,15 +39,29 @@ local terrainColorMap = {
 	[7] = { 0.0, 0.0, 0.5, 1.0 },
 }
 
-local function getTemperatureColor(tile)
+local moistureColorMap = {
+	[1] = { 0.0, 0.0, 100/255, 1.0 },
+	[2] = { 20/255, 70/255, 1.0, 1.0 },
+	[3] = { 85/255, 1.0, 1.0, 1.0 },
+	[4] = { 80/255, 1.0, 0.0, 1.0 },
+	[5] = { 245/255, 245/255, 23/255, 1.0 },
+	[6] = { 1.0, 139/255, 17/255, 1.0 },
+}
+
+local function getHeatColor(tile)
 	local t = tile:getHeatType()
 	return heatColorMap[t] or { 1.0, 0.0, 1.0, 1.0 }
 end
 
-local function getTerrainColor(tile)
-	local t = tile:getTerrainType()
-	return terrainColorMap[t] or { 1.0, 0.0, 1.0, 1.0 }
+local function getHeightColor(tile)
+	local t = tile:getHeightType()
+	return heightColorMap[t] or { 1.0, 0.0, 1.0, 1.0 }
 end
+
+local function getMoistureColor(tile)
+	local t = tile:getMoistureType()
+	return moistureColorMap[t] or { 1.0, 0.0, 1.0, 1.0 }
+end 
 
 local function generate()
 	generator:generate(size, math.random() * 171)
@@ -65,7 +78,11 @@ end
 function love.draw()
 	local w, h = generator:getSize()
 
-	local getColor = mapType == 1 and getTerrainColor or getTemperatureColor
+	local getColor = (
+		mapType == 1 and getHeightColor or 
+		mapType == 2 and getHeatColor or 
+		getMoistureColor
+	)
 
 	for face = 1, 6 do
 		local ox, oy = unpack(faceInfo.offsets[face])
@@ -76,7 +93,7 @@ function love.draw()
 				local c = getColor(tile)
 
 				-- draw borders around different types of land terrain
-				if tile:getBitmask() ~= 15 and tile:getTerrainType() < 6 then
+				if tile:getBitmask() ~= 15 and tile:getHeightType() < 6 then
 					c = { lerp(c[1], 0.0, 0.4), lerp(c[2], 0.0, 0.4), lerp(c[3], 0.0, 0.4), 1.0 }
 				end
 
@@ -98,6 +115,6 @@ function love.keypressed(key, code)
 
     -- toggle between heightmap and heatmap
     if key == 't' then
-    	mapType = (mapType + 1) % 2
+    	mapType = (mapType + 1) % 3
     end
 end

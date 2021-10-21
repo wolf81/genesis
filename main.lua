@@ -8,7 +8,7 @@ math.randomseed(os.time())
 io.stdout:setvbuf("no")
 
 -- config
-local size = 7
+local size = 8
 local colorize = false
 local mapType = 1
 

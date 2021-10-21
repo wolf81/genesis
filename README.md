@@ -14,11 +14,11 @@ Genesis is a Lua / LÖVE2D based world generator. My goals with Genesis are:
 The Genesis source code is based on a variety of ideas and posts found on the 
 internet. For reference I will add the most important links here:
 
-* [Procedurally Generating Wrapping World Maps in Unity C#](0)
-* [Wraparound square tile maps on a sphere](1)
-* [Creating tileable noise maps](2)
-* [Making maps with noise functions](3)
-* [Fractal Brownian Motion](4)
+* [Procedurally Generating Wrapping World Maps in Unity C#][0]
+* [Wraparound square tile maps on a sphere][1]
+* [Creating tileable noise maps][2]
+* [Making maps with noise functions][3]
+* [Fractal Brownian Motion][4]
 
 [0]: http://www.jgallant.com/procedurally-generating-wrapping-world-maps-in-unity-csharp-part-1
 [1]: https://www.redblobgames.com/x/1938-square-tiling-of-sphere/

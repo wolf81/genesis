@@ -1,18 +1,21 @@
 local NoiseMap = require 'noisemap'
 local GradientMap = require 'gradientmap'
 local CombineMap = require 'combinemap'
+local Generator = require 'generator'
+
+require 'functions'
 
 math.randomseed(os.time())
 
 -- show live output in console, don't wait for app to close
 io.stdout:setvbuf("no")
 
-local map = {}
-
 -- config
-local size = 8
+local size = 7
 local colorize = false
 local mapType = 1
+
+local generator = Generator()
 
 local faceInfo = {
 	-- drawing offsets for each face when applied to a cube
@@ -22,7 +25,7 @@ local faceInfo = {
 }
 
 local function getTemperatureColor(tile)
-	local v = tile:getValue()
+	local v = tile:getHeatValue()
 	if v < 0.15 then
 		return { 0.0, 1.0, 1.0, 1.0 }
 	elseif v < 0.30 then
@@ -38,34 +41,24 @@ local function getTemperatureColor(tile)
 	end
 end
 
+local terrainColorMap = {
+	[1] = { 1.0, 1.0, 1.0, 1.0 },
+	[2] = { 0.5, 0.5, 0.5, 1.0 },
+	[3] = { 16/255, 160/255, 0.0, 1.0 },
+	[4] = { 50/255, 220/255, 20/255, 1.0 },
+	[5] = { 240/255, 240/255, 64/255, 1.0 },
+	[6] = { 25/255, 25/255, 150/255, 1.0 },
+	[7] = { 0.0, 0.0, 0.5, 1.0 },
+}
+
 local function getTerrainColor(tile)
 	local t = tile:getTerrainType()
-
-	if t == 1 then
-		return { 1.0, 1.0, 1.0, 1.0 }
-	elseif t == 2 then
-		return { 0.5, 0.5, 0.5, 1.0 }
-	elseif t == 3 then
-		return { 16/255, 160/255, 0.0, 1.0 }
-	elseif t == 4 then
-		return { 50/255, 220/255, 20/255, 1.0 }
-	elseif t == 5 then
-		return { 240/255, 240/255, 64/255, 1.0 }
-	elseif t == 6 then
-		return { 25/255, 25/255, 150/255, 1.0 }
-	else 
-		return { 0.0, 0.0, 0.5, 1.0 }
-	end
+	local c = terrainColorMap[t]
+	return c or {1.0, 0.0, 0.0, 0.0}
 end
 
 local function generate()
-	if mapType == 1 then
-		map = NoiseMap(size, math.random() * 100)
-	else
-		local map1 = NoiseMap(size, math.random() * 100)
-		local map2 = GradientMap(size)
-		map = CombineMap(map1, map2)
-	end
+	generator:generate(size, math.random() * 171)
 end
 
 function love.load()
@@ -77,29 +70,20 @@ function love.load()
 end
 
 function love.draw()
-	local getColor = function(t) 
-		local v = t:getValue()
-		return { v, v, v, 1.0 } 
-	end
-
-	if colorize then
-		getColor = mapType == 1 and getTerrainColor or getTemperatureColor
-	end
+	local w, h = generator:getSize()
 
 	for face = 1, 6 do
 		local ox, oy = unpack(faceInfo.offsets[face])
-		local w, h = map:getSize()
 
 		for x = 0, w - 1 do
 			for y = 0, h - 1 do
-				local tile = map:getTile(face, x, y)
+				local tile = generator:getTile(face, x, y)
 
-				local c = getColor(tile)
+				local c = mapType == 1 and getTerrainColor(tile) or getTemperatureColor(tile)
 
-				if tile:getBitmask() ~= 15 then
-					c[1] = c[1] * 0.4
-					c[2] = c[2] * 0.4
-					c[3] = c[3] * 0.4
+				-- draw borders around land terrain
+				if tile:getBitmask() ~= 15 and tile:getTerrainType() < 6 then
+					c = { lerp(c[1], 0.0, 0.4), lerp(c[2], 0.0, 0.4), lerp(c[3], 0.0, 0.4), 1.0 }
 				end
 
 				local xi = x + (ox * w) + 0.5
@@ -117,13 +101,8 @@ function love.keypressed(key, code)
     	generate()
     end
 
-    if key == 'c' then
-    	colorize = not colorize
-    end
 
     if key == 't' then
     	mapType = (mapType + 1) % 2
-
-    	generate()
     end
 end

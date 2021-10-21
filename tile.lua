@@ -1,41 +1,39 @@
 local Tile = {}
 Tile.__index = Tile
 
-local function getTerrainType(value)
-	if value >= 0.9 then return 1 -- snow
-	elseif value >= 0.8 then return 2 -- mountain
-	elseif value >= 0.7 then return 3 -- forest
-	elseif value >= 0.62 then return 4 -- grass
-	elseif value >= 0.6 then return 5 -- beach
-	elseif value >= 0.3 then return 6 -- shallow ocean
-	else return 7 -- deep ocean
-	end	
-end 
-
-function Tile:new(face, x, y, value)
-	local value = value or 0.0
-	
-	local instance = setmetatable({
+function Tile:new(face, x, y, heightValue, heatValue)	
+	return setmetatable({
 		_position = { face, x, y },
-		_value = value,
+		_heightValue = heightValue or 0.0,
+		_heatValue = heatValue or 0.0,
 		-- neighbour tiles
 		_left = nil,
 		_right = nil,
 		_top = nil,
 		_bottom = nil,
-		_terrainType = getTerrainType(value),
+		_terrainType = 0,
 		_bitmask = 0,
 	}, Tile)	
-
-	return instance
 end
 
 function Tile:getTerrainType()
 	return self._terrainType
 end
 
-function Tile:getValue()
-	return self._value
+function Tile:setTerrainType(v)
+	self._terrainType = v
+end
+
+function Tile:getHeightValue()
+	return self._heightValue
+end
+
+function Tile:getHeatValue()
+	return self._heatValue
+end
+
+function Tile:setHeatValue(v)
+	self._heatValue = v
 end
 
 function Tile:setLeft(t)

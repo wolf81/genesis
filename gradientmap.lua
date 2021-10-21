@@ -1,7 +1,4 @@
-require 'utility'
-
 local mmin, mmax = math.min, math.max
-
 local Map = require 'map'
 
 local GradientMap = {}
@@ -94,16 +91,10 @@ local function radialGradient(size)
 		end
 	end
 
-	-- for i = 1, 6 do
-	-- 	printArray2(values[i])		
-	-- end
-
 	return values, min, max
 end
 
 function GradientMap:new(size)
-	local size = 2 ^ size + 1
-
 	local values, min, max = radialGradient(size) 
 	local super = Map(values, size, min, max)
 

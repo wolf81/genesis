@@ -1,5 +1,4 @@
 local mmin, mmax = math.min, math.max
-
 local Map = require 'map'
 
 -- based on: https://ronvalstar.nl/creating-tileable-noise-maps
@@ -74,14 +73,10 @@ local function noise(size, seed)
 		end
 	end
 
-	-- printArray2(map)
-
 	return values, min, max
 end
 
 function NoiseMap:new(size, seed)
-	local size = 2 ^ size + 1
-
 	local values, min, max = noise(size, seed or 0)
 	local super = Map(values, size, min, max)
 

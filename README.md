@@ -40,53 +40,65 @@ said what follows is a short description of the API at time of writing.
 In order to create a world, we first need to create an instance of the Genesis 
 class:
 
-	local genesis = Genesis()
+```lua
+local genesis = Genesis()
+```
 
 To generate a new map, just call the `generate` function with a size and 
 optionally a seed value. When using the same seed value, the same map will be 
 created. In no seed value is supplied, a random seed will be used.
 
-	genesis:generate(size, math.random())
+```lua
+genesis:generate(size, math.random())
+```
 
 It's possible to request the width and the height of the map. Since each face 
 map is a square, the width and height will be equal. 
 
-	local w, h = genesis:getSize()
+```lua
+local w, h = genesis:getSize()
+```
 
 After a map is generated, it is possible to request tiles based on face, x- and 
 y-coordinates. The x and y coordinates are 0 indexed while the faces are indexed
 from 1 to 6 (I might need to align this in the future).
 
-	local tile = genesis:getTile(1, 0, 3) 
+```lua
+local tile = genesis:getTile(1, 0, 3) 
+```
 
 The above code retrieves the tile for face 1, x coordinate 0, y coordinate 3.
 
 It's easy to loop through all the tiles in a map as such:
 
-	local w, h = genesis:getSize()
+```lua
+local w, h = genesis:getSize()
 
-	for face = 1, 6 do
-		for x = 0, w - 1 do
-			for y = 0, h - 1 do
-				local tile = genesis:getTile(face, x, y)
-				-- do something with the tile here ...
-			end
+for face = 1, 6 do
+	for x = 0, w - 1 do
+		for y = 0, h - 1 do
+			local tile = genesis:getTile(face, x, y)
+			-- do something with the tile here ...
 		end
 	end
+end
+```
 
 ## TILE
 
 With regards to a `Tile` I won't explain every function, just the most important 
 ones.
 
-	tile:getHeightValue() -- get normalized value indicating height level
-	tile:getHeightType() -- get an integer indicating the height type
+```lua
+tile:getHeightValue() -- get normalized value indicating height level
+tile:getHeightType() -- get an integer indicating the height type
 
-	tile:getHeatValue() -- get normalized value indicating heat level
-	tile:getHeatType() -- get an integer indicating the heat type
+tile:getHeatValue() -- get normalized value indicating heat level
+tile:getHeatType() -- get an integer indicating the heat type
 
-	tile:getMoistureValue() -- get normalized value indicating moisture level
-	tile:getMoistureType() -- get an integer indicating the moisture type
+tile:getMoistureValue() -- get normalized value indicating moisture level
+tile:getMoistureType() -- get an integer indicating the moisture type
+```
 
 The `get___Value()` functions will return values in 0.0 to 1.0 range. These 
 values are more suitable for rendering smooth color changes. 

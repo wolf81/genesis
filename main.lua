@@ -8,7 +8,7 @@ math.randomseed(os.time())
 io.stdout:setvbuf("no")
 
 -- config
-local scale = 7
+local scale = 8
 local mapType = 1
 
 local genesis = Genesis()

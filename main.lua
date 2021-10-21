@@ -1,4 +1,4 @@
-local Generator = require 'generator'
+local Genesis = require 'genesis'
 
 require 'functions'
 
@@ -8,10 +8,10 @@ math.randomseed(os.time())
 io.stdout:setvbuf("no")
 
 -- config
-local size = 8
+local scale = 7
 local mapType = 1
 
-local generator = Generator()
+local genesis = Genesis()
 
 local faceInfo = {
 	-- drawing offsets for each face when applied to a cube
@@ -64,7 +64,8 @@ local function getMoistureColor(tile)
 end 
 
 local function generate()
-	generator:generate(size, math.random() * 171)
+	local size = 2 ^ scale + 1
+	genesis:generate(size, math.random() * 171)
 end
 
 function love.load()
@@ -76,7 +77,7 @@ function love.load()
 end
 
 function love.draw()
-	local w, h = generator:getSize()
+	local w, h = genesis:getSize()
 
 	local getColor = (
 		mapType == 1 and getHeightColor or 
@@ -89,7 +90,7 @@ function love.draw()
 
 		for x = 0, w - 1 do
 			for y = 0, h - 1 do
-				local tile = generator:getTile(face, x, y)			
+				local tile = genesis:getTile(face, x, y)			
 				local c = getColor(tile)
 
 				-- draw borders around different types of land terrain

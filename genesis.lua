@@ -5,8 +5,8 @@ local CombineMap = require 'combinemap'
 
 local mmin = math.min
 
-local Generator = {}
-Generator.__index = Generator
+local Genesis = {}
+Genesis.__index = Genesis
 
 local neighbourFaceMap = {
 	-- face = { T, L, B, R }
@@ -198,15 +198,15 @@ local function loadTiles(self)
 	self._tiles = tiles
 end
 
-function Generator:new()
+function Genesis:new()
 	return setmetatable({
 		_size = 0,
 		_tiles = {}
-	}, Generator)
+	}, Genesis)
 end
 
-function Generator:generate(size, seed)
-	self._size = 2 ^ size + 1
+function Genesis:generate(size, seed)
+	self._size = size
 
 	getData(self, seed)
 
@@ -216,14 +216,14 @@ function Generator:generate(size, seed)
 	updateBitmasks(self)
 end
 
-function Generator:getTile(face, x, y)
+function Genesis:getTile(face, x, y)
 	return self._tiles[face][x][y]
 end
 
-function Generator:getSize()
+function Genesis:getSize()
 	return self._size, self._size
 end
 
-return setmetatable(Generator, {
-	__call = Generator.new
+return setmetatable(Genesis, {
+	__call = Genesis.new
 })

@@ -4,6 +4,7 @@ local Tile = require 'tile'
 local bband = bit.band
 
 require 'functions'
+require 'constants'
 
 math.randomseed(os.time())
 
@@ -24,31 +25,31 @@ local faceInfo = {
 }
 
 local heatColorMap = {
-	[1] = { 241/255, 12/255, 0.0, 1.0 },
-	[2] = { 1.0, 100/255, 0.0, 1.0 },
-	[3] = { 1.0, 1.0, 100/255, 1.0 },
-	[4] = { 0.0, 229/255, 133/255, 1.0 },
-	[5] = { 170/255, 1.0, 1.0, 1.0 },
-	[6] = { 0.0, 1.0, 1.0, 1.0 }
+	[HeatType.WARMEST] = { 241/255, 12/255, 0.0, 1.0 },
+	[HeatType.WARMER] = { 1.0, 100/255, 0.0, 1.0 },
+	[HeatType.WARM] = { 1.0, 1.0, 100/255, 1.0 },
+	[HeatType.COLD] = { 0.0, 229/255, 133/255, 1.0 },
+	[HeatType.COLDER] = { 170/255, 1.0, 1.0, 1.0 },
+	[HeatType.COLDEST] = { 0.0, 1.0, 1.0, 1.0 }
 }
 
 local heightColorMap = {
-	[1] = { 1.0, 1.0, 1.0, 1.0 },
-	[2] = { 0.5, 0.5, 0.5, 1.0 },
-	[3] = { 16/255, 160/255, 0.0, 1.0 },
-	[4] = { 50/255, 220/255, 20/255, 1.0 },
-	[5] = { 240/255, 240/255, 64/255, 1.0 },
-	[6] = { 25/255, 25/255, 150/255, 1.0 },
-	[7] = { 0.0, 0.0, 0.5, 1.0 },
+	[HeightType.SNOW] = { 1.0, 1.0, 1.0, 1.0 },
+	[HeightType.MOUNTAIN] = { 0.5, 0.5, 0.5, 1.0 },
+	[HeightType.FOREST] = { 16/255, 160/255, 0.0, 1.0 },
+	[HeightType.PLAIN] = { 50/255, 220/255, 20/255, 1.0 },
+	[HeightType.COAST] = { 240/255, 240/255, 64/255, 1.0 },
+	[HeightType.SHALLOW_WATER] = { 25/255, 25/255, 150/255, 1.0 },
+	[HeightType.DEEP_WATER] = { 0.0, 0.0, 0.5, 1.0 },
 }
 
 local moistureColorMap = {
-	[1] = { 0.0, 0.0, 100/255, 1.0 },
-	[2] = { 20/255, 70/255, 1.0, 1.0 },
-	[3] = { 85/255, 1.0, 1.0, 1.0 },
-	[4] = { 80/255, 1.0, 0.0, 1.0 },
-	[5] = { 245/255, 245/255, 23/255, 1.0 },
-	[6] = { 1.0, 139/255, 17/255, 1.0 },
+	[MoistureType.WETTEST] = { 0.0, 0.0, 100/255, 1.0 },
+	[MoistureType.WETTER] = { 20/255, 70/255, 1.0, 1.0 },
+	[MoistureType.WET] = { 85/255, 1.0, 1.0, 1.0 },
+	[MoistureType.DRY] = { 80/255, 1.0, 0.0, 1.0 },
+	[MoistureType.DRYER] = { 245/255, 245/255, 23/255, 1.0 },
+	[MoistureType.DRYEST] = { 1.0, 139/255, 17/255, 1.0 },
 }
 
 local function getHeatColor(tile)
@@ -96,7 +97,7 @@ function love.draw()
 				local tile = genesis:getTile(face, x, y)			
 				local c = getColor(tile)
 
-				if bband(tile:getBitmask(), Tile.MASK_EQ_ALL) ~= Tile.MASK_EQ_ALL and tile:getHeightType() < 6 then
+				if bband(tile:getBitmask(), Tile.MASK_EQ_ALL) ~= Tile.MASK_EQ_ALL and tile:getHeightType().id < 6 then
 					c = { lerp(c[1], 0.0, 0.4), lerp(c[2], 0.0, 0.4), lerp(c[3], 0.0, 0.4), 1.0 }
 				end
 
@@ -116,7 +117,7 @@ function love.keypressed(key, code)
     	generate()
     end
 
-    -- toggle between heightmap and heatmap
+    -- toggle between heightmap, heatmap & moisture map
     if key == 't' then
     	mapType = (mapType + 1) % 3
     end

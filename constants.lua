@@ -1,77 +1,29 @@
-HeatType = {
-	COLDEST = 0.15,
-	COLDER = 0.30,
-	COLD = 0.45,
-	WARM = 0.60,
-	WARMER = 0.75,
-	WARMEST = 1.0,
+require 'enum'
 
-	getColor = function(heatType)
-		if heatType == HeatType.COLDEST then
-			return { 0.0, 1.0, 1.0, 1.0 }
-		elseif heatType == HeatType.COLDER then
-			return { 170/255, 1.0, 1.0, 1.0 }
-		elseif heatType == HeatType.COLD then
-			return { 0.0, 229/255, 133/255, 1.0 }
-		elseif heatType == HeatType.WARM then
-			return { 1.0, 1.0, 100/255, 1.0 }
-		elseif heatType == HeatType.WARMER then
-			return { 1.0, 100/255, 0.0, 1.0 }
-		else -- HeatType.WARMEST
-			return { 241/255, 12/255, 0.0, 1.0 }
-		end
-	end
+HeightType = enum { 
+	"SNOW", 
+	"MOUNTAIN", 
+	"FOREST", 
+	"PLAIN", 
+	"COAST", 
+	"SHALLOW_WATER", 
+	"DEEP_WATER",
 }
 
-TerrainType = {
-	DEEP_WATER = 0.2,
-	SHALLOW_WATER = 0.4,
-	SAND = 0.5,
-	GRASS = 0.7,
-	FOREST = 0.8,
-	ROCK = 0.9,
-	SNOW = 1.0,
-
-	getColor = function(terrainType)
-		if terrainType == TerrainType.DEEP_WATER then 
-			return { 0.0, 0.0, 0.5, 1.0 }
-		elseif terrainType == TerrainType.SHALLOW_WATER then 
-			return { 25/255, 25/255, 150/255, 1.0 }
-		elseif terrainType == TerrainType.SAND then 
-			return { 240/255, 240/255, 64/255, 1.0 }
-		elseif terrainType == TerrainType.GRASS then 
-			return { 50/255, 220/255, 20/255, 1.0 }
-		elseif terrainType == TerrainType.FOREST then 
-			return { 16/255, 160/255, 0.0, 1.0 }
-		elseif terrainType == TerrainType.ROCK then 
-			return { 0.5, 0.5, 0.5, 1.0 }
-		else -- TerrainType.SNOW
-			return { 1.0, 1.0, 1.0, 1.0 }
-		end
-	end
+HeatType = enum {
+	"WARMEST",
+	"WARMER",
+	"WARM",
+	"COLD",
+	"COLDER",
+	"COLDEST",
 }
 
-MoistureType = {
-	DRYEST = 0,
-	DRYER = 0.27,
-	DRY = 0.4,
-	WET = 0.6,
-	WETTER = 0.8,
-	WETTEST = 0.9,
-
-	getColor = function(moistureType)
-		if moistureType == MoistureType.DRYEST then
-			return { 1.0, 139/255, 17/255, 1.0 }
-		elseif moistureType == MoistureType.DRYER then
-			return { 245/255, 245/255, 23/255, 1.0 }
-		elseif moistureType == MoistureType.DRY then
-			return { 80/255, 1.0, 0.0, 1.0 }
-		elseif moistureType == MoistureType.WET then
-			return { 85/255, 1.0, 1.0, 1.0 }
-		elseif moistureType == MoistureType.WETTER then
-			return { 20/255, 70/255, 1.0, 1.0 }
-		else -- moistureType == MoistureType.WETTEST then
-			return { 0.0, 0.0, 100/255, 1.0 }
-		end
-	end
+MoistureType = enum {
+	"DRYEST",
+	"DRYER",
+	"DRY",
+	"WET",
+	"WETTER",
+	"WETTEST",
 }

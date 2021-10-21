@@ -3,13 +3,50 @@ local NoiseMap = require 'noisemap'
 local GradientMap = require 'gradientmap'
 local CombineMap = require 'combinemap'
 
+require 'constants'
+
 local mmin = math.min
 
 local Genesis = {}
 Genesis.__index = Genesis
 
+local function getHeightType(heightValue)
+	if heightValue >= 0.9 then return HeightType.SNOW
+	elseif heightValue >= 0.8 then return HeightType.MOUNTAIN
+	elseif heightValue >= 0.7 then return HeightType.FOREST
+	elseif heightValue >= 0.62 then return HeightType.PLAIN
+	elseif heightValue >= 0.6 then return HeightType.COAST
+	elseif heightValue >= 0.3 then return HeightType.SHALLOW_WATER
+	else return HeightType.DEEP_WATER
+	end	
+end 
+
+local function getHeatType(heatValue)
+	if heatValue >= 0.75 then return HeatType.WARMEST
+	elseif heatValue >= 0.60 then return HeatType.WARMER
+	elseif heatValue >= 0.45 then return HeatType.WARM
+	elseif heatValue >= 0.30 then return HeatType.COLD
+	elseif heatValue >= 0.15 then return HeatType.COLDER
+	else return HeatType.COLDEST
+	end
+end
+
+local function getMoistureType(moistureValue)
+	if moistureValue >= 0.9 then return MoistureType.WETTEST
+	elseif moistureValue >= 0.8 then return MoistureType.WETTER
+	elseif moistureValue >= 0.6 then return MoistureType.WET
+	elseif moistureValue >= 0.4 then return MoistureType.DRY
+	elseif moistureValue >= 0.27 then return MoistureType.DRYER
+	else return MoistureType.DRYEST
+	end
+end
+
 local neighbourFaceMap = {
-	-- face = { T, L, B, R }
+	--[[
+	this map helps find neighbour faces for a given face number
+	the key is the current face number and the values are adjacent face 
+	numbers in order TOP, LEFT, BOTTOM, RIGHT
+	--]]
 	[1] = { 5, 4, 2, 6 },
 	[2] = { 5, 1, 3, 6 },
 	[3] = { 5, 2, 4, 6 },
@@ -17,37 +54,6 @@ local neighbourFaceMap = {
 	[5] = { 3, 4, 2, 1 },
 	[6] = { 1, 4, 2, 3 },
 }
-
-local function getHeightType(heightValue)
-	if heightValue >= 0.9 then return 1 -- snow
-	elseif heightValue >= 0.8 then return 2 -- mountain
-	elseif heightValue >= 0.7 then return 3 -- forest
-	elseif heightValue >= 0.62 then return 4 -- grass
-	elseif heightValue >= 0.6 then return 5 -- beach
-	elseif heightValue >= 0.3 then return 6 -- shallow ocean
-	else return 7 -- deep ocean
-	end	
-end 
-
-local function getHeatType(heatValue)
-	if heatValue >= 0.75 then return 1 -- warmest
-	elseif heatValue >= 0.60 then return 2 -- warmer
-	elseif heatValue >= 0.45 then return 3 -- warm
-	elseif heatValue >= 0.30 then return 4 -- cold
-	elseif heatValue >= 0.15 then return 5 -- colder
-	else return 6 -- coldest
-	end
-end
-
-local function getMoistureType(moistureValue)
-	if moistureValue >= 0.9 then return 1 -- wettest
-	elseif moistureValue >= 0.8 then return 2 -- wetter
-	elseif moistureValue >= 0.6 then return 3 -- wet
-	elseif moistureValue >= 0.4 then return 4 -- dry
-	elseif moistureValue >= 0.27 then return 5 -- dryer
-	else return 6 -- dryest
-	end
-end
 
 local function getTop(self, face, x, y)
 	local size = self._size
@@ -157,30 +163,37 @@ local function loadTiles(self)
 				local heightValue, min, max = self._heightMap:getValue(face, x, y)
 				heightValue = (heightValue - min) / (max - min)
 
-				local tile = Tile(face, x, y, heightValue)
+				local tile = Tile(face, x, y)
+
 				local heightType = getHeightType(heightValue)
 				tile:setHeightType(heightType)
 
 				-- set heat value & type
 				local heatValue = self._heatMap:getValue(face, x, y)
-				if heightType == 3 then
+
+				if heightType == HeightType.FOREST then
 					heatValue = heatValue - heightValue * 0.1
-				elseif heightType == 2 then
+				elseif heightType == HeightType.MOUNTAIN then
 					heatValue = heatValue - heightValue * 0.25
-				elseif heightType == 1 then
+				elseif heightType == HeightType.SNOW then
 					heatValue = heatValue - heightValue * 0.4
 				else
 					heatValue = heatValue + heightValue * 0.01
 				end
+
 				tile:setHeatValue(heatValue)
 				tile:setHeatType(getHeatType(heatValue))
 
 				-- set moisture value & type
 				local moistureValue, min, max = self._moistureMap:getValue(face, x, y)
 				moistureValue = (moistureValue - min) / (max - min)
-				if heightType == 7 then moistureValue = mmin(moistureValue + 8 * heightValue, 1.0)
-				elseif heightType == 6 then moistureValue = mmin(moistureValue + 3 * heightValue, 1.0)
-				elseif heightType == 5 then moistureValue = mmin(moistureValue + 1 * heightValue, 1.0)
+
+				if heightType == HeightType.DEEP_WATER then 
+					moistureValue = mmin(moistureValue + 8 * heightValue, 1.0)
+				elseif heightType == HeightType.SHALLOW_WATER then 
+					moistureValue = mmin(moistureValue + 3 * heightValue, 1.0)
+				elseif heightType == HeightType.COAST then 
+					moistureValue = mmin(moistureValue + 1 * heightValue, 1.0)
 				end
 
 				tile:setMoistureValue(moistureValue)

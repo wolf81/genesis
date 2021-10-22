@@ -52,6 +52,10 @@ local moistureColorMap = {
 	[MoistureType.DRYEST] = { 1.0, 139/255, 17/255, 1.0 },
 }
 
+local landColorMap = {}
+
+local waterColorMap = {}
+
 local function getHeatColor(tile)
 	local t = tile:getHeatType()
 	return heatColorMap[t] or { 1.0, 0.0, 1.0, 1.0 }
@@ -67,17 +71,35 @@ local function getMoistureColor(tile)
 	return moistureColorMap[t] or { 1.0, 0.0, 1.0, 1.0 }
 end 
 
-local function getWaterGroupColor(tileGroup)
-	return tileGroup:getTileCount() < 50 and { 0.0, 1.0, 1.0, 1.0 } or { 0.0, 0.0, 1.0, 1.0 }
+local function getWaterGroupColor(index)
+	return waterColorMap[index] or { 1.0, 0.0, 1.0, 1.0 }
 end
 
-local function getLandGroupColor(tileGroup)
-	return tileGroup:getTileCount() < 50 and { 0.0, 0.8, 0.0, 1.0 } or { 0.0, 0.4, 0.0, 1.0 }
+local function getLandGroupColor(index)
+	return landColorMap[index] or { 1.0, 0.0, 1.0, 1.0 }
 end
 
 local function generate()
+	love.graphics.clear(0, 0, 0, 1.0)
+
 	local size = 2 ^ scale + 1
 	genesis:generate(size, math.random())
+
+	landColorMap = {}
+	local landGroupCount = #genesis:getLandGroups()
+	local step = (math.pi * 2) / (landGroupCount - 1)
+	for i = 0, landGroupCount - 1 do
+		local rgb = hsv(step * i, 0.8, 0.5)
+		table.insert(landColorMap, rgb)
+	end
+
+	waterColorMap = {}
+	local waterGroupCount = #genesis:getWaterGroups()
+	local step = (math.pi * 2) / (waterGroupCount - 1)
+	for i = 0, waterGroupCount - 1 do
+		local rgb = hsv(step * i, 0.6, 0.8)
+		table.insert(waterColorMap, rgb)
+	end
 end
 
 function love.load()
@@ -93,15 +115,15 @@ function love.draw()
 
 	if mapType > 2 then
 		local getWaterColor = mapType == 3 and getWaterGroupColor or function()
-			return { 0.0, 0.0, 0.5, 1.0 }
+			return { 0.0, 0.0, 0.1, 1.0 }
 		end
 
 		local getLandColor = mapType == 4 and getLandGroupColor or function()
-			return { 0.05, 0.05, 0.05, 1.0 }
+			return { 0.0, 0.1, 0.0, 1.0 }
 		end
 
-		for _, tileGroup in ipairs(genesis:getWaterGroups()) do
-			local c = getWaterColor(tileGroup)
+		for i, tileGroup in ipairs(genesis:getWaterGroups()) do
+			local c = getWaterColor(i)
 
 			for _, tile in ipairs(tileGroup:getTiles()) do
 				local face, x, y = tile:getPosition()
@@ -115,8 +137,8 @@ function love.draw()
 			end
 		end
 
-		for _, tileGroup in ipairs(genesis:getLandGroups()) do
-			local c = getLandColor(tileGroup)
+		for i, tileGroup in ipairs(genesis:getLandGroups()) do
+			local c = getLandColor(i)
 
 			for _, tile in ipairs(tileGroup:getTiles()) do
 				local face, x, y = tile:getPosition()

@@ -229,27 +229,30 @@ local function floodFillTile(tile, tileGroup, stack)
 
 	local tileTop = tile:getTop()
 	if not tileTop:isFloodFilled() and tileTop:isCollidable() == tile:isCollidable() then
-		stack[#stack + 1] = tileTop
+		table.insert(stack, tileTop)
 	end
 
 	local tileLeft = tile:getLeft()
 	if not tileLeft:isFloodFilled() and tileLeft:isCollidable() == tile:isCollidable() then
-		stack[#stack + 1] = tileLeft
+		table.insert(stack, tileLeft)
 	end
 
 	local tileRight = tile:getRight()
 	if not tileRight:isFloodFilled() and tileRight:isCollidable() == tile:isCollidable() then
-		stack[#stack + 1] = tileRight
+		table.insert(stack, tileRight)
 	end
 
 	local tileBottom = tile:getBottom()
 	if not tileBottom:isFloodFilled() and tileBottom:isCollidable() == tile:isCollidable() then
-		stack[#stack + 1] = tileBottom
+		table.insert(stack, tileBottom)
 	end
 end
 
 local function floodFill(self)
 	local stack = {}
+
+	self._landGroups = {}
+	self._waterGroups = {}
 
 	local size = self._size
 	for face = 1, 6 do
@@ -267,7 +270,7 @@ local function floodFill(self)
 						end
 
 						if tileGroup:getTileCount() > 0 then
-							self._landGroups[#self._landGroups + 1] = tileGroup
+							table.insert(self._landGroups, tileGroup)
 						end
 					else						
 						local tileGroup = TileGroup(TileGroupType.WATER)
@@ -278,16 +281,13 @@ local function floodFill(self)
 						end
 
 						if tileGroup:getTileCount() > 0 then
-							self._waterGroups[#self._waterGroups + 1] = tileGroup
+							table.insert(self._waterGroups, tileGroup)
 						end
 					end
 				end
 			end
 		end
 	end
-
-	print(#self._landGroups .. ' land groups')
-	print(#self._waterGroups .. ' water groups')
 end
 
 function Genesis:new()

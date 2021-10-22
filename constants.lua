@@ -28,6 +28,11 @@ MoistureType = enum {
 	"WETTEST",
 }
 
+TileGroupType = enum {
+	"WATER",
+	"LAND",
+}
+
 TileFlags = {
 	["EQ_TOP"] = bit.lshift(1, 0),		--> 1
 	["EQ_LEFT"] = bit.lshift(1, 1),		--> 2

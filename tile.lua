@@ -22,7 +22,25 @@ function Tile:new(face, x, y, heightValue, heatValue, moistureValue)
 		_heatType = 0,
 		_moistureType = 0,
 		_flags = 0,
+		_floodFilled = false,
+		_collidable = false,
 	}, Tile)	
+end
+
+function Tile:isCollidable()
+	return self._collidable
+end
+
+function Tile:setCollidable(v)
+	self._collidable = v
+end
+
+function Tile:isFloodFilled()
+	return self._floodFilled
+end
+
+function Tile:floodFill()
+	self._floodFilled = true
 end
 
 function Tile:getHeatType()

@@ -2,6 +2,7 @@ local Tile = require 'tile'
 local NoiseMap = require 'noisemap'
 local GradientMap = require 'gradientmap'
 local CombineMap = require 'combinemap'
+local TileGroup = require 'tilegroup'
 
 require 'constants'
 
@@ -168,6 +169,11 @@ local function loadTiles(self)
 				local heightType = getHeightType(heightValue)
 				tile:setHeightType(heightType)
 
+				tile:setCollidable(
+					heightType ~= HeightType.DEEP_WATER and 
+					heightType ~= HeightType.SHALLOW_WATER
+				)
+
 				-- set heat value & type
 				local heatValue = self._heatMap:getValue(face, x, y)
 
@@ -207,10 +213,89 @@ local function loadTiles(self)
 	self._tiles = tiles
 end
 
+local function floodFillTile(tile, tileGroup, stack)
+	if tile:isFloodFilled() then return end
+
+	if tileGroup:getType() == TileGroupType.LAND and not tile:isCollidable() then
+		return
+	end
+
+	if tileGroup:getType() == TileGroupType.WATER and tile:isCollidable() then
+		return
+	end
+
+	tileGroup:addTile(tile)
+	tile:floodFill()
+
+	local tileTop = tile:getTop()
+	if not tileTop:isFloodFilled() and tileTop:isCollidable() == tile:isCollidable() then
+		stack[#stack + 1] = tileTop
+	end
+
+	local tileLeft = tile:getLeft()
+	if not tileLeft:isFloodFilled() and tileLeft:isCollidable() == tile:isCollidable() then
+		stack[#stack + 1] = tileLeft
+	end
+
+	local tileRight = tile:getRight()
+	if not tileRight:isFloodFilled() and tileRight:isCollidable() == tile:isCollidable() then
+		stack[#stack + 1] = tileRight
+	end
+
+	local tileBottom = tile:getBottom()
+	if not tileBottom:isFloodFilled() and tileBottom:isCollidable() == tile:isCollidable() then
+		stack[#stack + 1] = tileBottom
+	end
+end
+
+local function floodFill(self)
+	local stack = {}
+
+	local size = self._size
+	for face = 1, 6 do
+		for x = 0, size - 1 do
+			for y = 0, size - 1 do
+				local tile = self._tiles[face][x][y]
+
+				if not tile:isFloodFilled() then
+					if tile:isCollidable() then
+						local tileGroup = TileGroup(TileGroupType.LAND)
+						stack[#stack + 1] = tile
+
+						while #stack > 0 do
+							floodFillTile(table.remove(stack), tileGroup, stack)
+						end
+
+						if tileGroup:getTileCount() > 0 then
+							self._landGroups[#self._landGroups + 1] = tileGroup
+						end
+					else						
+						local tileGroup = TileGroup(TileGroupType.WATER)
+						stack[#stack + 1] = tile
+
+						while #stack > 0 do
+							floodFillTile(table.remove(stack), tileGroup, stack)
+						end
+
+						if tileGroup:getTileCount() > 0 then
+							self._waterGroups[#self._waterGroups + 1] = tileGroup
+						end
+					end
+				end
+			end
+		end
+	end
+
+	print(#self._landGroups .. ' land groups')
+	print(#self._waterGroups .. ' water groups')
+end
+
 function Genesis:new()
 	return setmetatable({
 		_size = 0,
-		_tiles = {}
+		_tiles = {},
+		_waterGroups = {},
+		_landGroups = {},
 	}, Genesis)
 end
 
@@ -224,10 +309,20 @@ function Genesis:generate(size, seed)
 	loadTiles(self)
 	updateNeighbours(self)
 	updateTileFlags(self)
+
+	floodFill(self)
 end
 
 function Genesis:getTile(face, x, y)
 	return self._tiles[face][x][y]
+end
+
+function Genesis:getWaterGroups()
+	return self._waterGroups
+end
+
+function Genesis:getLandGroups()
+	return self._landGroups
 end
 
 function Genesis:getSize()

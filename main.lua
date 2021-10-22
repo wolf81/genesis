@@ -67,6 +67,14 @@ local function getMoistureColor(tile)
 	return moistureColorMap[t] or { 1.0, 0.0, 1.0, 1.0 }
 end 
 
+local function getWaterGroupColor(tileGroup)
+	return tileGroup:getTileCount() < 50 and { 0.0, 1.0, 1.0, 1.0 } or { 0.0, 0.0, 1.0, 1.0 }
+end
+
+local function getLandGroupColor(tileGroup)
+	return tileGroup:getTileCount() < 50 and { 0.0, 0.8, 0.0, 1.0 } or { 0.0, 0.4, 0.0, 1.0 }
+end
+
 local function generate()
 	local size = 2 ^ scale + 1
 	genesis:generate(size, math.random())
@@ -82,6 +90,48 @@ end
 
 function love.draw()
 	local w, h = genesis:getSize()
+
+	if mapType > 2 then
+		local getWaterColor = mapType == 3 and getWaterGroupColor or function()
+			return { 0.0, 0.0, 0.5, 1.0 }
+		end
+
+		local getLandColor = mapType == 4 and getLandGroupColor or function()
+			return { 0.05, 0.05, 0.05, 1.0 }
+		end
+
+		for _, tileGroup in ipairs(genesis:getWaterGroups()) do
+			local c = getWaterColor(tileGroup)
+
+			for _, tile in ipairs(tileGroup:getTiles()) do
+				local face, x, y = tile:getPosition()
+				local ox, oy = unpack(faceInfo.offsets[face])
+
+				local xi = x + (ox * w) + 0.5
+				local yi = y + (oy * h) + 0.5
+
+				love.graphics.setColor(c)
+				love.graphics.points(xi, yi)	
+			end
+		end
+
+		for _, tileGroup in ipairs(genesis:getLandGroups()) do
+			local c = getLandColor(tileGroup)
+
+			for _, tile in ipairs(tileGroup:getTiles()) do
+				local face, x, y = tile:getPosition()
+				local ox, oy = unpack(faceInfo.offsets[face])
+
+				local xi = x + (ox * w) + 0.5
+				local yi = y + (oy * h) + 0.5
+
+				love.graphics.setColor(c)
+				love.graphics.points(xi, yi)	
+			end
+		end
+
+		return
+	end
 
 	local getColor = (
 		mapType == 1 and getHeightColor or 
@@ -117,8 +167,8 @@ function love.keypressed(key, code)
     	generate()
     end
 
-    -- toggle between heightmap, heatmap & moisture map
+    -- toggle between heightmap, heatmap, moisture map, water groups, land groups
     if key == 't' then
-    	mapType = (mapType + 1) % 3
+    	mapType = (mapType + 1) % 5
     end
 end

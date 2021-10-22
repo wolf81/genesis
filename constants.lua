@@ -29,11 +29,11 @@ MoistureType = enum {
 }
 
 TileFlags = {
-	["EQ_TOP"] = bit.lshift(1, 0),
-	["EQ_LEFT"] = bit.lshift(1, 1),
-	["EQ_RIGHT"] = bit.lshift(1, 2),
-	["EQ_BOTTOM"] = bit.lshift(1, 3),
-	["EQ_ALL"] = bit.bor(
+	["EQ_TOP"] = bit.lshift(1, 0),		--> 1
+	["EQ_LEFT"] = bit.lshift(1, 1),		--> 2
+	["EQ_RIGHT"] = bit.lshift(1, 2),	--> 4
+	["EQ_BOTTOM"] = bit.lshift(1, 3),	--> 8
+	["EQ_ALL"] = bit.bor(				--> 15
 		bit.lshift(1, 0), -- EQ_TOP
 		bit.lshift(1, 1), -- EQ_LEFT
 		bit.lshift(1, 2), -- EQ_RIGHT

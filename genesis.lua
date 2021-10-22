@@ -123,14 +123,14 @@ local function updateNeighbours(self)
 	end
 end
 
-local function updateBitmasks(self)
+local function updateTileFlags(self)
 	local size = self._size
 
 	for face = 1, 6 do
 		for x = 0, size - 1 do
 			for y = 0, size - 1 do
 				local tile = self._tiles[face][x][y]
-				tile:updateBitmask()
+				tile:updateFlags()
 			end
 		end
 	end	
@@ -223,7 +223,7 @@ function Genesis:generate(size, seed)
 	-- generate the tile map
 	loadTiles(self)
 	updateNeighbours(self)
-	updateBitmasks(self)
+	updateTileFlags(self)
 end
 
 function Genesis:getTile(face, x, y)

@@ -21,7 +21,7 @@ function Tile:new(face, x, y, heightValue, heatValue, moistureValue)
 		_heightType = 0,
 		_heatType = 0,
 		_moistureType = 0,
-		_bitmask = 0,
+		_flags = 0,
 	}, Tile)	
 end
 
@@ -105,30 +105,30 @@ function Tile:getPosition()
 	return unpack(self._position)
 end
 
-function Tile:getBitmask()
-	return self._bitmask
+function Tile:getFlags()
+	return self._flags
 end
 
-function Tile:updateBitmask()
-	local bitmask = 0
+function Tile:updateFlags()
+	local flags = 0
 
 	if self:getTop():getHeightType() == self._heightType then
-		bitmask = bbor(bitmask, TileFlags.EQ_TOP)
+		flags = bbor(flags, TileFlags.EQ_TOP)
 	end
 
 	if self:getLeft():getHeightType() == self._heightType then
-		bitmask = bbor(bitmask, TileFlags.EQ_LEFT)
+		flags = bbor(flags, TileFlags.EQ_LEFT)
 	end
 
 	if self:getRight():getHeightType() == self._heightType then
-		bitmask = bbor(bitmask, TileFlags.EQ_RIGHT)
+		flags = bbor(flags, TileFlags.EQ_RIGHT)
 	end
 
 	if self:getBottom():getHeightType() == self._heightType then
-		bitmask = bbor(bitmask, TileFlags.EQ_BOTTOM)
+		flags = bbor(flags, TileFlags.EQ_BOTTOM)
 	end
 
-	self._bitmask = bitmask
+	self._flags = flags
 end
 
 return setmetatable(Tile, {

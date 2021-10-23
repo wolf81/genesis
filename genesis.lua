@@ -44,6 +44,26 @@ local function getMoistureType(moistureValue)
 	end
 end
 
+local function addMoisture(self, tile, radius)
+	local _, x, y = tile:getPosition()
+	-- TODO: to implement
+end
+
+local function adjustMoistureMap(self)
+	local size = self._size
+
+	for face = 1, 6 do
+		for x = 0, size - 1 do
+			for y = 0, size - 1 do
+				local tile = self._tiles[face][x][y]
+				if tile:getHeightType() == HeightType.RIVER then
+					addMoisture(self, tile, 60)
+				end
+			end
+		end
+	end
+end
+
 local neighbourFaceMap = {
 	--[[
 	this map helps find neighbour faces for a given face number

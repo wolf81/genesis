@@ -436,8 +436,15 @@ local function findPathToWater(tile, direction, river)
 			findPathToWater(bottom, direction, river)
 		end
 	end
-
 end
+
+local function buildRiverGroups()
+	-- body	
+end 
+
+local function digRiverGroups()
+	-- body
+end 
 
 local function generateRivers(self)
 	local attempts = 0
@@ -516,14 +523,20 @@ function Genesis:generate(size, seed)
 	print('set tile neighbours')
 	updateNeighbours(self)
 
-	print('set land & water groups')
-	floodFill(self)
-
 	print('generate rivers')
 	generateRivers(self)
 
+	print('build river groups')
+	buildRiverGroups(self)
+
+	print('dig river groups')
+	digRiverGroups(self)
+
 	print('add tile neighbour flags')
 	updateTileFlags(self)
+
+	print('set land & water groups')
+	floodFill(self)
 end
 
 function Genesis:getTile(face, x, y)

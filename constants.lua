@@ -13,6 +13,7 @@ HeightType = enum {
 	"FOREST", 
 	"PLAIN", 
 	"COAST", 
+	"RIVER",
 	"SHALLOW_WATER", 
 	"DEEP_WATER",
 }

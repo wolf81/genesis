@@ -7,8 +7,21 @@ function River:new(id)
 		_currentDirection = nil,
 		_tiles = {},
 		_turns = 0,
+		_length = 0,
 		_intersections = 0,
 	}, River)
+end
+
+function River:getId()
+	return self._id
+end
+
+function River:setLength(n)
+	self._length = n
+end
+
+function River:getLength()
+	return self._length
 end
 
 function River:setCurrentDirection(direction)
@@ -48,7 +61,8 @@ function River:getTiles()
 end
 
 function River:addTile(tile)
-	table.insert(self._tiles, tile)
+	tile:setRiverPath(self)
+	self._tiles[#self._tiles + 1] = tile
 end
 
 return setmetatable(River, {

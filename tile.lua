@@ -25,6 +25,7 @@ function Tile:new(face, x, y, heightValue, heatValue, moistureValue)
 		_floodFilled = false,
 		_collidable = false,
 		_rivers = {},
+		_riverSize = 0,
 	}, Tile)	
 end
 
@@ -47,10 +48,71 @@ function Tile:getLowestNeighbourDirection()
 	return Direction.BOTTOM
 end
 
+function Tile:digRiver(river, size)
+	self:setRiverTile(self, river)
+	self._riverSize = size
+
+	if size == 1 then
+		self._bottom:setRiverTile(river)
+		self._right:setRiverTile(river)
+		self._bottom:getRight():setRiverTile(river)
+	elseif size == 2 then
+		self._bottom:setRiverTile(river)
+		self._right:setRiverTile(river)
+		self._bottom:getRight():setRiverTile(river)
+		self._top:setRiverTile(river)
+		self._top:getLeft():setRiverTile(river)
+		self._left:setRiverTile(river)
+		self._left:getBottom():setRiverTile(river)
+	elseif size == 3 then
+		self._bottom:setRiverTile(river)
+		self._right:setRiverTile(river)
+		self._bottom:getRight():setRiverTile(river)
+		self._top:setRiverTile(river)
+		self._top:getLeft():setRiverTile(river)
+		self._left:setRiverTile(river)
+		self._left:getBottom():setRiverTile(river)
+		self._right:getRight():setRiverTile(river)
+		self._right:getRight():getBottom():setRiverTile(river)
+		self._bottom:getBottom():setRiverTile(river)
+		self._bottom:getBottom():getRight():setRiverTile(river)
+	elseif size == 4 then
+		self._bottom:setRiverTile(river)
+		self._right:setRiverTile(river)
+		self._bottom:getRight():setRiverTile(river)
+		self._top:setRiverTile(river)
+		self._top:getLeft():setRiverTile(river)
+		self._left:setRiverTile(river)
+		self._left:getBottom():setRiverTile(river)
+		self._right:getRight():setRiverTile(river)
+		self._right:getRight():getBottom():setRiverTile(river)
+		self._bottom:getBottom():setRiverTile(river)
+		self._bottom:getBottom():getRight():setRiverTile(river)
+		self._left:getBottom():getBottom():setRiverTile(river)
+		self._left:getLeft():getBottom():setRiverTile(river)
+		self._left:getLeft():setRiverTile(river)
+		self._left:getLeft():getTop():setRiverTile(river)
+		self._left:getTop():setRiverTile(river)
+		self._left:getTop():getTop():setRiverTile(river)
+		self._top:getTop():setRiverTile(river)
+		self._top:getTop():getRight():setRiverTile(river)
+		self._top:getRight():getRight():setRiverTile(river)
+	end
+end
+
+function Tile:setRiverTile(river)
+	self:setRiverPath(river)
+
+	self._heightType = HeightType.RIVER
+	self._heightValue = 0
+	self._collidable = false
+end
+
 function Tile:removeRiver(river)
 	for i, r in ipairs(self._rivers) do
 		if r == river then
 			table.remove(self._rivers, i)
+			break
 		end
 	end
 end
@@ -87,6 +149,10 @@ function Tile:getRiverNeighbourCount(river)
 	end
 
 	return count
+end
+
+function Tile:addRiver(river)
+	table.insert(self._rivers, river)
 end
 
 function Tile:setRiverPath(river)

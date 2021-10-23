@@ -1,9 +1,10 @@
-local Tile = require 'tile'
 local NoiseMap = require 'noisemap'
 local GradientMap = require 'gradientmap'
 local CombineMap = require 'combinemap'
+local Tile = require 'tile'
 local TileGroup = require 'tilegroup'
 local River = require 'river'
+local RiverGroup = require 'rivergroup'
 
 require 'constants'
 
@@ -405,7 +406,7 @@ local function findPathToWater(tile, direction, river)
 
 	if min == topValue then
 		if top:isCollidable() then
-			if not river:getCurrentDirection() == Direction.TOP then
+			if river:getCurrentDirection() ~= Direction.TOP then
 				river:incrementTurns()
 				river:setCurrentDirection(Direction.TOP)
 			end
@@ -413,7 +414,7 @@ local function findPathToWater(tile, direction, river)
 		end
 	elseif min == leftValue then 
 		if left:isCollidable() then
-			if not river:getCurrentDirection() == Direction.LEFT then
+			if river:getCurrentDirection() ~= Direction.LEFT then
 				river:incrementTurns()
 				river:setCurrentDirection(Direction.LEFT)
 			end
@@ -421,7 +422,7 @@ local function findPathToWater(tile, direction, river)
 		end
 	elseif min == rightValue then
 		if right:isCollidable() then
-			if not river:getCurrentDirection() == Direction.RIGHT then
+			if river:getCurrentDirection() ~= Direction.RIGHT then
 				river:incrementTurns()
 				river:setCurrentDirection(Direction.RIGHT)
 			end
@@ -429,7 +430,7 @@ local function findPathToWater(tile, direction, river)
 		end
 	elseif min == bottomValue then
 		if bottom:isCollidable() then
-			if not river:getCurrentDirection() == Direction.BOTTOM then
+			if river:getCurrentDirection() ~= Direction.BOTTOM then
 				river:incrementTurns()
 				river:setCurrentDirection(Direction.BOTTOM)
 			end
@@ -438,12 +439,154 @@ local function findPathToWater(tile, direction, river)
 	end
 end
 
-local function buildRiverGroups()
-	-- body	
+local function buildRiverGroups(self)
+	local riverGroups = {}
+
+	local size = self._size
+
+	for face = 1, 6 do
+		for x = 0, size - 1 do
+			for y = 0, size - 1 do
+				local tile = self._tiles[face][x][y]
+				if #tile:getRivers() > 1 then
+					-- intersection
+					local riverGroup = nil
+
+					-- does a rivergroup already exists for this group
+					for _, tileRiver in ipairs(tile:getRivers()) do
+						for _, rg in ipairs(riverGroups) do
+							for _, river in ipairs(rg:getRivers()) do
+								if river:getId() == tileRiver:getId() then
+									riverGroup = rg
+								end
+								if riverGroup ~= nil then break end
+							end
+							if riverGroup ~= nil then break end
+						end
+						if riverGroup ~= nil then break end
+					end
+
+					if riverGroup ~= nil then
+						for _, river in ipairs(tile:getRivers()) do
+							if not riverGroup:containsRiver(river) then
+								riverGroup:addRiver(river)
+							end
+						end
+					else
+						riverGroup = RiverGroup()
+						for _, river in ipairs(tile:getRivers()) do
+							riverGroup:addRiver(river)
+						end
+						table.insert(riverGroups, riverGroup)
+					end
+				end
+			end
+		end
+	end
+
+	self._riverGroups = riverGroups
+
+	print("rivergroups:", #self._riverGroups)
 end 
 
-local function digRiverGroups()
-	-- body
+local function digRiver(self, river)
+	local counter = 0
+
+	local size = mfloor(mrandom() * 4 + 1)
+	river:setLength(#river:getTiles())
+
+	local two = river:getLength() / 2
+	local three = two / 2
+	local four = three / 2
+	local five = four / 2
+
+	local twomin = two / 3
+	local threemin = three / 3
+	local fourmin = four / 3
+	local fivemin = five / 3
+
+	local count1 = mfloor(mrandom() * (five - fivemin) + fivemin) 
+	if size < 4 then count1 = 0 end
+
+	local count2 = count1 + mfloor(mrandom() * (four - fourmin) + fourmin) 
+	if size < 3 then count1, count2 = 0, 0 end
+
+	local count3 = count2 + mfloor(mrandom() * (three - threemin) + threemin) 
+	if size < 2 then count1, count2, count3 = 0, 0, 0 end
+
+	local count4 = count3 + mfloor(mrandom() * (two - twomin) + twomin) 
+
+	if count4 > river:getLength() then
+		local extra = count4 - river:getLength()
+		while extra > 0 do
+			if count1 > 0 then 
+				count1 = count1 - 1
+				count2 = count2 - 1
+				count3 = count3 - 1
+				count4 = count4 - 1
+				extra = extra - 1
+			elseif count2 > 0 then
+				count2 = count2 - 1
+				count3 = count3 - 1
+				count4 = count4 - 1
+				extra = extra - 1
+			elseif count3 > 0 then
+				count3 = count3 - 1
+				count4 = count4 - 1
+				extra = extra - 1
+			elseif count4 > 0 then
+				count4 = count4 - 1
+				extra = extra - 1				
+			end
+		end
+	end
+
+	local riverTiles = river:getTiles()
+	for i = #river:getTiles(), 1, -1 do
+		local tile = riverTiles[i]
+
+		if counter < count1 then
+			tile:digRiver(river, 4)
+		elseif counter < count2 then
+			tile:digRiver(river, 3)
+		elseif counter < count3 then
+			tile:digRiver(river, 2)
+		elseif counter < count4 then
+			tile:digRiver(river, 1)
+		else
+			tile:digRiver(river, 0)
+		end
+
+		counter = counter + 1
+	end
+end
+
+local function digRiverBranch(self, river, parent)
+	print('dig river branch')
+end 
+
+local function digRiverGroups(self)
+	for _, riverGroup in ipairs(self._riverGroups) do
+		local longest = nil
+
+		for _, river in ipairs(riverGroup:getRivers()) do
+			if longest == nil then
+				longest = river
+			elseif #longest:getTiles() < #river:getTiles() then
+				longest = river
+			end
+		end
+
+		if longest ~= nil then
+			digRiver(self, longest)
+
+			for _, river in ipairs(riverGroup:getRivers()) do
+				if river ~= longest then
+					digRiverBranch(self, river, longest)
+				end
+			end
+		end
+	end 
 end 
 
 local function generateRivers(self)
@@ -461,7 +604,7 @@ local function generateRivers(self)
 
 	local size = self._size
 
-	while riverCount > 0 and attempts < 40 do
+	while riverCount > 0 and attempts < 1000 do
 		local face = mfloor(mrandom() * 6) + 1
 		local x = mfloor(mrandom() * size)
 		local y = mfloor(mrandom() * size)
@@ -476,28 +619,27 @@ local function generateRivers(self)
 				river:setCurrentDirection(direction)
 
 				-- recursively find path to water
-				print('find river path')
 				findPathToWater(tile, direction, river)
 
 				-- validate river
-				if river:getTurns() < 18 or 
-					#river:getTiles() < 20 or 
-					river:getIntersections() > 2 then
-
-					for i, riverTile in ipairs(river:getTiles()) do
+				if river:getTurns() < 18 or #river:getTiles() < 20 or river:getIntersections() > 2 then
+					for _, riverTile in ipairs(river:getTiles()) do
 						riverTile:removeRiver(river)
 					end
 				elseif #river:getTiles() >= 20 then
-					table.insert(self._rivers, river)
-					tile:setRiverPath(river)
+					table.insert(rivers, river)
+					tile:addRiver(river)
 					riverCount = riverCount - 1
-					print('add river')
 				end
 			end
 
 			attempts = attempts + 1
 		end
 	end
+
+	print('add rivers:', #rivers)
+
+	self._rivers = rivers
 end
 
 function Genesis:new()
@@ -506,6 +648,8 @@ function Genesis:new()
 		_tiles = {},
 		_waterGroups = {},
 		_landGroups = {},
+		_riverGroups = {},
+		_rivers = {},
 	}, Genesis)
 end
 

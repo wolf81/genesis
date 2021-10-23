@@ -42,6 +42,7 @@ local heightColorMap = {
 	[HeightType.COAST] = { 240/255, 240/255, 64/255, 1.0 },
 	[HeightType.SHALLOW_WATER] = { 25/255, 25/255, 150/255, 1.0 },
 	[HeightType.DEEP_WATER] = { 0.0, 0.0, 0.5, 1.0 },
+	[HeightType.RIVER] = { 25/255, 25/255, 150/255, 1.0 },
 }
 
 local moistureColorMap = {

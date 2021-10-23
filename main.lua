@@ -57,12 +57,12 @@ local landColorMap = {}
 
 local waterColorMap = {}
 
-local function setTitle()
+local function updateMapTitle()
 	if mapType == 0 then title = "height"
 	elseif mapType == 1 then title = "heat"
 	elseif mapType == 2 then title = "moisture"
-	elseif mapType == 3 then title = "water groups"
-	elseif mapType == 4 then title = "land groups"
+	elseif mapType == 3 then title = "water groups (" .. #genesis:getWaterGroups() .. ")"
+	elseif mapType == 4 then title = "land groups (" .. #genesis:getLandGroups() .. ")"
 	else title = ""
 	end
 end
@@ -120,7 +120,7 @@ function love.load()
 
 	generate()
 
-	setTitle()
+	updateMapTitle()
 end
 
 function love.draw()
@@ -208,6 +208,10 @@ function love.keypressed(key, code)
     -- toggle between heightmap, heatmap, moisture map, water groups, land groups
     if key == 't' then
     	mapType = (mapType + 1) % 5
-    	setTitle()
+    	updateMapTitle()
+    end
+
+    if key == 'escape' then
+    	love.event.quit()
     end
 end

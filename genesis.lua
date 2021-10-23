@@ -59,52 +59,52 @@ local neighbourFaceMap = {
 local function getTop(self, face, x, y)
 	local size = self._size
 
-	if y > 0 then
-		return self:getTile(face, x, y - 1)
+	local y = y - 1
+
+	if y >= 0 then
+		return self:getTile(face, x, y)
 	else 
-		local nextFace = x == 0 and neighbourFaceMap[face][2] or neighbourFaceMap[face][1]
-		local x = x == 0 and size - 1 or x
-		local y = x == 0 and 0 or size - 1
-		return self:getTile(nextFace, x, y)
+		local nextFace = neighbourFaceMap[face][1]
+		return self:getTile(nextFace, x, size - 1)
 	end
 end
 
 local function getLeft(self, face, x, y)
 	local size = self._size
 
-	if x > 0 then
-		return self:getTile(face, x - 1, y)
+	local x = x - 1
+
+	if x >= 0 then
+		return self:getTile(face, x, y)
 	else
-		local nextFace = y == size - 1 and neighbourFaceMap[face][4] or neighbourFaceMap[face][2]
-		local x = y == size - 1 and 0 or size - 1
-		local y = y == size - 1 and 0 or y
-		return self:getTile(nextFace, x, y)
+		local nextFace = neighbourFaceMap[face][2]
+		return self:getTile(nextFace, size - 1, y)
 	end
 end
 
 local function getRight(self, face, x, y)
 	local size = self._size
 
-	if x < size - 1 then
-		return self:getTile(face, x + 1, y)
+	local x = x + 1
+
+	if x < size then
+		return self:getTile(face, x, y)
 	else
-		local nextFace = y == 0 and neighbourFaceMap[face][1] or neighbourFaceMap[face][4]
-		local x = y == 0 and size - 1 or 0
-		local y = y == 0 and size - 1 or y
-		return self:getTile(nextFace, x, y)
+		local nextFace = neighbourFaceMap[face][4]
+		return self:getTile(nextFace, 0, y)
 	end
 end
 
 local function getBottom(self, face, x, y)
 	local size = self._size
 
-	if y < size - 1 then
-		return self:getTile(face, x, y + 1)
+	local y = y + 1
+
+	if y < size then
+		return self:getTile(face, x, y)
 	else
-		local nextFace = x == size - 1 and neighbourFaceMap[face][4] or neighbourFaceMap[face][3]
-		local x = x == size - 1 and 0 or x
-		local y = x == size - 1 and size - 1 or 0
-		return self:getTile(nextFace, x, y)
+		local nextFace = neighbourFaceMap[face][3]
+		return self:getTile(nextFace, x, 0)
 	end
 end
 

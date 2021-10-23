@@ -48,6 +48,10 @@ function Tile:getLowestNeighbourDirection()
 	return Direction.BOTTOM
 end
 
+function Tile:getRiverSize()
+	return self._riverSize
+end
+
 function Tile:digRiver(river, size)
 	self:setRiverTile(self, river)
 	self._riverSize = size

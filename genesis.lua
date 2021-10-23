@@ -563,6 +563,109 @@ end
 
 local function digRiverBranch(self, river, parent)
 	print('dig river branch')
+
+	local intersectionId = 0
+	local intersectionSize = 0
+
+	for i, tile in ipairs(river:getTiles()) do
+		for _, parentTile in ipairs(parent:getTiles()) do
+			if tile == parentTile then
+				intersectionId = i
+				intersectionSize = parentTile:getRiverSize()
+			end
+		end
+	end
+
+	local counter = 0
+	local intersectionCount = #river:getTiles() - intersectionId
+	local size = mfloor(mrandom() * (5 - intersectionSize)) + intersectionSize
+	river:setLength(#river:getTiles())
+
+	local two = river:getLength() / 2
+	local three = two / 2
+	local four = three / 2
+	local five = four / 2
+
+	local twomin = two / 3
+	local threemin = three / 3
+	local fourmin = four / 3
+	local fivemin = five / 3
+
+	local count1 = mfloor(mrandom() * (five - fivemin) + fivemin) 
+	if size < 4 then count1 = 0 end
+
+	local count2 = count1 + mfloor(mrandom() * (four - fourmin) + fourmin) 
+	if size < 3 then count1, count2 = 0, 0 end
+
+	local count3 = count2 + mfloor(mrandom() * (three - threemin) + threemin) 
+	if size < 2 then count1, count2, count3 = 0, 0, 0 end
+
+	local count4 = count3 + mfloor(mrandom() * (two - twomin) + twomin) 
+
+	if count4 > river:getLength() then
+		local extra = count4 - river:getLength()
+		while extra > 0 do
+			if count1 > 0 then 
+				count1 = count1 - 1
+				count2 = count2 - 1
+				count3 = count3 - 1
+				count4 = count4 - 1
+				extra = extra - 1
+			elseif count2 > 0 then
+				count2 = count2 - 1
+				count3 = count3 - 1
+				count4 = count4 - 1
+				extra = extra - 1
+			elseif count3 > 0 then
+				count3 = count3 - 1
+				count4 = count4 - 1
+				extra = extra - 1
+			elseif count4 > 0 then
+				count4 = count4 - 1
+				extra = extra - 1				
+			end
+		end
+	end
+
+	if intersectionSize == 1 then
+		count4 = intersectionCount
+		count3 = 0
+		count2 = 0
+		count1 = 0
+	elseif intersectionSize == 2 then
+		count3 = intersectionCount
+		count2 = 0
+		count1 = 0
+	elseif intersectionSize == 3 then
+		count2 = intersectionCount
+		count1 = 0
+	elseif intersectionSize == 4 then
+		count1 = intersectionCount
+	else
+		count4 = 0
+		count3 = 0
+		count2 = 0
+		count1 = 0
+	end
+
+	local riverTiles = river:getTiles()
+	for i = #river:getTiles(), 1, -1 do
+		local tile = riverTiles[i]
+
+		if counter < count1 then
+			tile:digRiver(river, 4)
+		elseif counter < count2 then
+			tile:digRiver(river, 3)
+		elseif counter < count3 then
+			tile:digRiver(river, 2)
+		elseif counter < count4 then
+			tile:digRiver(river, 1)
+		else
+			tile:digRiver(river, 0)
+		end
+
+		counter = counter + 1
+	end
 end 
 
 local function digRiverGroups(self)
@@ -582,6 +685,7 @@ local function digRiverGroups(self)
 
 			for _, river in ipairs(riverGroup:getRivers()) do
 				if river ~= longest then
+					print('branch')
 					digRiverBranch(self, river, longest)
 				end
 			end

@@ -75,8 +75,9 @@ local function updateMapTitle()
 	if mapType == 0 then title = "height"
 	elseif mapType == 1 then title = "heat"
 	elseif mapType == 2 then title = "moisture"
-	elseif mapType == 3 then title = "water groups (" .. #genesis:getWaterGroups() .. ")"
-	elseif mapType == 4 then title = "land groups (" .. #genesis:getLandGroups() .. ")"
+	elseif mapType == 3 then title = "biome"
+	elseif mapType == 4 then title = "water groups (" .. #genesis:getWaterGroups() .. ")"
+	elseif mapType == 5 then title = "land groups (" .. #genesis:getLandGroups() .. ")"
 	else title = ""
 	end
 end

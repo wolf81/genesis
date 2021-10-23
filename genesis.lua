@@ -3,10 +3,11 @@ local NoiseMap = require 'noisemap'
 local GradientMap = require 'gradientmap'
 local CombineMap = require 'combinemap'
 local TileGroup = require 'tilegroup'
+local River = require 'river'
 
 require 'constants'
 
-local mmin = math.min
+local mmin, mfloor, mrandom, mhuge = math.min, math.floor, math.random, math.huge
 
 local Genesis = {}
 Genesis.__index = Genesis
@@ -224,6 +225,7 @@ local function loadTiles(self)
 
 				local heightType = getHeightType(heightValue)
 				tile:setHeightType(heightType)
+				tile:setHeightValue(heightValue)
 
 				tile:setCollidable(
 					heightType ~= HeightType.DEEP_WATER and 
@@ -344,9 +346,151 @@ local function floodFill(self)
 			end
 		end
 	end
+end
 
-	print('water groups:', #self._waterGroups)
-	print('land groups:', #self._landGroups)
+local function findPathToWater(tile, direction, river)
+	if tile:containsRiver(river) then return end
+
+	if #tile:getRivers() > 0 then 
+		river:incrementIntersections()
+	end
+
+	river:addTile(tile)
+
+	local top = tile:getTop()
+	local left = tile:getLeft()
+	local right = tile:getRight()
+	local bottom = tile:getBottom()
+
+	local leftValue, rightValue, topValue, bottomValue = mhuge, mhuge, mhuge, mhuge
+
+	if top:getRiverNeighbourCount(river) < 2 and not river:containsTile(top) then
+		topValue = top:getHeightValue()
+	end
+
+	if left:getRiverNeighbourCount(river) < 2 and not river:containsTile(left) then
+		leftValue = left:getHeightValue()
+	end
+
+	if right:getRiverNeighbourCount(river) < 2 and not river:containsTile(right) then
+		rightValue = right:getHeightValue()
+	end
+
+	if bottom:getRiverNeighbourCount(river) < 2 and not river:containsTile(bottom) then
+		bottomValue = bottom:getHeightValue()
+	end
+
+	if #top:getRivers() == 0 and not top:isCollidable() then
+		topValue = 0
+	end
+
+	if #left:getRivers() == 0 and not left:isCollidable() then
+		leftValue = 0
+	end
+
+	if #right:getRivers() == 0 and not right:isCollidable() then
+		rightValue = 0
+	end
+
+	if #bottom:getRivers() == 0 and not bottom:isCollidable() then
+		bottomValue = 0
+	end
+
+	-- TODO: override flow dir...
+
+	-- find minimum
+	local min = mmin(mmin(mmin(topValue, bottomValue), leftValue), rightValue)
+
+	if min == mhuge then return end
+
+	if min == topValue then
+		if top:isCollidable() then
+			if not river:getCurrentDirection() == Direction.TOP then
+				river:incrementTurns()
+				river:setCurrentDirection(Direction.TOP)
+			end
+			findPathToWater(top, direction, river)
+		end
+	elseif min == leftValue then 
+		if left:isCollidable() then
+			if not river:getCurrentDirection() == Direction.LEFT then
+				river:incrementTurns()
+				river:setCurrentDirection(Direction.LEFT)
+			end
+			findPathToWater(left, direction, river)
+		end
+	elseif min == rightValue then
+		if right:isCollidable() then
+			if not river:getCurrentDirection() == Direction.RIGHT then
+				river:incrementTurns()
+				river:setCurrentDirection(Direction.RIGHT)
+			end
+			findPathToWater(right, direction, river)
+		end
+	elseif min == bottomValue then
+		if bottom:isCollidable() then
+			if not river:getCurrentDirection() == Direction.BOTTOM then
+				river:incrementTurns()
+				river:setCurrentDirection(Direction.BOTTOM)
+			end
+			findPathToWater(bottom, direction, river)
+		end
+	end
+
+end
+
+local function generateRivers(self)
+	local attempts = 0
+
+	-- rivercount 40
+	-- min river height: 0.6
+	-- max attemts 1000,
+	-- min turns 18,
+	-- min length 20,
+	-- max intersections 2
+
+	local riverCount = 40
+	local rivers = {}
+
+	local size = self._size
+
+	while riverCount > 0 and attempts < 40 do
+		local face = mfloor(mrandom() * 6) + 1
+		local x = mfloor(mrandom() * size)
+		local y = mfloor(mrandom() * size)
+		local tile = self._tiles[face][x][y]
+
+		if tile:isCollidable() and #tile:getRivers() == 0 then
+			if tile:getHeightValue() > 0.6 then
+				local river = River(riverCount)
+
+				-- figure out water direction
+				local direction = tile:getLowestNeighbourDirection()
+				river:setCurrentDirection(direction)
+
+				-- recursively find path to water
+				print('find river path')
+				findPathToWater(tile, direction, river)
+
+				-- validate river
+				if river:getTurns() < 18 or 
+					#river:getTiles() < 20 or 
+					river:getIntersections() > 2 then
+
+					for i, riverTile in ipairs(river:getTiles()) do
+						riverTile:removeRiver(river)
+					end
+				elseif #river:getTiles() >= 20 then
+					table.insert(self._rivers, river)
+					tile:setRiverPath(river)
+					riverCount = riverCount - 1
+					print('add river')
+				end
+			end
+
+			attempts = attempts + 1
+		end
+	end
 end
 
 function Genesis:new()
@@ -362,14 +506,24 @@ function Genesis:generate(size, seed)
 	self._size = size
 
 	-- get values for height map, heat map, moisture map
+	print('generate height, heat, moisture values')
 	getData(self, seed or math.random())
 
 	-- generate the tile map
+	print('create tiles')
 	loadTiles(self)
-	updateNeighbours(self)
-	updateTileFlags(self)
 
+	print('set tile neighbours')
+	updateNeighbours(self)
+
+	print('set land & water groups')
 	floodFill(self)
+
+	print('generate rivers')
+	generateRivers(self)
+
+	print('add tile neighbour flags')
+	updateTileFlags(self)
 end
 
 function Genesis:getTile(face, x, y)

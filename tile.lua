@@ -24,7 +24,77 @@ function Tile:new(face, x, y, heightValue, heatValue, moistureValue)
 		_flags = 0,
 		_floodFilled = false,
 		_collidable = false,
+		_rivers = {},
 	}, Tile)	
+end
+
+function Tile:getLowestNeighbourDirection()
+	local lhv = self._left:getHeightValue()
+	local rhv = self._right:getHeightValue()
+	local thv = self._top:getHeightValue()
+	local bhv = self._bottom:getHeightValue()
+
+	if lhv < rhv and lhv < thv and lhv < bhv then
+		return Direction.LEFT
+	elseif rhv < lhv and rhv < thv and lhv < bhv then
+		return Direction.TOP
+	elseif thv < lhv and thv < rhv and thv < bhv then
+		return Direction.RIGHT
+	elseif bhv < lhv and bhv < thv and bhv < rhv then
+		return Direction.BOTTOM -- or RIGHT?
+	end
+
+	return Direction.BOTTOM
+end
+
+function Tile:removeRiver(river)
+	for i, r in ipairs(self._rivers) do
+		if r == river then
+			table.remove(self._rivers, i)
+		end
+	end
+end
+
+function Tile:containsRiver(river)
+	for _, r in ipairs(self._rivers) do
+		if r == river then return true end
+	end
+
+	return false
+end
+
+function Tile:getRivers()
+	return self._rivers
+end
+
+function Tile:getRiverNeighbourCount(river)
+	local count = 0
+
+	if #self._top:getRivers() > 0 and self._top:containsRiver(river) then
+		count = count + 1
+	end
+
+	if #self._left:getRivers() > 0 and self._left:containsRiver(river) then
+		count = count + 1
+	end
+
+	if #self._right:getRivers() > 0 and self._right:containsRiver(river) then
+		count = count + 1
+	end
+
+	if #self._bottom:getRivers() > 0 and self._bottom:containsRiver(river) then
+		count = count + 1
+	end
+
+	return count
+end
+
+function Tile:setRiverPath(river)
+	if not self._collidable then return end
+
+	if not self:containsRiver(river) then
+		table.insert(self._rivers, river)		
+	end
 end
 
 function Tile:isCollidable()
@@ -69,6 +139,10 @@ end
 
 function Tile:getHeightValue()
 	return self._heightValue
+end
+
+function Tile:setHeightValue(v)
+	self._heightValue = v
 end
 
 function Tile:getHeatValue()

@@ -1,5 +1,12 @@
 require 'enum'
 
+Direction = enum {
+	"TOP",
+	"LEFT",
+	"BOTTOM",
+	"RIGHT"
+}
+
 HeightType = enum { 
 	"SNOW", 
 	"MOUNTAIN", 

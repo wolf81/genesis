@@ -13,6 +13,55 @@ local mmin, mfloor, mrandom, mhuge = math.min, math.floor, math.random, math.hug
 local Genesis = {}
 Genesis.__index = Genesis
 
+local neighbourFaceMap = {
+	--[[
+	this map helps find neighbour faces for a given face number
+	the key is the current face number and the values are adjacent face 
+	numbers in order TOP, LEFT, RIGHT, BOTTOM
+	--]]
+	[1] = { 5, 4, 6, 2 },
+	[2] = { 5, 1, 6, 3 },
+	[3] = { 5, 2, 6, 4 },
+	[4] = { 5, 3, 6, 1 },
+	[5] = { 3, 4, 1, 2 },
+	[6] = { 1, 4, 3, 2 },
+}
+
+local biomeMap = {
+	{ 	BiomeType.ICE, 					BiomeType.TUNDRA, 				BiomeType.GRASSLAND, 	
+		BiomeType.DESERT, 				BiomeType.DESERT, 				BiomeType.DESERT },
+	{ 	BiomeType.ICE, 					BiomeType.TUNDRA, 				BiomeType.GRASSLAND, 	
+		BiomeType.DESERT, 				BiomeType.DESERT, 				BiomeType.DESERT },
+	{ 	BiomeType.ICE, 					BiomeType.TUNDRA, 				BiomeType.WOODLAND, 		
+		BiomeType.WOODLAND, 			BiomeType.SAVANNA, 				BiomeType.SAVANNA },
+	{ 	BiomeType.ICE, 					BiomeType.TUNDRA, 				BiomeType.BOREAL_FOREST, 
+		BiomeType.WOODLAND, 			BiomeType.SAVANNA, 				BiomeType.SAVANNA, },
+	{ 	BiomeType.ICE, 					BiomeType.TUNDRA, 				BiomeType.BOREAL_FOREST, 
+		BiomeType.SEASONAL_FOREST, 		BiomeType.TROPICAL_RAINFOREST, 	BiomeType.TROPICAL_RAINFOREST },
+	{ 	BiomeType.ICE, 					BiomeType.TUNDRA, 				BiomeType.BOREAL_FOREST, 
+		BiomeType.TEMPERATE_RAINFOREST, BiomeType.TROPICAL_RAINFOREST, 	BiomeType.TROPICAL_RAINFOREST },	
+}
+
+local function getBiome(tile)
+
+	return biomeMap[tile:getMoistureType().id][6 - tile:getHeatType().id + 1]
+end
+
+local function generateBiomeMap(self)
+	local size = self._size
+	for face = 1, 6 do
+		for x = 0, size - 1 do
+			for y = 0, size - 1 do
+				local tile = self._tiles[face][x][y]
+				
+				if tile:isCollidable() then
+					tile:setBiomeType(getBiome(tile))
+				end
+			end
+		end
+	end
+end 
+
 local function getHeightType(heightValue)
 	if heightValue >= 0.9 then return HeightType.SNOW
 	elseif heightValue >= 0.8 then return HeightType.MOUNTAIN
@@ -63,20 +112,6 @@ local function adjustMoistureMap(self)
 		end
 	end
 end
-
-local neighbourFaceMap = {
-	--[[
-	this map helps find neighbour faces for a given face number
-	the key is the current face number and the values are adjacent face 
-	numbers in order TOP, LEFT, RIGHT, BOTTOM
-	--]]
-	[1] = { 5, 4, 6, 2 },
-	[2] = { 5, 1, 6, 3 },
-	[3] = { 5, 2, 6, 4 },
-	[4] = { 5, 3, 6, 1 },
-	[5] = { 3, 4, 1, 2 },
-	[6] = { 1, 4, 3, 2 },
-}
 
 local function getTop(self, face, x, y)
 	local size = self._size
@@ -805,6 +840,9 @@ function Genesis:generate(size, seed)
 
 	print('set land & water groups')
 	floodFill(self)
+
+	print('generate biomes')
+	generateBiomeMap(self)
 end
 
 function Genesis:getTile(face, x, y)

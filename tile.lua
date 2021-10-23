@@ -26,7 +26,17 @@ function Tile:new(face, x, y, heightValue, heatValue, moistureValue)
 		_collidable = false,
 		_rivers = {},
 		_riverSize = 0,
+
+		_biomeType = nil,
 	}, Tile)	
+end
+
+function Tile:getBiomeType()
+	return self._biomeType
+end
+
+function Tile:setBiomeType(t)
+	self._biomeType = t
 end
 
 function Tile:getLowestNeighbourDirection()

@@ -54,6 +54,19 @@ local moistureColorMap = {
 	[MoistureType.DRYEST] = { 1.0, 139/255, 17/255, 1.0 },
 }
 
+local biomeColorMap = {
+	[BiomeType.ICE] = { 1.0, 1.0, 1.0, 1.0 },
+	[BiomeType.DESERT] = { 238/255, 218/255, 130/255, 1.0 },
+	[BiomeType.SAVANNA] = { 177/255, 209/255, 110/255, 1.0 },
+	[BiomeType.TROPICAL_RAINFOREST] = { 66/255, 123/255, 25/255, 1.0 },
+	[BiomeType.TUNDRA] = { 96/255, 131/255, 112/255, 1.0 },
+	[BiomeType.TEMPERATE_RAINFOREST] = { 29/255, 73/255, 40/255, 1.0 },
+	[BiomeType.GRASSLAND] = { 164/255, 225/255, 99/255, 1.0 },
+	[BiomeType.SEASONAL_FOREST] = { 73/255, 100/255, 35/255, 1.0 },
+	[BiomeType.BOREAL_FOREST] = { 95/255, 115/255, 62/255, 1.0 },
+	[BiomeType.WOODLAND] = { 139/255, 175/255, 90/255, 1.0 },
+}
+
 local landColorMap = {}
 
 local waterColorMap = {}
@@ -82,6 +95,11 @@ local function getMoistureColor(tile)
 	local t = tile:getMoistureType()
 	return moistureColorMap[t] or { 1.0, 0.0, 1.0, 1.0 }
 end 
+
+local function getBiomeColor(tile)
+	local t = tile:getBiomeType()
+	return biomeColorMap[t] or { 0.0, 0.0, 0.2, 1.0 }
+end
 
 local function getWaterGroupColor(index)
 	return waterColorMap[index] or { 1.0, 0.0, 1.0, 1.0 }
@@ -130,12 +148,12 @@ function love.draw()
 	love.graphics.setColor(1.0, 1.0, 1.0, 1.0)
 	love.graphics.print(title, 10, 10)
 
-	if mapType > 2 then
-		local getWaterColor = mapType == 3 and getWaterGroupColor or function()
+	if mapType > 3 then
+		local getWaterColor = mapType == 4 and getWaterGroupColor or function()
 			return { 0.0, 0.0, 0.1, 1.0 }
 		end
 
-		local getLandColor = mapType == 4 and getLandGroupColor or function()
+		local getLandColor = mapType == 5 and getLandGroupColor or function()
 			return { 0.0, 0.1, 0.0, 1.0 }
 		end
 
@@ -175,7 +193,8 @@ function love.draw()
 	local getColor = (
 		mapType == 0 and getHeightColor or 
 		mapType == 1 and getHeatColor or 
-		getMoistureColor
+		mapType == 2 and getMoistureColor or
+		getBiomeColor	
 	)
 
 	for face = 1, 6 do
@@ -208,7 +227,7 @@ function love.keypressed(key, code)
 
     -- toggle between heightmap, heatmap, moisture map, water groups, land groups
     if key == 't' then
-    	mapType = (mapType + 1) % 5
+    	mapType = (mapType + 1) % 6
     	updateMapTitle()
     end
 

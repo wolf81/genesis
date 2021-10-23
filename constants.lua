@@ -41,6 +41,19 @@ TileGroupType = enum {
 	"LAND",
 }
 
+BiomeType = enum {
+	"DESERT",
+	"SAVANNA",
+	"TROPICAL_RAINFOREST",
+	"GRASSLAND",
+	"WOODLAND",
+	"SEASONAL_FOREST",
+	"TEMPERATE_RAINFOREST",
+	"BOREAL_FOREST",
+	"TUNDRA",
+	"ICE",
+}
+
 TileFlags = {
 	["EQ_TOP"] = bit.lshift(1, 0),		--> 1
 	["EQ_LEFT"] = bit.lshift(1, 1),		--> 2

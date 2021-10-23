@@ -65,7 +65,24 @@ local function getTop(self, face, x, y)
 		return self:getTile(face, x, y)
 	else 
 		local nextFace = neighbourFaceMap[face][1]
-		return self:getTile(nextFace, x, size - 1)
+
+		local y = size - 1
+
+		if face == 2 then -- nextFace 5
+			y = size - 1 - x
+			x = size - 1
+		elseif face == 3 then -- nextFace 5
+			y = 0
+			x = size - 1 - x
+		elseif face == 4 then -- nextFace 5 
+			y = x
+			x = 0
+		elseif face == 5 then -- nextFace 3
+			y = 0
+			x = size - 1 - x			
+		end
+
+		return self:getTile(nextFace, x, y)
 	end
 end
 
@@ -78,7 +95,18 @@ local function getLeft(self, face, x, y)
 		return self:getTile(face, x, y)
 	else
 		local nextFace = neighbourFaceMap[face][2]
-		return self:getTile(nextFace, size - 1, y)
+
+		x = size - 1
+
+		if face == 5 then -- nextFace 4
+			x = y
+			y = 0
+		elseif face == 6 then -- nextFace 4
+			x = size - 1 - y
+			y = size - 1
+		end
+
+		return self:getTile(nextFace, x, y)
 	end
 end
 
@@ -91,7 +119,18 @@ local function getRight(self, face, x, y)
 		return self:getTile(face, x, y)
 	else
 		local nextFace = neighbourFaceMap[face][4]
-		return self:getTile(nextFace, 0, y)
+
+		x = 0
+
+		if face == 5 then -- nextFace 2
+			x = size - 1 - y
+			y = 0
+		elseif face == 6 then -- nextFace 2
+			x = size - 1 - y
+			y = size - 1
+		end
+
+		return self:getTile(nextFace, x, y)
 	end
 end
 
@@ -104,7 +143,24 @@ local function getBottom(self, face, x, y)
 		return self:getTile(face, x, y)
 	else
 		local nextFace = neighbourFaceMap[face][3]
-		return self:getTile(nextFace, x, 0)
+
+		local y = 0
+
+		if face == 2 then -- nextFace 6
+			y = x
+			x = size - 1
+		elseif face == 3 then -- nextFace 6
+			y = size - 1
+			x = size - 1 - x
+		elseif face == 4 then -- nextFace 6
+			y = size - 1 - x
+			x = 0
+		elseif face == 6 then -- nextFace 3
+			y = size - 1
+			x = size - 1 - x
+		end
+
+		return self:getTile(nextFace, x, y)
 	end
 end
 
@@ -288,6 +344,9 @@ local function floodFill(self)
 			end
 		end
 	end
+
+	print('water groups:', #self._waterGroups)
+	print('land groups:', #self._landGroups)
 end
 
 function Genesis:new()

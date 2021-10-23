@@ -13,7 +13,8 @@ io.stdout:setvbuf("no")
 
 -- config
 local scale = 8
-local mapType = 1
+local mapType = 0
+local title = ""
 
 local genesis = Genesis()
 
@@ -56,6 +57,16 @@ local landColorMap = {}
 
 local waterColorMap = {}
 
+local function setTitle()
+	if mapType == 0 then title = "height"
+	elseif mapType == 1 then title = "heat"
+	elseif mapType == 2 then title = "moisture"
+	elseif mapType == 3 then title = "water groups"
+	elseif mapType == 4 then title = "land groups"
+	else title = ""
+	end
+end
+
 local function getHeatColor(tile)
 	local t = tile:getHeatType()
 	return heatColorMap[t] or { 1.0, 0.0, 1.0, 1.0 }
@@ -89,7 +100,7 @@ local function generate()
 	local landGroupCount = #genesis:getLandGroups()
 	local step = (math.pi * 2) / (landGroupCount - 1)
 	for i = 0, landGroupCount - 1 do
-		local rgb = hsv(step * i, 0.8, 0.5)
+		local rgb = hsv(step * i, 0.6, 0.8)
 		table.insert(landColorMap, rgb)
 	end
 
@@ -108,10 +119,15 @@ function love.load()
 	local _ = love.window.setMode(1280, 800, {})
 
 	generate()
+
+	setTitle()
 end
 
 function love.draw()
 	local w, h = genesis:getSize()
+
+	love.graphics.setColor(1.0, 1.0, 1.0, 1.0)
+	love.graphics.print(title, 10, 10)
 
 	if mapType > 2 then
 		local getWaterColor = mapType == 3 and getWaterGroupColor or function()
@@ -156,8 +172,8 @@ function love.draw()
 	end
 
 	local getColor = (
-		mapType == 1 and getHeightColor or 
-		mapType == 2 and getHeatColor or 
+		mapType == 0 and getHeightColor or 
+		mapType == 1 and getHeatColor or 
 		getMoistureColor
 	)
 
@@ -192,5 +208,6 @@ function love.keypressed(key, code)
     -- toggle between heightmap, heatmap, moisture map, water groups, land groups
     if key == 't' then
     	mapType = (mapType + 1) % 5
+    	setTitle()
     end
 end

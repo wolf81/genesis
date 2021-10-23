@@ -46,14 +46,14 @@ local neighbourFaceMap = {
 	--[[
 	this map helps find neighbour faces for a given face number
 	the key is the current face number and the values are adjacent face 
-	numbers in order TOP, LEFT, BOTTOM, RIGHT
+	numbers in order TOP, LEFT, RIGHT, BOTTOM
 	--]]
-	[1] = { 5, 4, 2, 6 },
-	[2] = { 5, 1, 3, 6 },
-	[3] = { 5, 2, 4, 6 },
-	[4] = { 5, 3, 1, 6 },
-	[5] = { 3, 4, 2, 1 },
-	[6] = { 1, 4, 2, 3 },
+	[1] = { 5, 4, 6, 2 },
+	[2] = { 5, 1, 6, 3 },
+	[3] = { 5, 2, 6, 4 },
+	[4] = { 5, 3, 6, 1 },
+	[5] = { 3, 4, 1, 2 },
+	[6] = { 1, 4, 3, 2 },
 }
 
 local function getTop(self, face, x, y)
@@ -88,7 +88,7 @@ local function getRight(self, face, x, y)
 	if x < size - 1 then
 		return self:getTile(face, x + 1, y)
 	else
-		local nextFace = y == 0 and neighbourFaceMap[face][1] or neighbourFaceMap[face][3]
+		local nextFace = y == 0 and neighbourFaceMap[face][1] or neighbourFaceMap[face][4]
 		local x = y == 0 and size - 1 or 0
 		local y = y == 0 and size - 1 or y
 		return self:getTile(nextFace, x, y)
@@ -101,7 +101,7 @@ local function getBottom(self, face, x, y)
 	if y < size - 1 then
 		return self:getTile(face, x, y + 1)
 	else
-		local nextFace = x == size - 1 and neighbourFaceMap[face][3] or neighbourFaceMap[face][4]
+		local nextFace = x == size - 1 and neighbourFaceMap[face][4] or neighbourFaceMap[face][3]
 		local x = x == size - 1 and 0 or x
 		local y = x == size - 1 and size - 1 or 0
 		return self:getTile(nextFace, x, y)

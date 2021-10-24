@@ -181,7 +181,7 @@ local function getRight(self, face, x, y)
 
 		if face == 5 then -- nextFace 2
 			x = size - 1 - y
-			y = 0
+			y = size - 1
 		elseif face == 6 then -- nextFace 2
 			x = size - 1 - y
 			y = size - 1
@@ -829,8 +829,9 @@ function Genesis:generate(size, seed)
 	self._size = size
 
 	-- get values for height map, heat map, moisture map
-	print('generate height, heat, moisture values')
-	getData(self, seed or math.random())
+	local seed = seed or math.random()
+	print('generate height, heat, moisture values based on seed:', seed)
+	getData(self, seed)
 
 	-- generate the tile map
 	print('create tiles')

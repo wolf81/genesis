@@ -281,23 +281,45 @@ function Tile:getFlags()
 	return self._flags
 end
 
-function Tile:updateFlags()
-	local flags = 0
+function Tile:updateHeightFlags()
+	local flags = self._flags
 
 	if self:getTop():getHeightType() == self._heightType then
-		flags = bbor(flags, TileFlags.EQ_TOP)
+		flags = bbor(flags, TileFlags.EQ_HEIGHT_TOP)
 	end
 
 	if self:getLeft():getHeightType() == self._heightType then
-		flags = bbor(flags, TileFlags.EQ_LEFT)
+		flags = bbor(flags, TileFlags.EQ_HEIGHT_LEFT)
 	end
 
 	if self:getRight():getHeightType() == self._heightType then
-		flags = bbor(flags, TileFlags.EQ_RIGHT)
+		flags = bbor(flags, TileFlags.EQ_HEIGHT_RIGHT)
 	end
 
 	if self:getBottom():getHeightType() == self._heightType then
-		flags = bbor(flags, TileFlags.EQ_BOTTOM)
+		flags = bbor(flags, TileFlags.EQ_HEIGHT_BOTTOM)
+	end
+
+	self._flags = flags
+end
+
+function Tile:updateBiomeFlags()
+	local flags = self._flags
+
+	if self:getTop():getBiomeType() == self._biomeType then
+		flags = bbor(flags, TileFlags.EQ_BIOME_TOP)
+	end
+
+	if self:getLeft():getBiomeType() == self._biomeType then
+		flags = bbor(flags, TileFlags.EQ_BIOME_LEFT)
+	end
+
+	if self:getRight():getBiomeType() == self._biomeType then
+		flags = bbor(flags, TileFlags.EQ_BIOME_RIGHT)
+	end
+
+	if self:getBottom():getBiomeType() == self._biomeType then
+		flags = bbor(flags, TileFlags.EQ_BIOME_BOTTOM)
 	end
 
 	self._flags = flags

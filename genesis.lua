@@ -53,7 +53,7 @@ local function generateBiomeMap(self)
 		for x = 0, size - 1 do
 			for y = 0, size - 1 do
 				local tile = self._tiles[face][x][y]
-				
+
 				if tile:isCollidable() then
 					tile:setBiomeType(getBiome(tile))
 				end
@@ -237,18 +237,31 @@ local function updateNeighbours(self)
 	end
 end
 
-local function updateTileFlags(self)
+local function updateTileHeightFlags(self)
 	local size = self._size
 
 	for face = 1, 6 do
 		for x = 0, size - 1 do
 			for y = 0, size - 1 do
 				local tile = self._tiles[face][x][y]
-				tile:updateFlags()
+				tile:updateHeightFlags()
 			end
 		end
 	end	
 end 
+
+local function updateTileBiomeFlags(self)
+	local size = self._size
+
+	for face = 1, 6 do
+		for x = 0, size - 1 do
+			for y = 0, size - 1 do
+				local tile = self._tiles[face][x][y]
+				tile:updateBiomeFlags()
+			end
+		end
+	end	
+end
 
 local function getData(self, seed)
 	if seed < 1.0 then seed = seed * 256 end
@@ -835,14 +848,17 @@ function Genesis:generate(size, seed)
 	print('dig river groups')
 	digRiverGroups(self)
 
-	print('add tile neighbour flags')
-	updateTileFlags(self)
+	print('update tile neighbour height flags')
+	updateTileHeightFlags(self)
 
 	print('set land & water groups')
 	floodFill(self)
 
 	print('generate biomes')
 	generateBiomeMap(self)
+
+	print('update tile neighbour biome flags')
+	updateTileBiomeFlags(self)
 end
 
 function Genesis:getTile(face, x, y)

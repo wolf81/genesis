@@ -55,14 +55,26 @@ BiomeType = enum {
 }
 
 TileFlags = {
-	["EQ_TOP"] = bit.lshift(1, 0),		--> 1
-	["EQ_LEFT"] = bit.lshift(1, 1),		--> 2
-	["EQ_RIGHT"] = bit.lshift(1, 2),	--> 4
-	["EQ_BOTTOM"] = bit.lshift(1, 3),	--> 8
-	["EQ_ALL"] = bit.bor(				--> 15
-		bit.lshift(1, 0), -- EQ_TOP
-		bit.lshift(1, 1), -- EQ_LEFT
-		bit.lshift(1, 2), -- EQ_RIGHT
-		bit.lshift(1, 3)  -- EQ_BOTTOM
+	-- height flags
+	["EQ_HEIGHT_TOP"] = bit.lshift(1, 0),		--> 1
+	["EQ_HEIGHT_LEFT"] = bit.lshift(1, 1),		--> 2
+	["EQ_HEIGHT_RIGHT"] = bit.lshift(1, 2),		--> 4
+	["EQ_HEIGHT_BOTTOM"] = bit.lshift(1, 3),	--> 8
+	["EQ_HEIGHT_ALL"] = bit.bor(				--> 15
+		bit.lshift(1, 0), -- EQ_HEIGHT_TOP
+		bit.lshift(1, 1), -- EQ_HEIGHT_LEFT
+		bit.lshift(1, 2), -- EQ_HEIGHT_RIGHT
+		bit.lshift(1, 3)  -- EQ_HEIGHT_BOTTOM
+	),
+	-- biome flags
+	["EQ_BIOME_TOP"] = bit.lshift(1, 4),		--> 32
+	["EQ_BIOME_LEFT"] = bit.lshift(1, 5),		--> 32
+	["EQ_BIOME_RIGHT"] = bit.lshift(1, 6),		--> 32
+	["EQ_BIOME_BOTTOM"] = bit.lshift(1, 7),		--> 32
+	["EQ_BIOME_ALL"] = bit.bor(
+		bit.lshift(1, 4), -- EQ_HEIGHT_TOP
+		bit.lshift(1, 5), -- EQ_HEIGHT_LEFT
+		bit.lshift(1, 6), -- EQ_HEIGHT_RIGHT
+		bit.lshift(1, 7)  -- EQ_HEIGHT_BOTTOM		
 	),
 }

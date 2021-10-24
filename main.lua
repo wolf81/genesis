@@ -206,7 +206,7 @@ function love.draw()
 				local tile = genesis:getTile(face, x, y)			
 				local c = getColor(tile)
 
-				if bband(tile:getFlags(), TileFlags.EQ_ALL) ~= TileFlags.EQ_ALL and tile:getHeightType().id < 6 then
+				if bband(tile:getFlags(), TileFlags.EQ_HEIGHT_ALL) ~= TileFlags.EQ_HEIGHT_ALL and tile:getHeightType().id < 6 then
 					c = { lerp(c[1], 0.0, 0.4), lerp(c[2], 0.0, 0.4), lerp(c[3], 0.0, 0.4), 1.0 }
 				end
 

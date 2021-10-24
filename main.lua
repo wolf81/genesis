@@ -82,6 +82,32 @@ local function updateMapTitle()
 	end
 end
 
+local function getHeightBorderColor(tile, color)
+	if bband(tile:getFlags(), TileFlags.EQ_HEIGHT_ALL) ~= TileFlags.EQ_HEIGHT_ALL and tile:getHeightType().id < 6 then
+		color = { 
+			lerp(color[1], 0.0, 0.4), 
+			lerp(color[2], 0.0, 0.4), 
+			lerp(color[3], 0.0, 0.4), 
+			1.0 
+		}
+	end
+
+	return color
+end
+
+local function getBiomeBorderColor(tile, color)
+	if bband(tile:getFlags(), TileFlags.EQ_BIOME_ALL) ~= TileFlags.EQ_BIOME_ALL and tile:getHeightType().id < 6 then
+		color = { 
+			lerp(color[1], 0.0, 0.4), 
+			lerp(color[2], 0.0, 0.4), 
+			lerp(color[3], 0.0, 0.4), 
+			1.0 
+		}
+	end
+
+	return color
+end
+
 local function getHeatColor(tile)
 	local t = tile:getHeatType()
 	return heatColorMap[t] or { 1.0, 0.0, 1.0, 1.0 }
@@ -191,6 +217,11 @@ function love.draw()
 		return
 	end
 
+	local getBorderColor = (
+		mapType == 3 and getBiomeBorderColor or
+		getHeightBorderColor
+	)
+
 	local getColor = (
 		mapType == 0 and getHeightColor or 
 		mapType == 1 and getHeatColor or 
@@ -206,9 +237,7 @@ function love.draw()
 				local tile = genesis:getTile(face, x, y)			
 				local c = getColor(tile)
 
-				if bband(tile:getFlags(), TileFlags.EQ_HEIGHT_ALL) ~= TileFlags.EQ_HEIGHT_ALL and tile:getHeightType().id < 6 then
-					c = { lerp(c[1], 0.0, 0.4), lerp(c[2], 0.0, 0.4), lerp(c[3], 0.0, 0.4), 1.0 }
-				end
+				c = getBorderColor(tile, c)
 
 				local xi = x + (ox * w) + 0.5
 				local yi = y + (oy * h) + 0.5

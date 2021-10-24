@@ -39,67 +39,50 @@ The entries are to be used as follows:
 --]]
 
 local topFaceModifiers = { 
-	[1] = {  1,  0,  0, -1,  },
+	[1] = {  1,  0,  0, -1,  				},
 	[2] = {  1, -1,  0, -1,	 1,  0,  0, -1  },
 	[3] = {  0,  0,  0,  0,  1, -1,  0, -1  },
 	[4] = {  0,  1,  0,  0,  0,  0,  0,  0  },
 	[5] = {  0,  0,  0,  0,  1, -1,  0, -1  },
-	[6] = {  1,  0,  0, -1,  },
+	[6] = {  1,  0,  0, -1,  				},
 }
 
 local bottomFaceModifiers = {
-	[1] = {  0,  0,  0,  0,  },
+	[1] = {  0,  0,  0,  0,  				},
 	[2] = {  0,  1,  0,  0,	 1,  0,  0, -1  },
 	[3] = {  1,  0,  0, -1,  1, -1,  0, -1  },
 	[4] = {  1, -1,  0, -1,  0,  0,  0,  0  },
-	[5] = {  0,  0,  0,  0,  },
+	[5] = {  0,  0,  0,  0,  				},
 	[6] = {  1,  0,  0, -1,  1, -1,  0, -1  },
 }
 
 local leftFaceModifiers = {
-	[1] = {  1,  0,  0, -1,  },
-	[2] = {  1,  0,  0, -1,	 },
-	[3] = {  1,  0,  0, -1,  },
-	[4] = {  1,  0,  0, -1,  },
+	[1] = {  1,  0,  0, -1,  				},
+	[2] = {  1,  0,  0, -1,	 				},
+	[3] = {  1,  0,  0, -1,  				},
+	[4] = {  1,  0,  0, -1,  				},
 	[5] = {  0,  0,  1,  0,  0,  0,  0,  0  },
 	[6] = {  1,  0, -1, -1,  1,  0,  0, -1  },
 }
 
 local rightFaceModifiers = {
-	[1] = {  0,  0,  0,  0,  },
-	[2] = {  0,  0,  0,  0,	 },
-	[3] = {  0,  0,  0,  0,  },
-	[4] = {  0,  0,  0,  0,  },
+	[1] = {  0,  0,  0,  0,  				},
+	[2] = {  0,  0,  0,  0,	 				},
+	[3] = {  0,  0,  0,  0,  				},
+	[4] = {  0,  0,  0,  0,  				},
 	[5] = {  1,  0, -1, -1,  1,  0,  0, -1  },
 	[6] = {  1,  0, -1, -1,  1,  0,  0, -1  },	
 }
 
 function CubeMapHelper.getCoord(face, size, x, y, dx, dy)
+	local face, x, y = CubeMapHelper.getCoordDx(face, size, x, y, dx)
+	return CubeMapHelper.getCoordDy(face, size, x, y, dy)
+end
+
+function CubeMapHelper.getCoordDx(face, size, x, y, dx)
 	-- TODO: dx/dy should never be greater than size, to simplify calculations
 	local ax, ay = x, y
-	local nx, ny = x + dx, y + dy
-
-	if ny < 0 then
-		local ySizeF, yXF, yYF, yOff, xSizeF, xXF, xYF, xOff = unpack(topFaceModifiers[face])
-		y = size * ySizeF + ax * yXF + ay * yYF + yOff
-
-		if xSizeF then			
-			x = size * xSizeF + ax * xXF + ay * xYF + xOff
-		end
-
-		face = adjacentFaceMap[face][1]
-	elseif ny >= size then
-		local ySizeF, yXF, yYF, yOff, xSizeF, xXF, xYF, xOff = unpack(bottomFaceModifiers[face])
-		y = size * ySizeF + ax * yXF + ay * yYF + yOff
-
-		if xSizeF then			
-			x = size * xSizeF + ax * xXF + ay * xYF + xOff
-		end
-
-		face = adjacentFaceMap[face][3]
-	else
-		y = ny
-	end
+	local nx = x + dx
 
 	if nx < 0 then
 		local xSizeF, xXF, xYF, xOff, ySizeF, yXF, yYF, yOff = unpack(leftFaceModifiers[face])
@@ -121,6 +104,36 @@ function CubeMapHelper.getCoord(face, size, x, y, dx, dy)
 		face = adjacentFaceMap[face][4]
 	else
 		x = nx
+	end
+
+	return face, x, y
+end
+
+function CubeMapHelper.getCoordDy(face, size, x, y, dy)
+	-- TODO: dx/dy should never be greater than size, to simplify calculations
+	local ax, ay = x, y
+	local ny = y + dy
+
+	if ny < 0 then
+		local ySizeF, yXF, yYF, yOff, xSizeF, xXF, xYF, xOff = unpack(topFaceModifiers[face])
+		y = size * ySizeF + ax * yXF + ay * yYF + yOff
+
+		if xSizeF then			
+			x = size * xSizeF + ax * xXF + ay * xYF + xOff
+		end
+
+		face = adjacentFaceMap[face][1]
+	elseif ny >= size then
+		local ySizeF, yXF, yYF, yOff, xSizeF, xXF, xYF, xOff = unpack(bottomFaceModifiers[face])
+		y = size * ySizeF + ax * yXF + ay * yYF + yOff
+
+		if xSizeF then			
+			x = size * xSizeF + ax * xXF + ay * xYF + xOff
+		end
+
+		face = adjacentFaceMap[face][3]
+	else
+		y = ny
 	end
 
 	return face, x, y

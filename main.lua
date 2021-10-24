@@ -140,7 +140,7 @@ local function generate()
 	love.graphics.clear(0, 0, 0, 1.0)
 
 	local size = 2 ^ scale + 1
-	genesis:generate(size, math.random())
+	genesis:generate(size)
 
 	landColorMap = {}
 	local landGroupCount = #genesis:getLandGroups()

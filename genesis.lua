@@ -5,6 +5,7 @@ local Tile = require 'tile'
 local TileGroup = require 'tilegroup'
 local River = require 'river'
 local RiverGroup = require 'rivergroup'
+local CubeMapHelper = require 'cubemaphelper'
 
 require 'constants'
 
@@ -12,20 +13,6 @@ local mmin, mfloor, mrandom, mhuge = math.min, math.floor, math.random, math.hug
 
 local Genesis = {}
 Genesis.__index = Genesis
-
-local neighbourFaceMap = {
-	--[[
-	this map helps find neighbour faces for a given face number
-	the key is the current face number and the values are adjacent face 
-	numbers in order TOP, LEFT, RIGHT, BOTTOM
-	--]]
-	[1] = { 5, 4, 6, 2 },
-	[2] = { 5, 1, 6, 3 },
-	[3] = { 5, 2, 6, 4 },
-	[4] = { 5, 3, 6, 1 },
-	[5] = { 3, 4, 1, 2 },
-	[6] = { 1, 4, 3, 2 },
-}
 
 local biomeMap = {
 	{ 	BiomeType.ICE, 					BiomeType.TUNDRA, 				BiomeType.GRASSLAND, 	
@@ -43,7 +30,6 @@ local biomeMap = {
 }
 
 local function getBiome(tile)
-
 	return biomeMap[tile:getMoistureType().id][6 - tile:getHeatType().id + 1]
 end
 
@@ -114,111 +100,23 @@ local function adjustMoistureMap(self)
 end
 
 local function getTop(self, face, x, y)
-	local size = self._size
-
-	local y = y - 1
-
-	if y >= 0 then
-		return self:getTile(face, x, y)
-	else 
-		local nextFace = neighbourFaceMap[face][1]
-
-		local y = size - 1
-
-		if face == 2 then -- nextFace 5
-			y = size - 1 - x
-			x = size - 1
-		elseif face == 3 then -- nextFace 5
-			y = 0
-			x = size - 1 - x
-		elseif face == 4 then -- nextFace 5 
-			y = x
-			x = 0
-		elseif face == 5 then -- nextFace 3
-			y = 0
-			x = size - 1 - x			
-		end
-
-		return self:getTile(nextFace, x, y)
-	end
+	local face, x, y = CubeMapHelper.getCoordDy(face, self._size, x, y, -1)
+	return self:getTile(face, x, y)
 end
 
 local function getLeft(self, face, x, y)
-	local size = self._size
-
-	local x = x - 1
-
-	if x >= 0 then
-		return self:getTile(face, x, y)
-	else
-		local nextFace = neighbourFaceMap[face][2]
-
-		x = size - 1
-
-		if face == 5 then -- nextFace 4
-			x = y
-			y = 0
-		elseif face == 6 then -- nextFace 4
-			x = size - 1 - y
-			y = size - 1
-		end
-
-		return self:getTile(nextFace, x, y)
-	end
+	local face, x, y = CubeMapHelper.getCoordDx(face, self._size, x, y, -1)
+	return self:getTile(face, x, y)
 end
 
 local function getRight(self, face, x, y)
-	local size = self._size
-
-	local x = x + 1
-
-	if x < size then
-		return self:getTile(face, x, y)
-	else
-		local nextFace = neighbourFaceMap[face][4]
-
-		x = 0
-
-		if face == 5 then -- nextFace 2
-			x = size - 1 - y
-			y = size - 1
-		elseif face == 6 then -- nextFace 2
-			x = size - 1 - y
-			y = size - 1
-		end
-
-		return self:getTile(nextFace, x, y)
-	end
+	local face, x, y = CubeMapHelper.getCoordDx(face, self._size, x, y, 1)
+	return self:getTile(face, x, y)
 end
 
 local function getBottom(self, face, x, y)
-	local size = self._size
-
-	local y = y + 1
-
-	if y < size then
-		return self:getTile(face, x, y)
-	else
-		local nextFace = neighbourFaceMap[face][3]
-
-		local y = 0
-
-		if face == 2 then -- nextFace 6
-			y = x
-			x = size - 1
-		elseif face == 3 then -- nextFace 6
-			y = size - 1
-			x = size - 1 - x
-		elseif face == 4 then -- nextFace 6
-			y = size - 1 - x
-			x = 0
-		elseif face == 6 then -- nextFace 3
-			y = size - 1
-			x = size - 1 - x
-		end
-
-		return self:getTile(nextFace, x, y)
-	end
+	local face, x, y = CubeMapHelper.getCoordDy(face, self._size, x, y, 1)
+	return self:getTile(face, x, y)
 end
 
 local function updateNeighbours(self)

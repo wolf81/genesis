@@ -82,7 +82,7 @@ local function updateMapTitle()
 	end
 end
 
-local function getHeightBorderColor(tile, color)
+local function applyHeightBorderColorIfNeeded(tile, color)
 	if bband(tile:getFlags(), TileFlags.EQ_HEIGHT_ALL) ~= TileFlags.EQ_HEIGHT_ALL and tile:getHeightType().id < 6 then
 		color = { 
 			lerp(color[1], 0.0, 0.4), 
@@ -95,7 +95,7 @@ local function getHeightBorderColor(tile, color)
 	return color
 end
 
-local function getBiomeBorderColor(tile, color)
+local function applyBiomeBorderColorIfNeeded(tile, color)
 	if bband(tile:getFlags(), TileFlags.EQ_BIOME_ALL) ~= TileFlags.EQ_BIOME_ALL and tile:getHeightType().id < 6 then
 		color = { 
 			lerp(color[1], 0.0, 0.4), 
@@ -217,12 +217,12 @@ function love.draw()
 		return
 	end
 
-	local getBorderColor = (
-		mapType == 3 and getBiomeBorderColor or
-		getHeightBorderColor
+	local applyBorderColor = (
+		mapType == 3 and applyBiomeBorderColorIfNeeded or
+		applyHeightBorderColorIfNeeded
 	)
 
-	local getColor = (
+	local getTileColor = (
 		mapType == 0 and getHeightColor or 
 		mapType == 1 and getHeatColor or 
 		mapType == 2 and getMoistureColor or
@@ -235,9 +235,8 @@ function love.draw()
 		for x = 0, w - 1 do
 			for y = 0, h - 1 do
 				local tile = genesis:getTile(face, x, y)			
-				local c = getColor(tile)
-
-				c = getBorderColor(tile, c)
+				local c = getTileColor(tile)
+				c = applyBorderColor(tile, c)
 
 				local xi = x + (ox * w) + 0.5
 				local yi = y + (oy * h) + 0.5

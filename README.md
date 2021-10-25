@@ -3,7 +3,11 @@
 *"In the beginning God created the heaven and the earth."*
 	- The Bible, Genesis 1 verse 1
 
-Genesis is a Lua / LÖVE2D based world generator. My goals with Genesis are:
+Genesis is a Lua / LÖVE2D based world generator. While this library wont allow 
+anyone to create a heaven, at least one can create an earth, so halfway there to
+becoming a god :)
+
+My goals with Genesis are:
 
 * To have a library that can be easily integrated into games
 * To be able to generate interesting random patterns
@@ -103,20 +107,21 @@ tile:getMoistureType() --> gets an integer indicating the moisture type, e.g. 5
 ```
 
 The `get___Value()` functions will return normalized values in 0.0 to 1.0 range. 
-These values are suitable for rendering terrain with smooth color changes (e.g. 
-grayscale rendering). 
+These values are suitable for rendering tiles with smooth color changes (e.g. 
+grayscale rendering of a height map). 
 
-The `get___Type()` functions will return integer values 0 or greater. 0 means 
-the type is undefined. Values 1 and greater indicate a distinct type. These 
-values are suitable for drawing terrain in a solid color.
+The `get___Type()` functions will return string contants. The string constants 
+are defined in `constants.lua`. These values are suitable for drawing tiles
+with a solid color.
 
 Another useful function for figuring out if an adjacent tile has the same 
-terrain type is the `getBitmask()` function. The `Tile` class contains some mask 
-constants. In order to check if all adjacent tiles are of same height type as 
-current tile, we can check as follows:
+terrain type or biome is the `getFlags()` function. The value returned can 
+contain various TileFlags as defined in `constants.lua`. In order to check if 
+all adjacent tiles are of same height type as current tile, we can check as 
+follows:
 
 ```lua
-bit.band(tile:getBitmask(), Tile.MASK_EQ_ALL) == Tile.MASK_EQ_ALL
+bit.band(tile:getFlags(), TileFlags.EQ_HEIGHT_ALL) == TileFlags.EQ_HEIGHT_ALL
 ```
 	
 # FURTHER READING

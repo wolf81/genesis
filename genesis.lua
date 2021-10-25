@@ -135,78 +135,66 @@ end
 local function getData(self, seed)
 	if seed < 1.0 then seed = seed * 256 end
 
-	self._heightMap = NoiseMap(self._size, seed % 128, 6, 0.5)
+	self._heightMap = NoiseMap(self._size, seed % 127, 6, 0.5)
 	
 	self._heatMap = CombineMap(self._size, 
-		NoiseMap(self._size, seed % 64), 
+		NoiseMap(self._size, seed % 63), 
 		GradientMap(self._size, 4, 3.0)
 	)
 
-	self._moistureMap = NoiseMap(self._size, seed % 32, 4, 2.0)
+	self._moistureMap = NoiseMap(self._size, seed % 31, 4, 2.0)
 end
 
 local function loadTiles(self)
-	local tiles = {}
+	self._tiles = CubeMapHelper.new(self._size, function(face, x, y)
+		-- set height value & type
+		local heightValue, min, max = self._heightMap:getValue(face, x, y)
+		heightValue = (heightValue - min) / (max - min)
 
-	for face = 1, 6 do 
-		tiles[face] = {}
+		local tile = Tile(face, x, y)
 
-		for x = 0, self._size - 1 do
-			tiles[face][x] = {}
+		local heightType = getHeightType(heightValue)
+		tile:setHeightType(heightType)
+		tile:setHeightValue(heightValue)
 
-			for y = 0, self._size - 1 do
-				-- set height value & type
-				local heightValue, min, max = self._heightMap:getValue(face, x, y)
-				heightValue = (heightValue - min) / (max - min)
+		tile:setCollidable(
+			heightType ~= HeightType.DEEP_WATER and 
+			heightType ~= HeightType.SHALLOW_WATER
+		)
 
-				local tile = Tile(face, x, y)
+		-- set heat value & type
+		local heatValue = self._heatMap:getValue(face, x, y)
 
-				local heightType = getHeightType(heightValue)
-				tile:setHeightType(heightType)
-				tile:setHeightValue(heightValue)
-
-				tile:setCollidable(
-					heightType ~= HeightType.DEEP_WATER and 
-					heightType ~= HeightType.SHALLOW_WATER
-				)
-
-				-- set heat value & type
-				local heatValue = self._heatMap:getValue(face, x, y)
-
-				if heightType == HeightType.FOREST then
-					heatValue = heatValue - heightValue * 0.1
-				elseif heightType == HeightType.MOUNTAIN then
-					heatValue = heatValue - heightValue * 0.25
-				elseif heightType == HeightType.SNOW then
-					heatValue = heatValue - heightValue * 0.4
-				else
-					heatValue = heatValue + heightValue * 0.01
-				end
-
-				tile:setHeatValue(heatValue)
-				tile:setHeatType(getHeatType(heatValue))
-
-				-- set moisture value & type
-				local moistureValue, min, max = self._moistureMap:getValue(face, x, y)
-				moistureValue = (moistureValue - min) / (max - min)
-
-				if heightType == HeightType.DEEP_WATER then 
-					moistureValue = mmin(moistureValue + 8 * heightValue, 1.0)
-				elseif heightType == HeightType.SHALLOW_WATER then 
-					moistureValue = mmin(moistureValue + 3 * heightValue, 1.0)
-				elseif heightType == HeightType.COAST then 
-					moistureValue = mmin(moistureValue + 1 * heightValue, 1.0)
-				end
-
-				tile:setMoistureValue(moistureValue)
-				tile:setMoistureType(getMoistureType(moistureValue))
-
-				tiles[face][x][y] = tile
-			end
+		if heightType == HeightType.FOREST then
+			heatValue = heatValue - heightValue * 0.1
+		elseif heightType == HeightType.MOUNTAIN then
+			heatValue = heatValue - heightValue * 0.25
+		elseif heightType == HeightType.SNOW then
+			heatValue = heatValue - heightValue * 0.4
+		else
+			heatValue = heatValue + heightValue * 0.01
 		end
-	end
 
-	self._tiles = tiles
+		tile:setHeatValue(heatValue)
+		tile:setHeatType(getHeatType(heatValue))
+
+		-- set moisture value & type
+		local moistureValue, min, max = self._moistureMap:getValue(face, x, y)
+		moistureValue = (moistureValue - min) / (max - min)
+
+		if heightType == HeightType.DEEP_WATER then 
+			moistureValue = mmin(moistureValue + 8 * heightValue, 1.0)
+		elseif heightType == HeightType.SHALLOW_WATER then 
+			moistureValue = mmin(moistureValue + 3 * heightValue, 1.0)
+		elseif heightType == HeightType.COAST then 
+			moistureValue = mmin(moistureValue + 1 * heightValue, 1.0)
+		end
+
+		tile:setMoistureValue(moistureValue)
+		tile:setMoistureType(getMoistureType(moistureValue))
+
+		return tile
+	end)
 end
 
 local function floodFillTile(tile, tileGroup, stack)
@@ -374,44 +362,38 @@ end
 local function buildRiverGroups(self)
 	local riverGroups = {}
 
-	local size = self._size
+	for face, x, y in CubeMapHelper.each(self._size) do
+		local tile = self._tiles[face][x][y]
+		if #tile:getRivers() > 1 then
+			-- intersection
+			local riverGroup = nil
 
-	for face = 1, 6 do
-		for x = 0, size - 1 do
-			for y = 0, size - 1 do
-				local tile = self._tiles[face][x][y]
-				if #tile:getRivers() > 1 then
-					-- intersection
-					local riverGroup = nil
-
-					-- does a rivergroup already exists for this group
-					for _, tileRiver in ipairs(tile:getRivers()) do
-						for _, rg in ipairs(riverGroups) do
-							for _, river in ipairs(rg:getRivers()) do
-								if river:getId() == tileRiver:getId() then
-									riverGroup = rg
-								end
-								if riverGroup ~= nil then break end
-							end
-							if riverGroup ~= nil then break end
+			-- does a rivergroup already exists for this group
+			for _, tileRiver in ipairs(tile:getRivers()) do
+				for _, rg in ipairs(riverGroups) do
+					for _, river in ipairs(rg:getRivers()) do
+						if river:getId() == tileRiver:getId() then
+							riverGroup = rg
 						end
 						if riverGroup ~= nil then break end
 					end
+					if riverGroup ~= nil then break end
+				end
+				if riverGroup ~= nil then break end
+			end
 
-					if riverGroup ~= nil then
-						for _, river in ipairs(tile:getRivers()) do
-							if not riverGroup:containsRiver(river) then
-								riverGroup:addRiver(river)
-							end
-						end
-					else
-						riverGroup = RiverGroup()
-						for _, river in ipairs(tile:getRivers()) do
-							riverGroup:addRiver(river)
-						end
-						table.insert(riverGroups, riverGroup)
+			if riverGroup ~= nil then
+				for _, river in ipairs(tile:getRivers()) do
+					if not riverGroup:containsRiver(river) then
+						riverGroup:addRiver(river)
 					end
 				end
+			else
+				riverGroup = RiverGroup()
+				for _, river in ipairs(tile:getRivers()) do
+					riverGroup:addRiver(river)
+				end
+				table.insert(riverGroups, riverGroup)
 			end
 		end
 	end
@@ -635,12 +617,13 @@ local function generateRivers(self)
 	-- min length 20,
 	-- max intersections 2
 
-	local riverCount = 40
+	local riverCount = math.ceil(math.sqrt(self._size))
 	local rivers = {}
 
 	local size = self._size
+	local attempts = size * 2
 
-	while riverCount > 0 and attempts < 1000 do
+	while riverCount > 0 and attempts > 0 do
 		local face = mfloor(mrandom() * 6) + 1
 		local x = mfloor(mrandom() * size)
 		local y = mfloor(mrandom() * size)
@@ -669,11 +652,9 @@ local function generateRivers(self)
 				end
 			end
 
-			attempts = attempts + 1
+			attempts = attempts - 1
 		end
 	end
-
-	print('add rivers:', #rivers)
 
 	self._rivers = rivers
 end

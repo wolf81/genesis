@@ -170,6 +170,38 @@ function CubeMapHelper.getCoordDy(face, size, x, y, dy)
 	return face, x, y
 end
 
+--[[
+Create a new cube map table of specified size. E.g when called with a size 10, 
+the table will have 6 x 10 x 10 values (6 faces times width times height).
+
+Optionally provide an initializer function for each value in the cube map table.
+]]
+function CubeMapHelper.new(size, f)
+	local f = f or function(face, x, y) return 0 end
+	local size = size - 1
+
+	local values = {}
+
+	for face = 1, 6 do 
+		values[face] = {}
+
+		for x = 0, size do
+			values[face][x] = {}
+
+			for y = 0, size do
+				values[face][x][y] = f(face, x, y)
+			end
+		end
+	end	
+
+	return values
+end
+
+--[[
+A utility function to retrieve all coordinates on a cube of arbitrary size. When 
+calling the function provide a size, then each iteration will return a face, x 
+and y position for each position on the cube.
+]]
 function CubeMapHelper.each(size)
 	local finished = false
 

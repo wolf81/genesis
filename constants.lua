@@ -8,7 +8,7 @@ Direction = enum {
 }
 
 HeightType = enum { 
-	"SNOW", 
+	"SNOW",
 	"MOUNTAIN", 
 	"FOREST", 
 	"PLAIN", 

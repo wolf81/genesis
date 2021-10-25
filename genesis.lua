@@ -16,17 +16,17 @@ Genesis.__index = Genesis
 
 local biomeMap = {
 	{ 	BiomeType.ICE, 					BiomeType.TUNDRA, 				BiomeType.GRASSLAND, 	
-		BiomeType.DESERT, 				BiomeType.DESERT, 				BiomeType.DESERT },
+		BiomeType.DESERT, 				BiomeType.DESERT, 				BiomeType.DESERT 				},
 	{ 	BiomeType.ICE, 					BiomeType.TUNDRA, 				BiomeType.GRASSLAND, 	
-		BiomeType.DESERT, 				BiomeType.DESERT, 				BiomeType.DESERT },
+		BiomeType.DESERT, 				BiomeType.DESERT, 				BiomeType.DESERT 				},
 	{ 	BiomeType.ICE, 					BiomeType.TUNDRA, 				BiomeType.WOODLAND, 		
-		BiomeType.WOODLAND, 			BiomeType.SAVANNA, 				BiomeType.SAVANNA },
+		BiomeType.WOODLAND, 			BiomeType.SAVANNA, 				BiomeType.SAVANNA 				},
 	{ 	BiomeType.ICE, 					BiomeType.TUNDRA, 				BiomeType.BOREAL_FOREST, 
-		BiomeType.WOODLAND, 			BiomeType.SAVANNA, 				BiomeType.SAVANNA, },
+		BiomeType.WOODLAND, 			BiomeType.SAVANNA, 				BiomeType.SAVANNA, 				},
 	{ 	BiomeType.ICE, 					BiomeType.TUNDRA, 				BiomeType.BOREAL_FOREST, 
-		BiomeType.SEASONAL_FOREST, 		BiomeType.TROPICAL_RAINFOREST, 	BiomeType.TROPICAL_RAINFOREST },
+		BiomeType.SEASONAL_FOREST, 		BiomeType.TROPICAL_RAINFOREST, 	BiomeType.TROPICAL_RAINFOREST 	},
 	{ 	BiomeType.ICE, 					BiomeType.TUNDRA, 				BiomeType.BOREAL_FOREST, 
-		BiomeType.TEMPERATE_RAINFOREST, BiomeType.TROPICAL_RAINFOREST, 	BiomeType.TROPICAL_RAINFOREST },	
+		BiomeType.TEMPERATE_RAINFOREST, BiomeType.TROPICAL_RAINFOREST, 	BiomeType.TROPICAL_RAINFOREST 	},	
 }
 
 local function getBiome(tile)

@@ -170,4 +170,36 @@ function CubeMapHelper.getCoordDy(face, size, x, y, dy)
 	return face, x, y
 end
 
+function CubeMapHelper.each(size)
+	local finished = false
+
+	local face, x, y, size = 1, -1, 0, size - 1
+
+	return function()
+		while not finished do
+			x = x + 1
+
+			if x > size then
+				y = y + 1
+				x = 0
+
+				if y > size then
+					face = face + 1
+					y = 0
+
+					if face > 6 then
+						finished = true
+					end
+				end
+			end
+
+			if not finished then
+				return face, x, y
+			end
+		end
+
+		return nil
+	end
+end
+
 return CubeMapHelper

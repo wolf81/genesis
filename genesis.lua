@@ -34,16 +34,11 @@ local function getBiome(tile)
 end
 
 local function generateBiomeMap(self)
-	local size = self._size
-	for face = 1, 6 do
-		for x = 0, size - 1 do
-			for y = 0, size - 1 do
-				local tile = self._tiles[face][x][y]
+	for face, x, y in CubeMapHelper.each(self._size) do
+		local tile = self._tiles[face][x][y]
 
-				if tile:isCollidable() then
-					tile:setBiomeType(getBiome(tile))
-				end
-			end
+		if tile:isCollidable() then
+			tile:setBiomeType(getBiome(tile))
 		end
 	end
 end 
@@ -85,16 +80,10 @@ local function addMoisture(self, tile, radius)
 end
 
 local function adjustMoistureMap(self)
-	local size = self._size
-
-	for face = 1, 6 do
-		for x = 0, size - 1 do
-			for y = 0, size - 1 do
-				local tile = self._tiles[face][x][y]
-				if tile:getHeightType() == HeightType.RIVER then
-					addMoisture(self, tile, 60)
-				end
-			end
+	for face, x, y in CubeMapHelper.each(self._size) do
+		local tile = self._tiles[face][x][y]
+		if tile:getHeightType() == HeightType.RIVER then
+			addMoisture(self, tile, 60)
 		end
 	end
 end
@@ -120,45 +109,27 @@ local function getBottom(self, face, x, y)
 end
 
 local function updateNeighbours(self)
-	local size = self._size
-
-	for face = 1, 6 do
-		for x = 0, size - 1 do
-			for y = 0, size - 1 do
-				local tile = self._tiles[face][x][y]
-				tile:setTop(getTop(self, face, x, y))
-				tile:setLeft(getLeft(self, face, x, y))
-				tile:setRight(getRight(self, face, x, y))
-				tile:setBottom(getBottom(self, face, x, y))
-			end
-		end
+	for face, x, y in CubeMapHelper.each(self._size) do
+		local tile = self._tiles[face][x][y]
+		tile:setTop(getTop(self, face, x, y))
+		tile:setLeft(getLeft(self, face, x, y))
+		tile:setRight(getRight(self, face, x, y))
+		tile:setBottom(getBottom(self, face, x, y))
 	end
 end
 
 local function updateTileHeightFlags(self)
-	local size = self._size
-
-	for face = 1, 6 do
-		for x = 0, size - 1 do
-			for y = 0, size - 1 do
-				local tile = self._tiles[face][x][y]
-				tile:updateHeightFlags()
-			end
-		end
-	end	
+	for face, x, y in CubeMapHelper.each(self._size) do
+		local tile = self._tiles[face][x][y]
+		tile:updateHeightFlags()
+	end
 end 
 
 local function updateTileBiomeFlags(self)
-	local size = self._size
-
-	for face = 1, 6 do
-		for x = 0, size - 1 do
-			for y = 0, size - 1 do
-				local tile = self._tiles[face][x][y]
-				tile:updateBiomeFlags()
-			end
-		end
-	end	
+	for face, x, y in CubeMapHelper.each(self._size) do
+		local tile = self._tiles[face][x][y]
+		tile:updateBiomeFlags()
+	end
 end
 
 local function getData(self, seed)
@@ -279,36 +250,31 @@ local function floodFill(self)
 	self._landGroups = {}
 	self._waterGroups = {}
 
-	local size = self._size
-	for face = 1, 6 do
-		for x = 0, size - 1 do
-			for y = 0, size - 1 do
-				local tile = self._tiles[face][x][y]
+	for face, x, y in CubeMapHelper.each(self._size) do
+		local tile = self._tiles[face][x][y]
 
-				if not tile:isFloodFilled() then
-					if tile:isCollidable() then
-						local tileGroup = TileGroup(TileGroupType.LAND)
-						stack[#stack + 1] = tile
+		if not tile:isFloodFilled() then
+			if tile:isCollidable() then
+				local tileGroup = TileGroup(TileGroupType.LAND)
+				stack[#stack + 1] = tile
 
-						while #stack > 0 do
-							floodFillTile(table.remove(stack), tileGroup, stack)
-						end
+				while #stack > 0 do
+					floodFillTile(table.remove(stack), tileGroup, stack)
+				end
 
-						if tileGroup:getTileCount() > 0 then
-							table.insert(self._landGroups, tileGroup)
-						end
-					else						
-						local tileGroup = TileGroup(TileGroupType.WATER)
-						stack[#stack + 1] = tile
+				if tileGroup:getTileCount() > 0 then
+					table.insert(self._landGroups, tileGroup)
+				end
+			else						
+				local tileGroup = TileGroup(TileGroupType.WATER)
+				stack[#stack + 1] = tile
 
-						while #stack > 0 do
-							floodFillTile(table.remove(stack), tileGroup, stack)
-						end
+				while #stack > 0 do
+					floodFillTile(table.remove(stack), tileGroup, stack)
+				end
 
-						if tileGroup:getTileCount() > 0 then
-							table.insert(self._waterGroups, tileGroup)
-						end
-					end
+				if tileGroup:getTileCount() > 0 then
+					table.insert(self._waterGroups, tileGroup)
 				end
 			end
 		end

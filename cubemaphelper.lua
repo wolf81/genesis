@@ -27,181 +27,85 @@ local adjacentFaceMap = {
 	[6] = { 1, 4, 3, 2 },
 }
 
---[[
-The following tables are used to translate x and y coordinates when moving 
-across faces on the cube.
-
-In order to better understand the translation tables remember the faces of the 
-cubemap are ordered as such:
-
-    5
-	1 2 3 4
-	6
-
-Moving from face 1 vertically to face 5 or 6 is trivial. The x coordinate stays 
-the same, but the y coordinate changes. Likewise moving horizontally across 
-faces 1 to 4 is trivial as well, the x coordinate changes but the y coordinate 
-stays the same.
-
-The situation becomes more tricky when moving from, say, face 2 to 5. In this 
-case the top x coordinates of face 2 are adjacent to the right y coordinates of 
-face 5. So in this case we need to translate the coordinates. For this reason we
-can use the translation tables, to simplify these calculations.
-
-Each table row is indexed by face number and has either 4 or 8 entries.
-
-The first 4 entries are to be used for the primary axis, the remaining entries 
-are to be used for the secondary axis. 
-
-The primary axis is the axis that we move over. The secondary axis might be 
-affected when moving over primary axis and if this is true, entries are added.
-If the secondary axis is not affected from movement across faces, it's value 
-remains unchanged.
-
-The entries are to be used as follows:
-- 1: primary axis size multiplier
-- 2: primary axis x-coord multiplier
-- 3: primary axis y-coord multiplier
-- 4: primary axis offset multiplier
-- 5: secondary axis size multiplier
-- 6: secondary axis x-coord multiplier
-- 7: secondary axis y-coord multiplier
-- 8: secondary axis offset multiplier
---]]
-
-local topFaceTranslation = { 
-	[1] = {  1,  0,  0,  1,  				},
-	[2] = {  1, -1,  0,  1,	 1,  0,  0,  1  },
-	[3] = {  0,  0,  0,  0,  1, -1,  0,  1  },
-	[4] = {  0,  1,  0,  0,  0,  0,  0,  0  },
-	[5] = {  0,  0,  0,  0,  1, -1,  0,  1  },
-	[6] = {  1,  0,  0,  1,  				},
-}
-
-local bottomFaceTranslation = {
-	[1] = {  0,  0,  0,  0,  				},
-	[2] = {  0,  1,  0,  0,	 1,  0,  0,  1  },
-	[3] = {  1,  0,  0,  1,  1, -1,  0,  1  },
-	[4] = {  1, -1,  0,  1,  0,  0,  0,  0  },
-	[5] = {  0,  0,  0,  0,  				},
-	[6] = {  1,  0,  0,  1,  1, -1,  0,  1  },
-}
-
-local leftFaceTranslation = {
-	[1] = {  1,  0,  0,  1,  				},
-	[2] = {  1,  0,  0,  1,	 				},
-	[3] = {  1,  0,  0,  1,  				},
-	[4] = {  1,  0,  0,  1,  				},
-	[5] = {  0,  0,  1,  0,  0,  0,  0,  0  },
-	[6] = {  1,  0, -1,  1,  1,  0,  0,  1  },
-}
-
-local rightFaceTranslation = {
-	[1] = {  0,  0,  0,  0,  				},
-	[2] = {  0,  0,  0,  0,	 				},
-	[3] = {  0,  0,  0,  0,  				},
-	[4] = {  0,  0,  0,  0,  				},
-	[5] = {  1,  0, -1,  1,  1,  0,  0,  1  },
-	[6] = {  1,  0, -1,  1,  1,  0,  0,  1  },	
-}
-
 function CubeMapHelper.getCoord(face, size, x, y, dx, dy)
 	local face, x, y = CubeMapHelper.getCoordDx(face, size, x, y, dx)
 	return CubeMapHelper.getCoordDy(face, size, x, y, dy)
 end
 
 function CubeMapHelper.getCoordDx(face, size, x, y, dx)
-	-- TODO: dx/dy should never be greater than size, to simplify calculations
-	local ax, ay = x, y
-	local nx = x + dx
+	local x = x + dx
 
-	if nx < 0 then
-		local xSizeF, xXF, xYF, xOff, ySizeF, yXF, yYF, yOff = unpack(leftFaceTranslation[face])
-		x = size * xSizeF + ax * xXF + ay * xYF + xOff * dx
+	if x > size - 1 then
+		dx = x - size
 
-		if ySizeF then			
-			y = size * ySizeF + ax * yXF + ay * yYF + yOff * dx
+		local nextFace = adjacentFaceMap[face][4]
+
+		if face == 5 then
+			face, x, y = CubeMapHelper.getCoordDy(nextFace, size, size - 1 - y, 0, dx)
+		elseif face == 6 then			
+			face, x, y = CubeMapHelper.getCoordDy(nextFace, size, y, size - 1, -(dx))
+		else
+			face, x, y = CubeMapHelper.getCoordDx(nextFace, size, 0, y, dx)
 		end
 
-		face = adjacentFaceMap[face][2]
-	elseif nx >= size then
-		local xSizeF, xXF, xYF, xOff, ySizeF, yXF, yYF, yOff = unpack(rightFaceTranslation[face])
-		x = size * xSizeF + ax * xXF + ay * xYF - xOff * dx
+	elseif x < 0 then
+		dx = x + size
 
-		if ySizeF then			
-			y = size * ySizeF + ax * yXF + ay * yYF - yOff * dx
+		local nextFace = adjacentFaceMap[face][2]
+
+		if face == 5 then
+			face, x, y = CubeMapHelper.getCoordDy(nextFace, size, y, 0, size - dx - 1)
+		elseif face == 6 then
+			face, x, y = CubeMapHelper.getCoordDy(nextFace, size, size - 1 - y, size - 1, -(size - dx - 1))
+		else
+			face, x, y = CubeMapHelper.getCoordDx(nextFace, size, size - 1, y, -(size - 1 - dx))
 		end
-
-		face = adjacentFaceMap[face][4]
-	else
-		x = nx
 	end
 
 	return face, x, y
 end
 
 function CubeMapHelper.getCoordDy(face, size, x, y, dy)
-	-- TODO: dx/dy should never be greater than size, to simplify calculations
-	local ax, ay = x, y
-	local ny = y + dy
+	local y = y + dy
 
-	if ny < 0 then
-		local ySizeF, yXF, yYF, yOff, xSizeF, xXF, xYF, xOff = unpack(topFaceTranslation[face])
-		y = size * ySizeF + ax * yXF + ay * yYF + yOff * dy
+	if y > size - 1 then		
+		dy = y - size
 
-		if xSizeF then			
-			x = size * xSizeF + ax * xXF + ay * xYF + xOff * dy
+		local nextFace = adjacentFaceMap[face][3]
+
+		if face == 2 then
+			face, x, y = CubeMapHelper.getCoordDx(nextFace, size, size - 1, x, -(dy))			
+			--face, x, y = CubeMapHelper.getCoordDx(nextFace, size, 0, size - x - 1, dy)			
+		elseif face == 3 then
+			face, x, y = CubeMapHelper.getCoordDy(nextFace, size, size - 1 - x, size - 1, -(dy))
+		elseif face == 4 then
+			face, x, y = CubeMapHelper.getCoordDx(nextFace, size, 0, size - x - 1, dy)			
+		elseif face == 6 then
+			face, x, y = CubeMapHelper.getCoordDy(nextFace, size, size - 1 - x, size - 1, -(dy))
+		else -- face: 2, 5
+			face, x, y = CubeMapHelper.getCoordDy(nextFace, size, x, 0, dy)
 		end
+	elseif y < 0 then
+		dy = y + size
 
-		face = adjacentFaceMap[face][1]
-	elseif ny >= size then
-		local ySizeF, yXF, yYF, yOff, xSizeF, xXF, xYF, xOff = unpack(bottomFaceTranslation[face])
-		y = size * ySizeF + ax * yXF + ay * yYF - yOff * dy
+		local nextFace = adjacentFaceMap[face][1]
 
-		if xSizeF then			
-			x = size * xSizeF + ax * xXF + ay * xYF - xOff * dy
+		if face == 3 then
+			face, x, y = CubeMapHelper.getCoordDy(nextFace, size, size - 1 - x, 0, size - 1 - dy)
+		elseif face == 2 then
+			face, x, y = CubeMapHelper.getCoordDx(nextFace, size, size - 1, size - 1 - x, -(size - 1 - dy))
+		elseif face == 4 then
+			face, x, y = CubeMapHelper.getCoordDx(nextFace, size, 0, x, size - 1 - dy)	
+		elseif face == 5 then
+			face, x, y = CubeMapHelper.getCoordDy(nextFace, size, size - 1 - x, 0, size - 1 - dy)
+		else -- face: 1, 6
+			face, x, y = CubeMapHelper.getCoordDy(nextFace, size, x, size - 1, -(size - 1 - dy))
 		end
-
-		face = adjacentFaceMap[face][3]
-	else
-		y = ny
 	end
 
 	return face, x, y
 end
 
---[[
-Create a new cube map table of specified size. E.g when called with a size 10, 
-the table will have 6 x 10 x 10 values (6 faces times width times height).
-
-Optionally provide an initializer function for each value in the cube map table.
-]]
-function CubeMapHelper.new(size, f)
-	local f = f or function(face, x, y) return 0 end
-	local size = size - 1
-
-	local values = {}
-
-	for face = 1, 6 do 
-		values[face] = {}
-
-		for x = 0, size do
-			values[face][x] = {}
-
-			for y = 0, size do
-				values[face][x][y] = f(face, x, y)
-			end
-		end
-	end	
-
-	return values
-end
-
---[[
-A utility function to retrieve all coordinates on a cube of arbitrary size. When 
-calling the function provide a size, then each iteration will return a face, x 
-and y position for each position on the cube.
-]]
 function CubeMapHelper.each(size)
 	local finished = false
 

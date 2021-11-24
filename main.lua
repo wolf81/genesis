@@ -1,6 +1,8 @@
 local Genesis = require 'genesis'
 local Tile = require 'tile'
 
+local CubeMapHelper = require 'cubemaphelper'
+
 local bband = bit.band
 
 require 'functions'
@@ -166,7 +168,148 @@ function love.load()
 
 	generate()
 
-	updateMapTitle()
+	--updateMapTitle()
+
+	local size = 4
+
+	--[[ LEFT
+
+	print("\n*** LEFT ***\n")
+
+	local f, x, y = CubeMapHelper.getCoordDx(1, size, 2, 2, -5)
+	print('[' .. f .. ']', x, y)
+
+	print()
+
+	local f, x, y = CubeMapHelper.getCoordDx(2, size, 2, 2, -3)
+	print('[' .. f .. ']', x, y)
+
+	print()
+
+	local f, x, y = CubeMapHelper.getCoordDx(3, size, 2, 2, -4)
+	print('[' .. f .. ']', x, y)
+
+	print()
+
+	local f, x, y = CubeMapHelper.getCoordDx(4, size, 2, 2, -4)
+	print('[' .. f .. ']', x, y)
+
+	print()
+
+	local f, x, y = CubeMapHelper.getCoordDx(5, size, 2, 2, -6)
+	print('[' .. f .. ']', x, y)
+
+	print()
+
+	local f, x, y = CubeMapHelper.getCoordDx(6, size, 2, 2, -5)
+	print('[' .. f .. ']', x, y)
+
+	print()
+
+	--]]
+
+	--[[ RIGHT
+
+	print("\n*** RIGHT ***\n")
+
+	local f, x, y = CubeMapHelper.getCoordDx(1, size, 2, 2, 3)
+	print('[' .. f .. ']', x, y)
+
+	print()
+
+	local f, x, y = CubeMapHelper.getCoordDx(2, size, 2, 2, 4)
+	print('[' .. f .. ']', x, y)
+
+	print()
+
+	local f, x, y = CubeMapHelper.getCoordDx(3, size, 2, 2, 5)
+	print('[' .. f .. ']', x, y)
+
+	print()
+
+	local f, x, y = CubeMapHelper.getCoordDx(4, size, 2, 2, 3)
+	print('[' .. f .. ']', x, y)
+
+	print()
+
+	local f, x, y = CubeMapHelper.getCoordDx(5, size, 2, 2, 5)
+	print('[' .. f .. ']', x, y)
+
+	print()
+
+	local f, x, y = CubeMapHelper.getCoordDx(6, size, 2, 2, 4)
+	print('[' .. f .. ']', x, y)
+
+	print()
+	--]]
+
+	--[[ UP	
+	print("\n*** UP ***\n")
+
+	local f, x, y = CubeMapHelper.getCoordDy(6, size, 2, 2, -3)
+	print('[' .. f .. ']', x, y)
+
+	print()
+
+	local f, x, y = CubeMapHelper.getCoordDy(2, size, 2, 2, -5)
+	print('[' .. f .. ']', x, y)
+
+	print()
+
+	local f, x, y = CubeMapHelper.getCoordDy(1, size, 2, 2, -4)
+	print('[' .. f .. ']', x, y)
+
+	print()
+
+	local f, x, y = CubeMapHelper.getCoordDy(3, size, 1, 2, -3)
+	print('[' .. f .. ']', x, y)
+
+	print()
+
+	local f, x, y = CubeMapHelper.getCoordDy(4, size, 2, 2, -5)
+	print('[' .. f .. ']', x, y)
+
+	print()
+
+	local f, x, y = CubeMapHelper.getCoordDy(5, size, 1, 2, -3)
+	print('[' .. f .. ']', x, y)
+
+	print()
+	--]]
+
+	--[[ DOWN
+	print("\n*** DOWN ***\n")
+
+	local f, x, y = CubeMapHelper.getCoordDy(6, size, 2, 2, 4)
+	print('[' .. f .. ']', x, y)
+
+	print()
+
+	local f, x, y = CubeMapHelper.getCoordDy(4, size, 1, 1, 3)
+	print('[' .. f .. ']', x, y)
+
+	print()
+
+	local f, x, y = CubeMapHelper.getCoordDy(5, size, 2, 2, 4)
+	print('[' .. f .. ']', x, y)
+
+	print()
+
+	local f, x, y = CubeMapHelper.getCoordDy(3, size, 2, 2, 3)
+	print('[' .. f .. ']', x, y)
+
+	print()
+
+	local f, x, y = CubeMapHelper.getCoordDy(1, size, 2, 2, 4)
+	print('[' .. f .. ']', x, y)
+
+	print()
+
+	local f, x, y = CubeMapHelper.getCoordDy(2, size, 2, 3, 3)
+	print('[' .. f .. ']', x, y)
+
+	print()
+	--]]
 end
 
 function love.draw()

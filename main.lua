@@ -388,6 +388,23 @@ function love.draw()
 	end
 end
 
+local function export()
+	for face = 1, 6 do
+		local size = genesis:getSize()
+		local image_data = love.image.newImageData(size, size)
+
+		for y = 0, size - 1 do
+			for x = 0, size - 1 do
+				local t = genesis:getTile(face, x, y)
+				local v = t:getHeightValue()
+				image_data:setPixel(x, y, v, v, v, 1.0)
+			end
+		end
+
+		image_data:encode('png', 'face' .. face .. '.png')
+	end
+end
+
 function love.keypressed(key, code)
 	-- generate a new random terrain
     if key == 'g' then
@@ -398,6 +415,10 @@ function love.keypressed(key, code)
     if key == 't' then
     	mapType = (mapType + 1) % 6
     	updateMapTitle()
+    end
+
+    if key == 'e' then
+    	export()
     end
 
     if key == 'escape' then

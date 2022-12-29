@@ -1,5 +1,9 @@
+local PATH = (...):match("(.-)[^%.]+$") 
+
 local mmin, mmax, msqrt = math.min, math.max, math.sqrt
-local Map = require 'map'
+local Map = require(PATH .. 'map')
+
+local lmath = love and love.math or lovr.math
 
 local NoiseMap = {}
 NoiseMap.__index = Map
@@ -13,7 +17,7 @@ local function fBm(x, y, z, octaves, frequency, amplitude)
 	local a = amplitude or 0.5
 
 	for i = 0, octaves do
-		v = v + a * love.math.noise(x * f, y * f, z * f)
+		v = v + a * lmath.noise(x * f, y * f, z * f)
 		f = f * lacunarity
 		a = a * gain
 	end

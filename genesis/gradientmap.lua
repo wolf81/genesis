@@ -1,5 +1,7 @@
+local PATH = (...):match("(.-)[^%.]+$") 
+
 local mmin, mmax, msqrt, mcos = math.min, math.max, math.sqrt, math.cos
-local Map = require 'map'
+local Map = require(PATH .. 'map')
 
 local GradientMap = {}
 GradientMap.__index = Map

@@ -1,12 +1,9 @@
-local Genesis = require 'genesis'
-local Tile = require 'tile'
+local genesis = require 'genesis'
 
-local CubeMapHelper = require 'cubemaphelper'
+local Tile = genesis.Tile
+local CubeMapHelper = genesis.CubemapHelper
 
 local bband = bit.band
-
-require 'functions'
-require 'constants'
 
 math.randomseed(os.time())
 
@@ -18,7 +15,7 @@ local scale = 8
 local mapType = 0
 local title = ""
 
-local genesis = Genesis()
+local genesis = genesis.Genesis()
 
 local faceInfo = {
 	-- drawing offsets for each face when applied to a cube

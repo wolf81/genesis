@@ -1,4 +1,6 @@
-require 'constants'
+local PATH = (...):match("(.-)[^%.]+$") 
+
+require(PATH .. 'constants')
 
 local bbor = bit.bor
 

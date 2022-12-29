@@ -1,5 +1,7 @@
+local PATH = (...):match("(.-)[^%.]+$") 
+
 local mmin, mmax = math.min, math.max
-local Map = require 'map'
+local Map = require(PATH .. 'map')
 
 local CombineMap = {}
 CombineMap.__index = Map

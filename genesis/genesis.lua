@@ -1,13 +1,15 @@
-local NoiseMap = require 'noisemap'
-local GradientMap = require 'gradientmap'
-local CombineMap = require 'combinemap'
-local Tile = require 'tile'
-local TileGroup = require 'tilegroup'
-local River = require 'river'
-local RiverGroup = require 'rivergroup'
-local CubeMapHelper = require 'cubemaphelper'
+local PATH = (...):match("(.-)[^%.]+$") 
 
-require 'constants'
+local NoiseMap = require(PATH .. 'noisemap')
+local GradientMap = require(PATH .. 'gradientmap')
+local CombineMap = require(PATH .. 'combinemap')
+local Tile = require(PATH .. 'tile')
+local TileGroup = require(PATH .. 'tilegroup')
+local River = require(PATH .. 'river')
+local RiverGroup = require(PATH .. 'rivergroup')
+local CubeMapHelper = require(PATH .. 'cubemaphelper')
+
+require(PATH .. 'constants')
 
 local mmin, mfloor, mrandom, mhuge = math.min, math.floor, math.random, math.huge
 

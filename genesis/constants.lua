@@ -1,4 +1,6 @@
-require 'enum'
+local PATH = (...):match("(.-)[^%.]+$") 
+
+require(PATH .. 'enum')
 
 Direction = enum {
 	"TOP",

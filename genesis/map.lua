@@ -1,4 +1,6 @@
-local Tile = require 'tile'
+local PATH = (...):match("(.-)[^%.]+$") 
+
+local Tile = require(PATH .. 'tile')
 
 local Map = {}
 Map.__index = Map

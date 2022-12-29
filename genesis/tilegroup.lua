@@ -1,4 +1,6 @@
-require 'constants'
+local PATH = (...):match("(.-)[^%.]+$") 
+
+require(PATH .. 'constants')
 
 local TileGroup = {}
 TileGroup.__index = TileGroup

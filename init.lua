@@ -1,3 +1,3 @@
 local PATH = (...):gsub('%.init$', '')
 
-return require(PATH..".genesis")
+return require(PATH .. '.genesis')

@@ -1,12 +1,7 @@
-local PATH = (...):match("(.-)[^%.]+$") 
+local lmath = love.math
+local msqrt, mmin, mmax = math.sqrt, math.min, math.max
 
-local mmin, mmax, msqrt = math.min, math.max, math.sqrt
-local Map = require(PATH .. 'map')
-
-local lmath = love and love.math or lovr.math
-
-local NoiseMap = {}
-NoiseMap.__index = Map
+local noisemap = {}
 
 local function fBm(x, y, z, octaves, frequency, amplitude)
 	local gain = 0.5
@@ -35,9 +30,9 @@ local function noise(size, seed, octaves, frequency)
 
 	for face = 1, 6 do
 		values[face] = {}
-		for x = 0, size - 1 do
+		for x = 1, size do
 			values[face][x] = {}
-			for y = 0, size - 1 do
+			for y = 1, size do
 				local a = -hsize + x + 0.5
 				local b = -hsize + y + 0.5
 				local c = -hsize
@@ -78,17 +73,9 @@ local function noise(size, seed, octaves, frequency)
 	return values, min, max
 end
 
-function NoiseMap:new(size, seed, octaves, frequency)
+noisemap.generate = function(size, seed, octaves, frequency)
 	local values, min, max = noise(size, seed or 0, octaves or 4, frequency or 1.25)
-	local super = Map(values, size, min, max)
-
-	return setmetatable(super, NoiseMap)
+	return values, min, max
 end
 
-function NoiseMap:getSize()
-	return self._size, self._size
-end
-
-return setmetatable(NoiseMap, {
-	__call = NoiseMap.new
-})
+return noisemap

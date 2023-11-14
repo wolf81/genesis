@@ -1,49 +1,41 @@
-local PATH = (...):match("(.-)[^%.]+$") 
-
 local mmin, mmax = math.min, math.max
-local Map = require(PATH .. 'map')
 
-local CombineMap = {}
-CombineMap.__index = Map
+local combineMap = {}
 
 local function multiply(size, maps)
-	local mapCount = #maps
+    local mapCount = #maps
 
-	local values = {}
+    local values = {}
 
-	local min, max = math.huge, -math.huge
+    local min, max = math.huge, -math.huge
 
-	for face = 1, 6 do
-		values[face] = {}
+    for face = 1, 6 do
+        values[face] = {}
 
-		for x = 0, size - 1 do
-			values[face][x] = {}
+        for x = 1, size do
+            values[face][x] = {}
 
-			for y = 0, size - 1 do
-				local v = 0
-				for i = 1, mapCount do
-					v = v + maps[i]:getValue(face, x, y)
-				end
-				v = v / mapCount				
-				values[face][x][y] = v
+            for y = 1, size do
+                local v = 0
+                for i = 1, mapCount do
+                    v = v + maps[i][face][x][y]
+                end
+                v = v / mapCount                
+                values[face][x][y] = v
 
-				min = mmin(min, v)
-				max = mmax(max, v)
-			end
-		end
-	end
+                min = mmin(min, v)
+                max = mmax(max, v)
+            end
+        end
+    end
 
-	return values, min, max
+    return values, min, max
 end
 
-function CombineMap:new(size, ...)
-	local maps = {...}
-	local values, min, max = multiply(size, maps)
-	local super = Map(values, size, min, max)
-
-	return setmetatable(super, CombineMap)
+combineMap.generate = function(size, ...)
+    local maps = {...}
+    local values, min, max = multiply(size, maps)
+    return values, min, max
 end
 
-return setmetatable(CombineMap, {
-	__call = CombineMap.new
-})
+return combineMap

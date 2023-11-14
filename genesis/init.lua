@@ -1,13 +1,13 @@
 local PATH = (...):gsub('%.init$', '')
 
 local M = {
-    _VERSION = "0.1.1",
-    _DESCRIPTION = "A random world generator",
-    _URL = "https://github.com/wolf81/genesis",
+    _VERSION = '0.1.0',
+    _DESCRIPTION = 'A random world generator',
+    _URL = 'https://github.com/wolf81/genesis',
     _LICENSE = [[ 
 MIT License
 
-Copyright (c) 2018 Wolftrail
+Copyright (c) 2023 Wolftrail
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -29,10 +29,26 @@ SOFTWARE.
     ]], 
 }
 
+local generator = require(PATH .. '.generator')
+
+M.generate = generator.generate
+
+M.getHeightValue = function(tile)
+    return bit.band(bit.rshift(tile, 16), 0xFF)
+end
+
+M.getHeatValue = function(tile)
+    return bit.band(bit.rshift(tile, 8), 0xFF)
+end
+
+M.getMoistureValue = function(tile)
+    return bit.band(tile, 0xFF)
+end
+
 -- TODO: it's a bit ugly the way Constants & Functions are loaded into the global namespace
-M.Genesis = require(PATH .. '.genesis')
-M.Functions = require(PATH .. '.functions')
-M.CubemapHelper = require(PATH .. '.cubemaphelper')
-M.Tile = require(PATH .. '.tile')
+-- M.Genesis = require(PATH .. '.genesis')
+-- M.Functions = require(PATH .. '.functions')
+-- M.CubemapHelper = require(PATH .. '.cubemaphelper')
+-- M.Tile = require(PATH .. '.tile')
 
 return M

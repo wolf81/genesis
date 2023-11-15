@@ -3,18 +3,16 @@
 *"In the beginning God created the heaven and the earth."*
 	- The Bible, Genesis 1 verse 1
 
-Genesis is a Lua / LÖVE2D based world generator. While this library wont allow 
-anyone to create a heaven, at least one can create an earth, so halfway there to
-becoming a god :)
+Genesis is a Lua / LÖVE2D based world generator. 
 
 My goals with Genesis are:
 
 * To have a library that can be easily integrated into games
 * To be able to generate interesting random patterns
 * Worlds should be seedable: the same seed value should generate the same world
-* Worlds should be easily usable with cubemaps
+* Worlds should be easily usable with cubemaps: it should be possible to wrap the world around a cube
 * Worlds should have biomes, rivers, seas, lakes, mountains
-* Allow some configuration of the generator, e.g. detail level
+* Allow some configuration of the generator, e.g. sea level
 
 # CONCEPTS
 
@@ -41,89 +39,52 @@ the cube, like the height, heat and moisture values.
 The API is still a work-in-progress and as such, subject to change. With that 
 said what follows is a short description of the API at time of writing.
 
-In order to create a world, we first need to create an instance of the Genesis 
-class:
+First we need to import the library, which can be done as follows:
 
 ```lua
-local genesis = Genesis() --> returns a new Genesis instance
+require 'genesis'
 ```
+
+Assuming the genesis directory is in the root of your project.
 
 To generate a new map, just call the `generate` function with a size and 
-optionally a seed value. When using the same seed value, the same map will be 
-created. In no seed value is supplied, a random seed will be used.
+optionally a seed value and sea level. When using the same seed value, the same 
+map will be created. In no seed value is supplied, a random seed will be used.
 
 ```lua
-genesis:generate(100) --> generates a map of 6 x 100 x 100
-```
-
-It's possible to request the width and the height of a face of the map. Since 
-each face map is a square, the width and height will be equal. 
-
-```lua
-local w, h = genesis:getSize() --> returns 100 x 100
-
-local s = genesis:getSize() --> returns 100
+local tileMap = genesis.generate(100) --> generates a map of 6 x 100 x 100 
 ```
 
 After a map is generated, it is possible to request tiles based on face number, 
-x- and y-coordinates. The x and y coordinates are 0 indexed while the faces are 
-indexed from 1 to 6 (I might need to align this in the future).
+x- and y-coordinates. 
 
 ```lua
-local tile = genesis:getTile(1, 0, 3) --> returns Tile object
+local tile = tileMap[1][20][30] -- get tile at face 1, x-coord 20, y-coord 30
 ```
 
-The above code retrieves the tile for face 1, x coordinate 0, y coordinate 3.
-
-It's easy to loop through all the tiles in a map as such:
+It is easy to loop through all tiles, by using the `eachTile` function.
 
 ```lua
-local w, h = genesis:getSize()
-
-for face = 1, 6 do
-	for x = 0, w - 1 do
-		for y = 0, h - 1 do
-			local tile = genesis:getTile(face, x, y)
-			-- do something with the tile here ...
-		end
-	end
-end
+genesis.eachTile(function(tile, face, x, y)
+	-- do something with the tile
+end)
 ```
 
 ## Tile
 
-With regards to a `Tile` I won't explain every function, just the most important 
-ones.
+A tile is just a number value composed of several integers. In order to retrieve
+specific information of a tile, we can use the following functions:
 
 ```lua
-tile:getHeightValue() --> gets a value indicating height level, e.g. 0.95
-tile:getHeightType() --> gets an integer indicating the height type, e.g. 3
+local tile = tileMap[1][20][30] -- get tile at face 1, x-coord 20, y-coord 30
+local height = genesis.getHeightValue(tile) --> number between 0 .. 255
+local moisture = genesis.getMoistureValue(tile) --> number between 1 .. 6
+local heat = genesis.getHeatValue(tile) --> number between 1 .. 6
+``` 
 
-tile:getHeatValue() --> gets a value indicating heat level, e.g. 0.33
-tile:getHeatType() --> gets an integer indicating the heat type, e.g. 4
+The values can be used to render height maps, heat maps, moisture maps or 
+generate biomes.
 
-tile:getMoistureValue() --> gets a value indicating moisture level, e.g. 0.17
-tile:getMoistureType() --> gets an integer indicating the moisture type, e.g. 5
-```
-
-The `get___Value()` functions will return normalized values in 0.0 to 1.0 range. 
-These values are suitable for rendering tiles with smooth color changes (e.g. 
-grayscale rendering of a height map). 
-
-The `get___Type()` functions will return string contants. The string constants 
-are defined in `constants.lua`. These values are suitable for drawing tiles
-with a solid color.
-
-Another useful function for figuring out if an adjacent tile has the same 
-terrain type or biome is the `getFlags()` function. The value returned can 
-contain various TileFlags as defined in `constants.lua`. In order to check if 
-all adjacent tiles are of same height type as current tile, we can check as 
-follows:
-
-```lua
-bit.band(tile:getFlags(), TileFlags.EQ_HEIGHT_ALL) == TileFlags.EQ_HEIGHT_ALL
-```
-	
 # FURTHER READING
 
 The Genesis source code is based on a variety of ideas and posts found on the 

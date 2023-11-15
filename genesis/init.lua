@@ -1,4 +1,7 @@
+local bband, brshift = bit.band, bit.rshift
+
 local PATH = (...):gsub('%.init$', '')
+local BitmaskOffsets = require(PATH .. '.bitmaskoffsets')
 
 local M = {
     _VERSION = '0.1.0',
@@ -33,22 +36,34 @@ local generator = require(PATH .. '.generator')
 
 M.generate = generator.generate
 
+M.BiomeType = require(PATH .. '.biometype')
+
+M.getBiomeType = function(tile)
+    return bband(brshift(tile, BitmaskOffsets.BIOME), 0xF)
+end
+
 M.getHeightValue = function(tile)
-    return bit.band(bit.rshift(tile, 16), 0xFF)
+    return bband(brshift(tile, BitmaskOffsets.HEIGHT), 0xFF)
 end
 
 M.getHeatValue = function(tile)
-    return bit.band(bit.rshift(tile, 8), 0xFF)
+    return bband(brshift(tile, BitmaskOffsets.HEAT), 0x7)
 end
 
 M.getMoistureValue = function(tile)
-    return bit.band(tile, 0xFF)
+    return bband(tile, 0x7)
 end
 
--- TODO: it's a bit ugly the way Constants & Functions are loaded into the global namespace
--- M.Genesis = require(PATH .. '.genesis')
--- M.Functions = require(PATH .. '.functions')
--- M.CubemapHelper = require(PATH .. '.cubemaphelper')
--- M.Tile = require(PATH .. '.tile')
+M.eachTile = function(tileMap, fn)
+    local size = #tileMap[face]
+    
+    for face = 1, 6 do
+        for x = 1, size do
+            for y = 1, size do
+                fn(tileMap[face][x][y], face, x, y)
+            end
+        end
+    end
+end
 
 return M

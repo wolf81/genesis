@@ -2,6 +2,7 @@ local bband, brshift = bit.band, bit.rshift
 
 local PATH = (...):gsub('%.init$', '')
 local BitmaskOffsets = require(PATH .. '.bitmaskoffsets')
+local generator = require(PATH .. '.generator')
 
 local M = {
     _VERSION = '0.1.0',
@@ -32,26 +33,28 @@ SOFTWARE.
     ]], 
 }
 
-local generator = require(PATH .. '.generator')
-
 M.generate = generator.generate
 
 M.BiomeType = require(PATH .. '.biometype')
 
 M.getBiomeType = function(tile)
-    return bband(brshift(tile, BitmaskOffsets.BIOME), 0xF)
+    return bband(brshift(tile, BitmaskOffsets.BIOME_TYPE), 0xF)
 end
 
-M.getHeightValue = function(tile)
-    return bband(brshift(tile, BitmaskOffsets.HEIGHT), 0xFF)
+M.getHeightType = function(tile)
+    return bband(brshift(tile, BitmaskOffsets.HEIGHT_TYPE), 0x7)
 end
 
 M.getHeatValue = function(tile)
-    return bband(brshift(tile, BitmaskOffsets.HEAT), 0x7)
+    return bband(brshift(tile, BitmaskOffsets.HEAT_TYPE), 0x7)
 end
 
 M.getMoistureValue = function(tile)
-    return bband(tile, 0x7)
+    return bband(brshift(tile, BitmaskOffsets.MOISTURE_TYPE), 0x7)
+end
+
+M.getHeightValue = function(tile)
+    return bband(tile, 0xFF)
 end
 
 M.eachTile = function(tileMap, fn)

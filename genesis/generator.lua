@@ -2,28 +2,76 @@ local PATH = (...):match('(.-)[^%.]+$')
 local noiseMap = require(PATH .. 'noisemap')
 local gradientMap = require(PATH .. 'gradientmap')
 local combineMap = require(PATH .. 'combinemap')
-local util = require(PATH .. 'util')
 local BitmaskOffsets = require(PATH .. 'bitmaskoffsets')
 local BiomeType = require(PATH .. 'biometype')
+local HeightType = require(PATH .. 'heighttype')
 local cubeMapHelper = require(PATH .. 'cubemaphelper')
 
 local bbor, blshift = bit.bor, bit.lshift
+local mmin, mmax = math.min, math.max
+
+local generator = {}
 
 local HEAT_THRESHOLDS 	  = { 0.15, 0.30, 0.45, 0.60, 0.75 } -- cold to hot
 local MOISTURE_THRESHOLDS = { 0.27, 0.40, 0.60, 0.80, 0.90 } -- dry to wet
 
-local mmin, mmax = math.min, math.max
-
-local generator = {}
+local BiomeTypeLookupTable = {
+--		COLDEST			COLDER				COLD 					HOT								HOTTER							HOTTEST	
+	{ BiomeType.ICE, BiomeType.TUNDRA, BiomeType.GRASSLAND,     BiomeType.DESERT, 				BiomeType.DESERT, 			   BiomeType.DESERT },				-- DRYEST
+	{ BiomeType.ICE, BiomeType.TUNDRA, BiomeType.GRASSLAND,     BiomeType.DESERT, 				BiomeType.DESERT, 			   BiomeType.DESERT },				-- DRYER
+	{ BiomeType.ICE, BiomeType.TUNDRA, BiomeType.WOODLAND,      BiomeType.WOODLAND, 			BiomeType.SAVANNA, 			   BiomeType.SAVANNA },				-- DRY
+	{ BiomeType.ICE, BiomeType.TUNDRA, BiomeType.BOREAL_FOREST, BiomeType.WOODLAND, 			BiomeType.SAVANNA, 			   BiomeType.SAVANNA },				-- WET
+	{ BiomeType.ICE, BiomeType.TUNDRA, BiomeType.BOREAL_FOREST, BiomeType.SEASONAL_FOREST, 		BiomeType.TROPICAL_RAINFOREST, BiomeType.TROPICAL_RAINFOREST },	-- WETTER
+	{ BiomeType.ICE, BiomeType.TUNDRA, BiomeType.BOREAL_FOREST, BiomeType.TEMPERATE_RAINFOREST, BiomeType.TROPICAL_RAINFOREST, BiomeType.TROPICAL_RAINFOREST },	-- WETTEST
+}
 
 -- normalize a value to 0.0 .. 1.0 range
 local function normalize(value, min, max)
 	return (value - min) / (max - min)
 end
 
+local function getBiomeType(moistureType, heatType)
+	return BiomeTypeLookupTable[moistureType][heatType] 
+end
+
+local function getHeatType(heat)
+	-- for heat value assign the index of closest heat threshold
+	local heatIdx = #HEAT_THRESHOLDS
+	for i = #HEAT_THRESHOLDS, 1, -1 do
+		if heat > HEAT_THRESHOLDS[i] then
+			break						
+		end
+		heatIdx = i
+	end
+	return heatIdx
+end
+
+local function getMoistureType(moisture)
+	-- for moisture value assign the index of closest moisture threshold
+	local moistureIdx = #MOISTURE_THRESHOLDS
+	for i = #MOISTURE_THRESHOLDS, 1, -1 do
+		if moisture > MOISTURE_THRESHOLDS[i] then
+			break
+		end
+		moistureIdx = i
+	end
+	return moistureIdx
+end
+
+local function getHeightType(height)
+	if height <= 0.2 then return HeightType.DEEP_WATER
+	elseif height <= 0.4 then return HeightType.SHALLOW_WATER
+	elseif height <= 0.5 then return HeightType.SHORE
+	elseif height <= 0.7 then return HeightType.GRASS
+	elseif height <= 0.8 then return HeightType.FOREST
+	elseif height <= 0.9 then return HeightType.ROCK
+	elseif height <= 1.0 then return HeightType.SNOW
+	else return 0 end
+end
+
 -- generate a tile map based on size and optionally seed & sea level
 -- TODO: seed, seaLevel should be part of an options table
-generator.generate = function(size, seed, seaLevel)
+generator.generate = function(size, seed)
 	local tileMaps = {}
 
 	-- set seed if needed and ensure an integer value is used
@@ -32,12 +80,7 @@ generator.generate = function(size, seed, seaLevel)
 		 seed = math.floor(seed * 255)
 	end
 
-	seaLevel = seaLevel or 0.6
-	local oceanLevel = seaLevel * 0.7
-	local coastLevel = seaLevel + 0.02
-	local shoreLevel = seaLevel + 0.1
-
-	local heightMap, heightMin, heightMax = noiseMap.generate(size, seed % 127, 6, 0.5)
+	local heightMap, heightMin, heightMax = noiseMap.generate(size, seed % 127, 6)
 
 	local heatNoiseMap, _, _ = noiseMap.generate(size, seed % 63, 4, 2.0)
 	local heatGradientMap, _, _ = gradientMap.generate(size, 4, 3.0)
@@ -59,82 +102,58 @@ generator.generate = function(size, seed, seaLevel)
 				local height = normalize(heightMap[face][x][y], heightMin, heightMax)
 				local heat = normalize(heatMap[face][x][y], heatMin, heatMax)
 				local moisture = normalize(moistureMap[face][x][y], moistureMin, moistureMax)
-				local biome = 0
+				local biomeType = 0
+
+				local heightType = getHeatType(height)
 
 				-- increase moisture above water and coastal areas
-				if height <= oceanLevel then
+				if heightType == HeightType.DEEP_WATER then
 					moisture = mmin(moisture + 8 * height, 1.0)
-					biome = BiomeType.DEEP_WATER
-				elseif height <= seaLevel then
+					biomeType = BiomeType.DEEP_WATER
+				elseif heightType == HeightType.SHALLOW_WATER then
 					moisture = mmin(moisture + 3 * height, 1.0)
-					biome = BiomeType.SHALLOW_WATER
-				elseif height <= coastLevel then
-					moisture = mmin(moisture + height, 1.0)
-				elseif height <= shoreLevel then
-					moisture = mmin(moisture + height / 4, 1.0)
+					biomeType = BiomeType.SHALLOW_WATER
+				elseif heightType == HeightType.SHORE then
+					moisture = mmin(moisture + 0.25 * height, 1.0)
 				end
 
 				-- above coast level: decrease temperature as height increases
-				local heatOffset = (1.0 - seaLevel) / 4				
-				if height >= (seaLevel + heatOffset * 3) then
+				if heightType == HeightType.SNOW then
 					heat = mmax(heat - height * 0.4, 0.0)
-				elseif height >= (seaLevel + heatOffset * 2) then
+				elseif heightType == HeightType.ROCK then
 					heat = mmax(heat - height * 0.3, 0.0)
-				elseif height >= (seaLevel + heatOffset) then
+				elseif heightType == HeightType.FOREST then
 					heat = mmax(heat - height * 0.2, 0.0)
-				elseif height >= coastLevel then
+				elseif heightType == HeightType.GRASS then
 					heat = mmax(heat - height * 0.1, 0.0)
-				end
+				end			
 
-				-- for heat value assign the index of closest heat threshold
-				local heatIdx = #HEAT_THRESHOLDS
-				for i = #HEAT_THRESHOLDS, 1, -1 do
-					if heat > HEAT_THRESHOLDS[i] then
-						break						
-					end
-					heatIdx = i
-				end
-				heat = heatIdx
-
-				-- for moisture value assign the index of closest moisture threshold
-				local moistureIdx = #MOISTURE_THRESHOLDS
-				for i = #MOISTURE_THRESHOLDS, 1, -1 do
-					if moisture > MOISTURE_THRESHOLDS[i] then
-						break
-					end
-					moistureIdx = i
-				end
-				moisture = moistureIdx
+				local moistureType = getMoistureType(moisture)
+				local heatType = getHeatType(heat)
 
 				-- assign terrestial biomes for land above sea level
-				if height > seaLevel then
-					biome = util.getBiomeType(moisture, heat)
+				if heightType ~= HeightType.DEEP_WATER and heightType ~= HeightType.SHALLOW_WATER then
+					biomeType = getBiomeType(moistureType, heatType)
 				end
 
-				-- set tile value based on biome, height, heat, moisture, ...
+				-- set tile value based on biomeType, heightType, heatType, moistureType, height ...
 				tileMap[face][x][y] = bbor(
-					blshift(biome, BitmaskOffsets.BIOME),			-- 4 bits
-					blshift(height * 255, BitmaskOffsets.HEIGHT),	-- 8 bits
-					blshift(heat, BitmaskOffsets.HEAT),				-- 3 bits
-					moisture) 										-- 3 bits
+					blshift(biomeType, BitmaskOffsets.BIOME_TYPE),						-- 4 bits
+					blshift(getMoistureType(moisture), BitmaskOffsets.MOISTURE_TYPE),	-- 3 bits
+					blshift(getHeatType(heat), BitmaskOffsets.HEAT_TYPE),				-- 3 bits
+					blshift(getHeightType(height), BitmaskOffsets.HEIGHT_TYPE),			-- 3 bits
+					height * 255)														-- 8 bits
 				--[[ 
-					remaining 14 bits for: 
-					- height type (3 bits): 
-						- DeepWater (0.2), 
-						- ShallowWater (0.4), 
-						- Sand (0.5), 
-						- Grass (0.7), 
-						- Forest (0.8), 
-						- Rock (0.9), 
-						- Snow (1.0)
-					- neighbor equal biome flags (4 bits)
-					- neighbor equal height flags (4 bits)
+					remaining bits for: 
+					- biomeType adjadency flags (4 bits)
+					- heightType adjadency flags (4 bits)
 					- ?
 				--]] 
 			end
 		end
 	end
 
+	--[[
 	-- calculate adjacency flags
 	for face = 1, 6 do
 		for x = 1, size do
@@ -160,6 +179,7 @@ generator.generate = function(size, seed, seaLevel)
 			end
 		end
 	end
+	--]]
 
 	return tileMap
 end

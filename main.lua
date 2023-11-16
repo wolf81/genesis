@@ -22,6 +22,18 @@ local tileMapType = 0
 
 local isRendering = false
 
+local didTileMapChange = true
+
+local HeightColors = {
+	{ 0, 0, 0, 1 },
+	{ 25/255, 25/255, 150/255, 1 },
+	{ 240 / 255, 240 / 255, 64 / 255, 1 },
+	{ 50 / 255, 220 / 255, 20 / 255, 1 },
+	{ 16 / 255, 160 / 255, 0, 1 },
+	{ 0.5, 0.5, 0.5, 1 },            
+	{ 1, 1, 1, 1 },
+}
+
 local MoistureColors = {
 	{ 1.0, 139/255, 17/255, 1.0 },
 	{ 245/255, 245/255, 23/255, 1.0 },
@@ -38,16 +50,6 @@ local HeatColors = {
 	{ 1.0, 1.0, 100/255, 1.0 },
 	{ 1.0, 100/255, 0.0, 1.0 },
 	{ 241/255, 12/255, 0.0, 1.0 },
-}
-
-local HeightColors = {
-	{ 0.0, 0.0, 0.5, 1.0 },
-	{ 25/255, 25/255, 150/255, 1.0 },
-	{ 240 / 255, 240 / 255, 64 / 255, 1.0 },
-	{ 0 / 255, 220 / 255, 20 / 255, 1.0 },
-	{ 16 / 255, 160 / 255, 0.0, 1.0 },
-	{ 0.5, 0.5, 0.5, 1.0 },            
-	{ 1.0, 1.0, 1.0, 1.0 },
 }
 
 local BiomeColors = {
@@ -72,15 +74,18 @@ end
 local function render() 
 	isRendering = true
 
-	if tileMapType == 0 then
-		print('height')
-	elseif tileMapType == 1 then
-		print('moisture')
-	elseif tileMapType == 2 then
-		print('heat')
-	elseif tileMapType == 3 then
-		print('biome')
-	end					
+	if didTileMapChange then
+		if tileMapType == 0 then
+			print('height')
+		elseif tileMapType == 1 then
+			print('moisture')
+		elseif tileMapType == 2 then
+			print('heat')
+		elseif tileMapType == 3 then
+			print('biome')
+		end
+		didTileMapChange = false					
+	end
 
 	for face = 1, 6 do
 		local canvas = love.graphics.newCanvas(SIZE, SIZE)		
@@ -90,8 +95,8 @@ local function render()
 					local tile = tileMap[face][x][y]
 
 					if tileMapType == 0 then
-						local value = genesis.getHeightValue(tile) / 255
-						love.graphics.setColor(value, value, value, 1.0)
+						local value = genesis.getHeightType(tile)
+						love.graphics.setColor(unpack(HeightColors[value]))
 					elseif tileMapType == 1 then						
 						local value = genesis.getMoistureValue(tile)
 						love.graphics.setColor(unpack(MoistureColors[value]))
@@ -117,6 +122,7 @@ end
 
 local function toggle()
 	tileMapType = (tileMapType + 1) % 4
+	didTileMapChange = true
 	render()
 end
 

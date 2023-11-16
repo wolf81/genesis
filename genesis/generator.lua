@@ -104,7 +104,7 @@ generator.generate = function(size, seed)
 				local moisture = normalize(moistureMap[face][x][y], moistureMin, moistureMax)
 				local biomeType = 0
 
-				local heightType = getHeatType(height)
+				local heightType = getHeightType(height)
 
 				-- increase moisture above water and coastal areas
 				if heightType == HeightType.DEEP_WATER then
@@ -132,7 +132,7 @@ generator.generate = function(size, seed)
 				local heatType = getHeatType(heat)
 
 				-- assign terrestial biomes for land above sea level
-				if heightType ~= HeightType.DEEP_WATER and heightType ~= HeightType.SHALLOW_WATER then
+				if biomeType == 0 then
 					biomeType = getBiomeType(moistureType, heatType)
 				end
 

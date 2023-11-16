@@ -25,7 +25,7 @@ local isRendering = false
 local didTileMapChange = true
 
 local HeightColors = {
-	{ 0, 0, 0, 1 },
+	{ 0, 0, 0.5, 1 },
 	{ 25/255, 25/255, 150/255, 1 },
 	{ 240 / 255, 240 / 255, 64 / 255, 1 },
 	{ 50 / 255, 220 / 255, 20 / 255, 1 },

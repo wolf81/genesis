@@ -16,6 +16,14 @@ local M = {}
 local HEAT_THRESHOLDS 	  = { 0.15, 0.30, 0.45, 0.60, 0.75, 1.00 } -- cold to hot
 local MOISTURE_THRESHOLDS = { 0.27, 0.40, 0.60, 0.80, 0.90, 1.00 } -- dry to wet
 local HEIGHT_THRESHOLDS   = { 0.20, 0.48, 0.52, 0.70, 0.80, 0.90, 1.00 } -- low to high
+local MAX_RIVER_COUNT	  = 10
+
+local Direction = {
+	Up 		= {  0, -1 },
+	Down 	= {  0,  1 },
+	Left 	= { -1,  0 },
+	Right 	= {  1,  0 },
+}
 
 local Direction = {
 	Up 		= {  0, -1 },

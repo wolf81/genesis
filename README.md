@@ -88,8 +88,8 @@ local heatType = genesis.getHeatType(tile) --> number between 1 .. 6
 local biomeType = genesis.getBiomeType(tile) --> 1 .. 12
 
 -- adjacent height & biome flags
-local adjHeightFlags = genesis.getHeightAdjFlags(tile) -- EQ_TOP, EQ_LEFT, EQ_RIGHT, EQ_BOTTOM, EQ_ALL
-local adjBiomeFlags = genesis.getBiomeAdjFlags(tile) -- EQ_TOP, EQ_LEFT, EQ_RIGHT, EQ_BOTTOM, EQ_ALL
+local adjHeightFlags = genesis.getAdjHeightFlags(tile) -- EQ_TOP, EQ_LEFT, EQ_RIGHT, EQ_BOTTOM, EQ_ALL
+local adjBiomeFlags = genesis.getAdjBiomeFlags(tile) -- EQ_TOP, EQ_LEFT, EQ_RIGHT, EQ_BOTTOM, EQ_ALL
 ``` 
 
 With regards to height, the height type indicates that neighbouring tiles are inside same height range. When tiles are inside the same height range, they get the same height type. Height types are defined in heighttypes.lua.

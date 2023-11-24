@@ -93,8 +93,9 @@ local function render()
 		didTileMapChange = false					
 	end
 
+	-- defaults form: tileMapType == 0
 	local valueFunc = genesis.getHeightType
-	local flagsFunc = genesis.getHeightAdjFlags
+	local flagsFunc = genesis.getAdjHeightFlags
 	local colorTable = HeightColors
 
 	if tileMapType == 1 then
@@ -105,7 +106,7 @@ local function render()
 		colorTable = HeatColors
 	elseif tileMapType == 3 then
 		valueFunc = genesis.getBiomeType
-		flagsFunc = genesis.getBiomeAdjFlags	
+		flagsFunc = genesis.getAdjBiomeFlags	
 		colorTable = BiomeColors
 	end
 

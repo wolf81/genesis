@@ -1,9 +1,9 @@
 local lmath = love.math
 local msqrt, mmin, mmax = math.sqrt, math.min, math.max
 
-local noisemap = {}
+local M = {}
 
-local function fBm(x, y, z, octaves, frequency, amplitude)
+local function fractalBrownianMotion(x, y, z, octaves, frequency, amplitude)
 	local gain = 0.5
 	local lacunarity = 2.0
 
@@ -54,7 +54,7 @@ local function noise(size, seed, octaves, frequency)
 					{  a, -c,  b },
 				}
 
-				local value = fBm(
+				local value = fractalBrownianMotion(
 					aa + noisePos[face][1], 
 					bb + noisePos[face][2],
 					cc + noisePos[face][3],
@@ -73,9 +73,9 @@ local function noise(size, seed, octaves, frequency)
 	return values, min, max
 end
 
-noisemap.generate = function(size, seed, octaves, frequency)
+M.generate = function(size, seed, octaves, frequency)
 	local values, min, max = noise(size, seed or 0, octaves or 4, frequency or 1.25)
 	return values, min, max
 end
 
-return noisemap
+return M

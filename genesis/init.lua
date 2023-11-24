@@ -57,6 +57,14 @@ M.getHeightValue = function(tile)
     return bband(tile, 0xFF)
 end
 
+M.getBiomeAdjFlags = function(tile)
+    return bband(brshift(tile, BitmaskOffsets.BIOME_ADJ_FLAGS), 0xF)
+end
+
+M.getHeightAdjFlags = function(tile)
+    return bband(brshift(tile, BitmaskOffsets.HEIGHT_ADJ_FLAGS), 0xF)
+end
+
 M.eachTile = function(tileMap, fn)
     local size = #tileMap[face]
     

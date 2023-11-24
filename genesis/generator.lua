@@ -17,6 +17,8 @@ local HEAT_THRESHOLDS 	  = { 0.15, 0.30, 0.45, 0.60, 0.75, 1.00 } -- cold to hot
 local MOISTURE_THRESHOLDS = { 0.27, 0.40, 0.60, 0.80, 0.90, 1.00 } -- dry to wet
 local HEIGHT_THRESHOLDS   = { 0.20, 0.48, 0.52, 0.70, 0.80, 0.90, 1.00 } -- low to high
 
+local EPSILON = 0.01
+
 local Direction = {
 	Up 		= {  0, -1 },
 	Down 	= {  0,  1 },
@@ -124,8 +126,8 @@ local function planchonDarboux(heightMap, size, surface)
 						local face2, x2, y2 = CubeMapHelper.getCoord(size, face, x, y, dx, dy)
 						local adjHeight = heightMap[face2][x2][y2]
 
-						if height > adjHeight + 0.03 then
-							surface[face][x][y] = adjHeight + 0.03
+						if height > adjHeight + EPSILON then
+							surface[face][x][y] = adjHeight + EPSILON
 							changeCount = changeCount + 1
 						end
 					end
@@ -137,7 +139,21 @@ local function planchonDarboux(heightMap, size, surface)
 		if changeCount == 0 then break end
 	end
 
-	return surface
+	-- determine minimum & maximum height values
+	local heightMin = math.huge
+	local heightMax = -math.huge
+
+	for face = 1, 6 do
+		for x = 1, size do
+			for y = 1, size do
+				local height = surface[face][x][y]
+				heightMin = mmin(height, heightMin)
+				heightMax = mmax(height, heightMax)
+			end
+		end
+	end
+
+	return surface, heightMin, heightMax
 end
 
 local function fillDepressions(heightMap, size)
@@ -152,16 +168,14 @@ local function fillDepressions(heightMap, size)
 			for y = 1, size do
 				surface[face][x][y] = math.huge
 				
-				if x == 1 or x == size or y == 1 or y == size then
+				if x == 1 and y == 1 then
 					surface[face][x][y] = heightMap[face][x][y]
 				end
 			end
 		end
 	end
 
-	heightMap = planchonDarboux(heightMap, size, surface)
-
-	return heightMap
+	return planchonDarboux(heightMap, size, surface)
 end
 
 -- generate tile maps based on size and optionally seed & sea level
@@ -183,10 +197,10 @@ M.generate = function(size, seed)
 	local heatMap, heatMin, heatMax = CombineMap.generate(size, heatNoiseMap, heatGradientMap)
 	local moistureMap, moistureMin, moistureMax = NoiseMap.generate(size, seed % 31, 4, 2.0)
 
-	heightMap = fillDepressions(heightMap, size)
+	-- TODO: instead of modifying the heightmap, maybe use the map purely to generate rivers
+	heightMap, heightMin, heightMax = fillDepressions(heightMap, size)
 
 	-- could be a 2 dimensional array, the face could be an x-offset
-
 	local tileMap = {}
 
 	for face = 1, 6 do

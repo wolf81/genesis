@@ -5,7 +5,7 @@ local genesis = require 'genesis'
 
 local Generator = genesis.Generator
 
-local SIZE = 200
+local SIZE = 100
 
 local FaceOffsets = {
 	{ 1, 1 }, 

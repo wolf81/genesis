@@ -154,8 +154,6 @@ local function fillDepressions(heightMap, size)
 	local heightMax = -math.huge
 
 	for face = 1, 6 do
-		print()
-		local s = ''
 		for x = 1, size do
 			for y = 1, size do
 				local height = surface[face][x][y]
@@ -163,7 +161,6 @@ local function fillDepressions(heightMap, size)
 				heightMax = mmax(height, heightMax)
 			end
 		end
-		print(s .. '\n')
 	end
 
 	return surface, heightMin, heightMax
@@ -200,7 +197,49 @@ local function generateFlowMap(heightMap, size)
 	return flowMap
 end
 
-local function generateRivers(heightMap, flowMap, size)
+local function generateRivers(heightMap, flowMap, size, heightMin, heightMax)
+	local rivers = {}
+
+	local attempts = 1000
+
+	print(heightMin, heightMax)
+
+	-- normalize height heightThresholds, so we can figure out threshold for 
+	-- * mountains (start of rivers)
+	-- * sea (end of rivers)
+	local heightThresholds = {}
+	for _, threshold in ipairs(HEIGHT_THRESHOLDS) do
+		heightThresholds[#heightThresholds + 1] = heightMin + (heightMax - heightMin) * threshold
+	end
+
+	local startRiverHeight = heightThresholds[5]
+	local endRiverHeight = heightThresholds[2]
+
+	do repeat
+		attempts = attempts - 1
+
+		local face = mrandom(6)
+		local x = mrandom(size)
+		local y = mrandom(size)
+		local height = heightMap[face][x][y]
+
+		if height < startRiverHeight then goto continue end
+
+		print('start river @', face, x, y)
+
+		while height >= endRiverHeight do
+			print(face, x, y)
+
+			local direction = flowMap[face][x][y]
+			height, face, x, y = getTile(heightMap, size, face, x, y, direction)
+		end
+
+		print('end river')
+
+		::continue::
+	until attempts == 0 end
+
+
 	return heightMap
 end
 
@@ -227,7 +266,7 @@ M.generate = function(size, seed)
 	heightMap, heightMin, heightMax = fillDepressions(heightMap, size)
 
 	local flowMap = generateFlowMap(heightMap, size)
-	-- generateRivers(heightMap, flowMap)
+	local rivers = generateRivers(heightMap, flowMap, size, heightMin, heightMax)
 
 	-- could be a 2 dimensional array, the face could be an x-offset
 	local tileMap = {}

@@ -85,15 +85,16 @@ end
 local function planchonDarboux(heightMap, size)
 	local surface = {}
 
-	-- configure initial surface - unlike the original algorithm, we don't set
-	-- the border heights, but set only the height for top x and y coord
+	-- configure initial surface - unlike the original algorithm, the sets all 
+	-- 4 borders, for a given face we only set 2 borders, as we have a wrapping
+	-- map
 	for face = 1, 6 do
 		surface[face] = {}
 		for x = 1, size do
 			surface[face][x] = {}
 			for y = 1, size do
 				surface[face][x][y] = math.huge				
-				if x == 1 or y == 1 or x == size or y == size then
+				if x == 1 or y == 1 then
 					surface[face][x][y] = heightMap[face][x][y]
 				end
 			end

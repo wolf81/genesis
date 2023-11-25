@@ -94,7 +94,10 @@ local function planchonDarboux(heightMap, size)
 			surface[face][x] = {}
 			for y = 1, size do
 				surface[face][x][y] = math.huge				
-				if x == 1 or y == 1 then
+				if x == 1 and y == 1 then
+					-- TODO: maybe we should use the highest coords instead,
+					-- because I think having a 0 value in corner might result
+					-- in issues with river flow, when reaching such a tile
 					surface[face][x][y] = heightMap[face][x][y]
 				end
 			end
@@ -166,6 +169,41 @@ local function fillDepressions(heightMap, size)
 	return surface, heightMin, heightMax
 end
 
+local function generateFlowMap(heightMap, size)
+	local flowMap = {}
+
+	local directions = { Direction.Left, Direction.Right, Direction.Up, Direction.Down }
+
+	for face = 1, 6 do
+		flowMap[face] = {}
+		for x = 1, size do
+			flowMap[face][x] = {}
+			for y = 1, size do
+				local height = heightMap[face][x][y]
+
+				local neighbors = {}
+				for _, direction in ipairs(directions) do
+					local height = getTile(heightMap, size, face, x, y, direction)
+					neighbors[#neighbors + 1] = { height = height, direction = direction }
+				end
+
+				table.sort(neighbors, function(a, b) return a.height < b.height end)
+				if neighbors[1].height < height then
+					flowMap[face][x][y] = neighbors[1].direction
+				else 
+					flowMap[face][x][y] = neighbors[1].height
+				end
+			end
+		end
+	end
+
+	return flowMap
+end
+
+local function generateRivers(heightMap, flowMap, size)
+	return heightMap
+end
+
 -- generate tile maps based on size and optionally seed & sea level
 -- TODO: consider adding options table for thresholds, rivers, etc...
 M.generate = function(size, seed)
@@ -187,6 +225,9 @@ M.generate = function(size, seed)
 
 	-- TODO: instead of modifying the heightmap, maybe use the map purely to generate rivers
 	heightMap, heightMin, heightMax = fillDepressions(heightMap, size)
+
+	local flowMap = generateFlowMap(heightMap, size)
+	-- generateRivers(heightMap, flowMap)
 
 	-- could be a 2 dimensional array, the face could be an x-offset
 	local tileMap = {}

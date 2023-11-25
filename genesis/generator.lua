@@ -17,7 +17,7 @@ local HEAT_THRESHOLDS 	  = { 0.15, 0.30, 0.45, 0.60, 0.75, 1.00 } -- cold to hot
 local MOISTURE_THRESHOLDS = { 0.27, 0.40, 0.60, 0.80, 0.90, 1.00 } -- dry to wet
 local HEIGHT_THRESHOLDS   = { 0.20, 0.48, 0.52, 0.70, 0.80, 0.90, 1.00 } -- low to high
 
-local EPSILON = 0.01
+local EPSILON = 1e-5
 
 local Direction = {
 	Up 		= {  0, -1 },
@@ -26,7 +26,7 @@ local Direction = {
 	Right 	= {  1,  0 },
 }
 
-local BiomeTypeLookupTable = {
+local BiomeTypeInfo = {
 --		COLDEST			COLDER				COLD 					HOT								HOTTER							HOTTEST	
 	{ BiomeType.ICE, BiomeType.TUNDRA, BiomeType.GRASSLAND,     BiomeType.DESERT, 				BiomeType.DESERT, 			   BiomeType.DESERT },				-- DRYEST
 	{ BiomeType.ICE, BiomeType.TUNDRA, BiomeType.GRASSLAND,     BiomeType.DESERT, 				BiomeType.DESERT, 			   BiomeType.DESERT },				-- DRYER
@@ -47,7 +47,7 @@ local function getRandomDirection()
 end
 
 local function getBiomeType(moistureType, heatType)
-	return BiomeTypeLookupTable[moistureType][heatType] 
+	return BiomeTypeInfo[moistureType][heatType] 
 end
 
 local function getTypeForValue(value, thresholds)
@@ -85,14 +85,15 @@ end
 local function planchonDarboux(heightMap, size)
 	local surface = {}
 
-	-- configure initial surface
+	-- configure initial surface - unlike the original algorithm, we don't set
+	-- the border heights, but set only the height for top x and y coord
 	for face = 1, 6 do
 		surface[face] = {}
 		for x = 1, size do
 			surface[face][x] = {}
 			for y = 1, size do
 				surface[face][x][y] = math.huge				
-				if x == 1 and y == 1 then
+				if x == 1 or y == 1 or x == size or y == size then
 					surface[face][x][y] = heightMap[face][x][y]
 				end
 			end
@@ -101,6 +102,8 @@ local function planchonDarboux(heightMap, size)
 
 	local directions = { Direction.Left, Direction.Right, Direction.Up, Direction.Down }
 
+	-- repeatedly update tile heights based on neighbor heights, until the loop
+	-- runs without updating any heights
 	do repeat
 		local changeCount = 0
 
@@ -109,17 +112,27 @@ local function planchonDarboux(heightMap, size)
 				for y = 1, size do
 					local height = surface[face][x][y]
 
+					if heightMap[face][x][y] == height then goto continue end
+
 					for _, direction in ipairs(directions) do
 						local dx, dy = unpack(direction)
 						local adjFace, adjX, adjY = CubeMapHelper.getCoord(size, face, x, y, dx, dy)
-						local adjHeight = heightMap[adjFace][adjX][adjY]
+						local nVal = surface[adjFace][adjX][adjY]
 
-						if height > adjHeight + EPSILON then
-							surface[face][x][y] = adjHeight + EPSILON
+						if heightMap[face][x][y] >= nVal + EPSILON then
+							surface[face][x][y] = heightMap[face][x][y]
 							changeCount = changeCount + 1
 							break
 						end
+
+						local hVal = nVal + EPSILON
+						if surface[face][x][y] > hVal and hVal > heightMap[face][x][y] then
+							surface[face][x][y] = hVal
+							changeCount = changeCount + 1
+						end
 					end
+
+					::continue::
 				end
 			end
 		end
@@ -137,6 +150,8 @@ local function fillDepressions(heightMap, size)
 	local heightMax = -math.huge
 
 	for face = 1, 6 do
+		print()
+		local s = ''
 		for x = 1, size do
 			for y = 1, size do
 				local height = surface[face][x][y]
@@ -144,6 +159,7 @@ local function fillDepressions(heightMap, size)
 				heightMax = mmax(height, heightMax)
 			end
 		end
+		print(s .. '\n')
 	end
 
 	return surface, heightMin, heightMax

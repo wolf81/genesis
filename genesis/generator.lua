@@ -36,30 +36,6 @@ local BiomeTypeLookupTable = {
 	{ BiomeType.ICE, BiomeType.TUNDRA, BiomeType.BOREAL_FOREST, BiomeType.TEMPERATE_RAINFOREST, BiomeType.TROPICAL_RAINFOREST, BiomeType.TROPICAL_RAINFOREST },	-- WETTEST
 }
 
--- create a deep copy
-local function deepCopy(value)
-	local type = type(value)
-    local copy
-    if type == 'table' then
-        copy = {}
-        for tblKey, tblValue in next, value, nil do
-            copy[deepCopy(tblKey)] = deepCopy(tblValue)
-        end
-        setmetatable(copy, deepCopy(getmetatable(value)))
-    else -- number, string, boolean, etc
-        copy = value
-    end
-    return copy
-end
-
-local function shuffle(tbl)
-  for i = #tbl, 2, -1 do
-    local j = mrandom(i)
-    tbl[i], tbl[j] = tbl[j], tbl[i]
-  end
-  return tbl
-end
-
 -- normalize a value to 0.0 .. 1.0 range
 local function normalize(value, min, max)
 	return (value - min) / (max - min)
@@ -141,11 +117,9 @@ local function planchonDarboux(heightMap, size)
 						if height > adjHeight + EPSILON then
 							surface[face][x][y] = adjHeight + EPSILON
 							changeCount = changeCount + 1
-							goto continue
+							break
 						end
 					end
-
-					::continue::
 				end
 			end
 		end

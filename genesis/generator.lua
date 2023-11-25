@@ -106,14 +106,26 @@ local function getAdjFlags(tileMap, size, face, x, y, direction)
 	return adjBiome, adjHeight
 end
 
-local function planchonDarboux(heightMap, size, surface)
-	local neighborOffsets = { 
-		{ -1, -1 }, { 0, -1 }, { 1, -1 },
-		{ -1,  0 }, 		   { 1,  0 },
-		{ -1,  1 }, { 0,  1 }, { 1,  1 },		
-	}
+local function planchonDarboux(heightMap, size)
+	local surface = {}
 
-	while true do
+	-- configure initial surface
+	for face = 1, 6 do
+		surface[face] = {}
+		for x = 1, size do
+			surface[face][x] = {}
+			for y = 1, size do
+				surface[face][x][y] = math.huge				
+				if x == 1 and y == 1 then
+					surface[face][x][y] = heightMap[face][x][y]
+				end
+			end
+		end
+	end
+
+	local directions = { Direction.Left, Direction.Right, Direction.Up, Direction.Down }
+
+	do repeat
 		local changeCount = 0
 
 		for face = 1, 6 do
@@ -121,23 +133,30 @@ local function planchonDarboux(heightMap, size, surface)
 				for y = 1, size do
 					local height = surface[face][x][y]
 
-					for _, neighborOffset in ipairs(neighborOffsets) do
-						local dx, dy = unpack(neighborOffset)
-						local face2, x2, y2 = CubeMapHelper.getCoord(size, face, x, y, dx, dy)
-						local adjHeight = heightMap[face2][x2][y2]
+					for _, direction in ipairs(directions) do
+						local dx, dy = unpack(direction)
+						local adjFace, adjX, adjY = CubeMapHelper.getCoord(size, face, x, y, dx, dy)
+						local adjHeight = heightMap[adjFace][adjX][adjY]
 
 						if height > adjHeight + EPSILON then
 							surface[face][x][y] = adjHeight + EPSILON
 							changeCount = changeCount + 1
+							goto continue
 						end
 					end
+
+					::continue::
 				end
 			end
 		end
 		print('changeCount: ', changeCount)
+	until changeCount == 0 end
 
-		if changeCount == 0 then break end
-	end
+	return surface
+end
+
+local function fillDepressions(heightMap, size)
+	local surface = planchonDarboux(heightMap, size)
 
 	-- determine minimum & maximum height values
 	local heightMin = math.huge
@@ -154,28 +173,6 @@ local function planchonDarboux(heightMap, size, surface)
 	end
 
 	return surface, heightMin, heightMax
-end
-
-local function fillDepressions(heightMap, size)
-	local surface = {}
-
-	for face = 1, 6 do
-		surface[face] = {}
-
-		for x = 1, size do
-			surface[face][x] = {}
-
-			for y = 1, size do
-				surface[face][x][y] = math.huge
-				
-				if x == 1 and y == 1 then
-					surface[face][x][y] = heightMap[face][x][y]
-				end
-			end
-		end
-	end
-
-	return planchonDarboux(heightMap, size, surface)
 end
 
 -- generate tile maps based on size and optionally seed & sea level
@@ -205,10 +202,8 @@ M.generate = function(size, seed)
 
 	for face = 1, 6 do
 		tileMap[face] = {}
-
 		for x = 1, size do
 			tileMap[face][x] = {}
-
 			for y = 1, size do
 				local height = normalize(heightMap[face][x][y], heightMin, heightMax)
 				local heat = normalize(heatMap[face][x][y], heatMin, heatMax)

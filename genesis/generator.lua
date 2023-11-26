@@ -1,23 +1,30 @@
 local PATH = (...):match('(.-)[^%.]+$') 
-local noiseMap = require(PATH .. 'noisemap')
-local gradientMap = require(PATH .. 'gradientmap')
-local combineMap = require(PATH .. 'combinemap')
+local NoiseMap = require(PATH .. 'noisemap')
+local GradientMap = require(PATH .. 'gradientmap')
+local CombineMap = require(PATH .. 'combinemap')
 local BitmaskOffsets = require(PATH .. 'bitmaskoffsets')
 local EqualityFlags = require(PATH .. 'equalityflags')
 local BiomeType = require(PATH .. 'biometype')
 local HeightType = require(PATH .. 'heighttype')
-local cubeMapHelper = require(PATH .. 'cubemaphelper')
+local CubeMapHelper = require(PATH .. 'cubemaphelper')
 
 local bbor, bband, blshift, brshift = bit.bor, bit.band, bit.lshift, bit.rshift
-local mmin, mmax, mfloor = math.min, math.max, math.floor
+local mmin, mmax, mfloor, mrandom, mabs = math.min, math.max, math.floor, math.random, math.abs
 
-local generator = {}
+local M = {}
 
 local HEAT_THRESHOLDS 	  = { 0.15, 0.30, 0.45, 0.60, 0.75, 1.00 } -- cold to hot
 local MOISTURE_THRESHOLDS = { 0.27, 0.40, 0.60, 0.80, 0.90, 1.00 } -- dry to wet
 local HEIGHT_THRESHOLDS   = { 0.20, 0.48, 0.52, 0.70, 0.80, 0.90, 1.00 } -- low to high
 
-local BiomeTypeLookupTable = {
+local Direction = {
+	Up 		= {  0, -1 },
+	Down 	= {  0,  1 },
+	Left 	= { -1,  0 },
+	Right 	= {  1,  0 },
+}
+
+local BiomeTypeInfo = {
 --		COLDEST			COLDER				COLD 					HOT								HOTTER							HOTTEST	
 	{ BiomeType.ICE, BiomeType.TUNDRA, BiomeType.GRASSLAND,     BiomeType.DESERT, 				BiomeType.DESERT, 			   BiomeType.DESERT },				-- DRYEST
 	{ BiomeType.ICE, BiomeType.TUNDRA, BiomeType.GRASSLAND,     BiomeType.DESERT, 				BiomeType.DESERT, 			   BiomeType.DESERT },				-- DRYER
@@ -32,8 +39,13 @@ local function normalize(value, min, max)
 	return (value - min) / (max - min)
 end
 
+local function getRandomDirection()
+	local directions = { Direction.Up, Direction.Down, Direction.Left, Direction.Right }
+	return directions[mrandom(#directions)]
+end
+
 local function getBiomeType(moistureType, heatType)
-	return BiomeTypeLookupTable[moistureType][heatType] 
+	return BiomeTypeInfo[moistureType][heatType] 
 end
 
 local function getTypeForValue(value, thresholds)
@@ -47,35 +59,53 @@ local function getTypeForValue(value, thresholds)
 	return idx
 end
 
--- generate a tile map based on size and optionally seed & sea level
--- TODO: seed, seaLevel should be part of an options table
-generator.generate = function(size, seed)
-	local tileMaps = {}
+local function getTileValue(tileMap, size, face, x, y, direction)
+	local dx, dy = unpack(direction)
 
-	-- set seed if needed and ensure an integer value is used
-	seed = seed or math.random()
-	if seed < 1.0 then
-		 seed = mfloor(seed * 255)
+	if dx ~= 0 then
+		face, x, y = CubeMapHelper.getCoordDx(size, face, x, y, dx)
 	end
 
-	local heightMap, heightMin, heightMax = noiseMap.generate(size, seed % 127, 6)
+	if dy ~= 0 then
+		face, x, y = CubeMapHelper.getCoordDy(size, face, x, y, dy)
+	end
 
-	local heatNoiseMap, _, _ = noiseMap.generate(size, seed % 63, 4, 2.0)
-	local heatGradientMap, _, _ = gradientMap.generate(size, 4, 3.0)
-	local heatMap, heatMin, heatMax = combineMap.generate(size, heatNoiseMap, heatGradientMap)
+	return tileMap[face][x][y], face, x, y
+end
 
-	local moistureMap, moistureMin, moistureMax = noiseMap.generate(size, seed % 31, 4, 2.0)
+local function getAdjFlags(tileMap, size, face, x, y, direction)
+	local adjTile, adjFace, adjX, adjY = getTileValue(tileMap, size, face, x, y, direction)
+	local adjBiome = bband(brshift(adjTile, BitmaskOffsets.BIOME_TYPE), 0xF)
+	local adjHeight = bband(brshift(adjTile, BitmaskOffsets.HEIGHT_TYPE), 0x7)
+	return adjBiome, adjHeight
+end
+
+-- generate tile maps based on size and optionally seed & sea level
+-- TODO: consider adding options table for thresholds, rivers, etc...
+M.generate = function(size, seed)
+	local tileMaps = {}
+
+	-- TODO: assert a minimum size
+
+	-- set seed if needed and ensure an integer value is used
+	seed = seed or mrandom()
+	if seed < 1.0 then
+		seed = mfloor(seed * 255)
+	end
+
+	local heightMap, heightMin, heightMax = NoiseMap.generate(size, seed % 127, 6)
+	local heatNoiseMap, _, _ = NoiseMap.generate(size, seed % 63, 4, 2.0)
+	local heatGradientMap, _, _ = GradientMap.generate(size, 4, 3.0)
+	local heatMap, heatMin, heatMax = CombineMap.generate(size, heatNoiseMap, heatGradientMap)
+	local moistureMap, moistureMin, moistureMax = NoiseMap.generate(size, seed % 31, 4, 2.0)
 
 	-- could be a 2 dimensional array, the face could be an x-offset
-
 	local tileMap = {}
 
 	for face = 1, 6 do
 		tileMap[face] = {}
-
 		for x = 1, size do
 			tileMap[face][x] = {}
-
 			for y = 1, size do
 				local height = normalize(heightMap[face][x][y], heightMin, heightMax)
 				local heat = normalize(heatMap[face][x][y], heatMin, heatMax)
@@ -116,58 +146,39 @@ generator.generate = function(size, seed)
 
 				-- set tile value based on biomeType, heightType, heatType, moistureType, height ...
 				tileMap[face][x][y] = bbor(
-					blshift(biomeType, BitmaskOffsets.BIOME_TYPE),						-- 4 bits
+					blshift(biomeType, BitmaskOffsets.BIOME_TYPE),			-- 4 bits
 					blshift(moistureType, BitmaskOffsets.MOISTURE_TYPE),	-- 3 bits
-					blshift(heatType, BitmaskOffsets.HEAT_TYPE),				-- 3 bits
-					blshift(heightType, BitmaskOffsets.HEIGHT_TYPE),			-- 3 bits
-					mfloor(height * 255))														-- 8 bits
-				--[[ 
-					remaining bits for: 
-					- biomeType adjadency flags (4 bits)
-					- heightType adjadency flags (4 bits)
-					- ?
-				--]] 
+					blshift(heatType, BitmaskOffsets.HEAT_TYPE),			-- 3 bits
+					blshift(heightType, BitmaskOffsets.HEIGHT_TYPE),		-- 3 bits
+					mfloor(height * 255))									-- 8 bits
 			end
 		end
 	end
 
-	-- calculate adjacency flags
+	-- set adjacency flags for biome type & height type
 	for face = 1, 6 do
 		for x = 1, size do
 			for y = 1, size do
 				local tile = tileMap[face][x][y]
 				local biome = bband(brshift(tile, BitmaskOffsets.BIOME_TYPE), 0xF)
-				local height = bband(brshift(tile, BitmaskOffsets.HEIGHT_TYPE), 0x7)
-				local biomeFlags = 0
-				local heightFlags = 0
+				local height = bband(brshift(tile, BitmaskOffsets.HEIGHT_TYPE), 0xF)
+				local biomeFlags, heightFlags = 0, 0
 
-				local adjFace, adjX, adjY = cubeMapHelper.getCoordDx(face, size, x, y, -1)
-				local adjTile = tileMap[adjFace][adjX][adjY]
-				local adjBiome = bband(brshift(adjTile, BitmaskOffsets.BIOME_TYPE), 0xF)
-				adjHeight = bband(brshift(adjTile, BitmaskOffsets.HEIGHT_TYPE), 0x7)
+				local adjBiome, adjHeight = getAdjFlags(tileMap, size, face, x, y, Direction.Left)
 				if biome == adjBiome then biomeFlags = bbor(biomeFlags, EqualityFlags.EQ_LEFT) end
 				if height == adjHeight then heightFlags = bbor(heightFlags, EqualityFlags.EQ_LEFT) end
 
-				adjFace, adjX, adjY = cubeMapHelper.getCoordDx(face, size, x, y, 1)
-				adjTile = tileMap[adjFace][adjX][adjY]
-				adjBiome = bband(brshift(adjTile, BitmaskOffsets.BIOME_TYPE), 0xF)
-				adjHeight = bband(brshift(adjTile, BitmaskOffsets.HEIGHT_TYPE), 0x7)
+				local adjBiome, adjHeight = getAdjFlags(tileMap, size, face, x, y, Direction.Right)
 				if biome == adjBiome then biomeFlags = bbor(biomeFlags, EqualityFlags.EQ_RIGHT) end
 				if height == adjHeight then heightFlags = bbor(heightFlags, EqualityFlags.EQ_RIGHT) end
 
-				adjFace, adjX, adjY = cubeMapHelper.getCoordDy(face, size, x, y, -1)
-				adjTile = tileMap[adjFace][adjX][adjY]
-				adjBiome = bband(brshift(adjTile, BitmaskOffsets.BIOME_TYPE), 0xF)
-				adjHeight = bband(brshift(adjTile, BitmaskOffsets.HEIGHT_TYPE), 0x7)
-				if biome == adjBiome then biomeFlags = bbor(biomeFlags, EqualityFlags.EQ_TOP) end
-				if height == adjHeight then heightFlags = bbor(heightFlags, EqualityFlags.EQ_TOP) end
+				local adjBiome, adjHeight = getAdjFlags(tileMap, size, face, x, y, Direction.Up)
+				if biome == adjBiome then biomeFlags = bbor(biomeFlags, EqualityFlags.EQ_UP) end
+				if height == adjHeight then heightFlags = bbor(heightFlags, EqualityFlags.EQ_UP) end
 
-				adjFace, adjX, adjY = cubeMapHelper.getCoordDy(face, size, x, y, 1)
-				adjTile = tileMap[adjFace][adjX][adjY]
-				adjBiome = bband(brshift(adjTile, BitmaskOffsets.BIOME_TYPE), 0xF)
-				adjHeight = bband(brshift(adjTile, BitmaskOffsets.HEIGHT_TYPE), 0x7)
-				if biome == adjBiome then biomeFlags = bbor(biomeFlags, EqualityFlags.EQ_BOTTOM) end
-				if height == adjHeight then heightFlags = bbor(heightFlags, EqualityFlags.EQ_BOTTOM) end
+				local adjBiome, adjHeight = getAdjFlags(tileMap, size, face, x, y, Direction.Down)
+				if biome == adjBiome then biomeFlags = bbor(biomeFlags, EqualityFlags.EQ_DOWN) end
+				if height == adjHeight then heightFlags = bbor(heightFlags, EqualityFlags.EQ_DOWN) end
 
 				tileMap[face][x][y] = bbor(tile, 
 					blshift(biomeFlags, BitmaskOffsets.ADJ_BIOME_FLAGS),
@@ -179,4 +190,4 @@ generator.generate = function(size, seed)
 	return tileMap
 end
 
-return generator
+return M

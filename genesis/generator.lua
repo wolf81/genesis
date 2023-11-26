@@ -17,8 +17,6 @@ local HEAT_THRESHOLDS 	  = { 0.15, 0.30, 0.45, 0.60, 0.75, 1.00 } -- cold to hot
 local MOISTURE_THRESHOLDS = { 0.27, 0.40, 0.60, 0.80, 0.90, 1.00 } -- dry to wet
 local HEIGHT_THRESHOLDS   = { 0.20, 0.48, 0.52, 0.70, 0.80, 0.90, 1.00 } -- low to high
 
-local EPSILON = 1e-5
-
 local Direction = {
 	Up 		= {  0, -1 },
 	Down 	= {  0,  1 },
@@ -61,7 +59,7 @@ local function getTypeForValue(value, thresholds)
 	return idx
 end
 
-local function getTile(tileMap, size, face, x, y, direction)
+local function getTileValue(tileMap, size, face, x, y, direction)
 	local dx, dy = unpack(direction)
 
 	if dx ~= 0 then
@@ -76,171 +74,10 @@ local function getTile(tileMap, size, face, x, y, direction)
 end
 
 local function getAdjFlags(tileMap, size, face, x, y, direction)
-	local adjTile, adjFace, adjX, adjY = getTile(tileMap, size, face, x, y, direction)
+	local adjTile, adjFace, adjX, adjY = getTileValue(tileMap, size, face, x, y, direction)
 	local adjBiome = bband(brshift(adjTile, BitmaskOffsets.BIOME_TYPE), 0xF)
 	local adjHeight = bband(brshift(adjTile, BitmaskOffsets.HEIGHT_TYPE), 0x7)
 	return adjBiome, adjHeight
-end
-
-local function planchonDarboux(heightMap, size)
-	local surface = {}
-
-	-- configure initial surface - unlike the original algorithm, the sets all 
-	-- 4 borders, for a given face we only set 2 borders, as we have a wrapping
-	-- map
-	for face = 1, 6 do
-		surface[face] = {}
-		for x = 1, size do
-			surface[face][x] = {}
-			for y = 1, size do
-				surface[face][x][y] = math.huge				
-				if x == 1 and y == 1 then
-					-- TODO: maybe we should use the highest coords instead,
-					-- because I think having a 0 value in corner might result
-					-- in issues with river flow, when reaching such a tile
-					surface[face][x][y] = heightMap[face][x][y]
-				end
-			end
-		end
-	end
-
-	local directions = { Direction.Left, Direction.Right, Direction.Up, Direction.Down }
-
-	-- repeatedly update tile heights based on neighbor heights, until the loop
-	-- runs without updating any heights
-	do repeat
-		local changeCount = 0
-
-		for face = 1, 6 do
-			for x = 1, size do
-				for y = 1, size do
-					local height = surface[face][x][y]
-
-					if heightMap[face][x][y] == height then goto continue end
-
-					for _, direction in ipairs(directions) do
-						local dx, dy = unpack(direction)
-						local adjFace, adjX, adjY = CubeMapHelper.getCoord(size, face, x, y, dx, dy)
-						local nVal = surface[adjFace][adjX][adjY]
-
-						if heightMap[face][x][y] >= nVal + EPSILON then
-							surface[face][x][y] = heightMap[face][x][y]
-							changeCount = changeCount + 1
-							break
-						end
-
-						local hVal = nVal + EPSILON
-						if surface[face][x][y] > hVal and hVal > heightMap[face][x][y] then
-							surface[face][x][y] = hVal
-							changeCount = changeCount + 1
-						end
-					end
-
-					::continue::
-				end
-			end
-		end
-		print('changeCount: ', changeCount)
-	until changeCount == 0 end
-
-	return surface
-end
-
-local function fillDepressions(heightMap, size)
-	local surface = planchonDarboux(heightMap, size)
-
-	-- determine minimum & maximum height values
-	local heightMin = math.huge
-	local heightMax = -math.huge
-
-	for face = 1, 6 do
-		for x = 1, size do
-			for y = 1, size do
-				local height = surface[face][x][y]
-				heightMin = mmin(height, heightMin)
-				heightMax = mmax(height, heightMax)
-			end
-		end
-	end
-
-	return surface, heightMin, heightMax
-end
-
-local function generateFlowMap(heightMap, size)
-	local flowMap = {}
-
-	local directions = { Direction.Left, Direction.Right, Direction.Up, Direction.Down }
-
-	for face = 1, 6 do
-		flowMap[face] = {}
-		for x = 1, size do
-			flowMap[face][x] = {}
-			for y = 1, size do
-				local height = heightMap[face][x][y]
-
-				local neighbors = {}
-				for _, direction in ipairs(directions) do
-					local height = getTile(heightMap, size, face, x, y, direction)
-					neighbors[#neighbors + 1] = { height = height, direction = direction }
-				end
-
-				table.sort(neighbors, function(a, b) return a.height < b.height end)
-				if neighbors[1].height < height then
-					flowMap[face][x][y] = neighbors[1].direction
-				else 
-					flowMap[face][x][y] = neighbors[1].height
-				end
-			end
-		end
-	end
-
-	return flowMap
-end
-
-local function generateRivers(heightMap, flowMap, size, heightMin, heightMax)
-	local rivers = {}
-
-	local attempts = 1000
-
-	print(heightMin, heightMax)
-
-	-- normalize height heightThresholds, so we can figure out threshold for 
-	-- * mountains (start of rivers)
-	-- * sea (end of rivers)
-	local heightThresholds = {}
-	for _, threshold in ipairs(HEIGHT_THRESHOLDS) do
-		heightThresholds[#heightThresholds + 1] = heightMin + (heightMax - heightMin) * threshold
-	end
-
-	local startRiverHeight = heightThresholds[5]
-	local endRiverHeight = heightThresholds[2]
-
-	do repeat
-		attempts = attempts - 1
-
-		local face = mrandom(6)
-		local x = mrandom(size)
-		local y = mrandom(size)
-		local height = heightMap[face][x][y]
-
-		if height < startRiverHeight then goto continue end
-
-		print('start river @', face, x, y)
-
-		while height >= endRiverHeight do
-			print(face, x, y)
-
-			local direction = flowMap[face][x][y]
-			height, face, x, y = getTile(heightMap, size, face, x, y, direction)
-		end
-
-		print('end river')
-
-		::continue::
-	until attempts == 0 end
-
-
-	return heightMap
 end
 
 -- generate tile maps based on size and optionally seed & sea level
@@ -253,7 +90,7 @@ M.generate = function(size, seed)
 	-- set seed if needed and ensure an integer value is used
 	seed = seed or mrandom()
 	if seed < 1.0 then
-		 seed = mfloor(seed * 255)
+		seed = mfloor(seed * 255)
 	end
 
 	local heightMap, heightMin, heightMax = NoiseMap.generate(size, seed % 127, 6)
@@ -261,12 +98,6 @@ M.generate = function(size, seed)
 	local heatGradientMap, _, _ = GradientMap.generate(size, 4, 3.0)
 	local heatMap, heatMin, heatMax = CombineMap.generate(size, heatNoiseMap, heatGradientMap)
 	local moistureMap, moistureMin, moistureMax = NoiseMap.generate(size, seed % 31, 4, 2.0)
-
-	-- TODO: instead of modifying the heightmap, maybe use the map purely to generate rivers
-	heightMap, heightMin, heightMax = fillDepressions(heightMap, size)
-
-	local flowMap = generateFlowMap(heightMap, size)
-	local rivers = generateRivers(heightMap, flowMap, size, heightMin, heightMax)
 
 	-- could be a 2 dimensional array, the face could be an x-offset
 	local tileMap = {}

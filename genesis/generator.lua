@@ -133,30 +133,35 @@ local function getAdjFlags(tileMap, size, face, x, y, direction)
 	return adjBiome, adjHeight
 end
 
-local function floodFill(heightMap, size, face, x, y, group, getGroupType, fillInfo)
-	local key = getKey(face, x, y)
+local function floodFill(heightMap, size, coord, group, getGroupType, fillInfo, stack)
+	local face, x, y = unpack(coord)
 
 	-- ignore processed coords
+	local key = getKey(face, x, y)
 	if fillInfo[key] then return end
 
 	-- mark coord as processed
 	fillInfo[key] = group.id
 
-	-- add coord to current group
-	group.coords[key] = group.id -- add to current group
+	-- ensure the group type at current coord matches the type of the group
+	local height = heightMap[face][x][y]	
+	if group.type ~= getGroupType(height) then return end
 
-	-- recursively add neighbor coords if neighbor coords are of same group type
+	-- add coord to current group coords
+	group.coords[#group.coords + 1] = { face, x, y }
+
+	-- add neighbors to the stack, if they are of similar group type
 	local directions = { Direction.Left, Direction.Right, Direction.Up, Direction.Down }
 	for _, direction in ipairs(directions) do
 		local value, face, x, y = getTileValue(heightMap, size, face, x, y, direction)
 		if getGroupType(value) == group.type then
-			floodFill(heightMap, size, face, x, y, group, getGroupType, fillInfo)
+			stack[#stack + 1] = { face, x, y }
 		end
 	end
 end
 
 local function generateGroups(heightMap, size, heightMin, heightMax)
-	local fillInfo = {}
+	local fillInfo, groups, stack = {}, {}, {}
 
 	-- shore starts at top of shallow water
 	local shoreHeight = heightMin + HEIGHT_THRESHOLDS[2] * (heightMax - heightMin) 
@@ -166,33 +171,37 @@ local function generateGroups(heightMap, size, heightMin, heightMax)
 		return height >= shoreHeight and GroupType.LAND or GroupType.WATER
 	end
 
-	local groups = {}
-
 	-- generate land & water groups
 	forEachTile(heightMap, function(height, face, x, y)
-		local key = getKey(face, x, y)		
-		if fillInfo[key] then return end -- already processed
+		-- skip already processed coords
+		if fillInfo[getKey(face, x, y)] then return end 
 
+		-- create a new group for the current group type and add intial coord
 		local group = {
 			id = #groups + 1,
 			type = height < shoreHeight and GroupType.WATER or GroupType.LAND,
-			coords = {},
+			coords = { { face, x, y } },
 		}
-		-- convert floodfill algorithm to use a stack instead of recursion
-		-- add neigbour tiles to stack until border reached
-		-- process stack one by one until empty
-		floodFill(heightMap, size, face, x, y, group, getGroupType, fillInfo)
-		groups[#groups + 1] = group
+
+		-- add the initial coord to the stack, that will have neighbors added
+		stack[#stack + 1] = group.coords[1]
+
+		-- process neighbors until border is reached for current group type
+		while #stack > 0 do
+			floodFill(heightMap, size, table.remove(stack, 1), group, getGroupType, fillInfo, stack)
+		end
+
+		-- only store groups with multiple coords
+		if #group.coords > 0 then
+			groups[#groups + 1] = group
+		end
 	end)
 
 	print('groups:', #groups)
+	print()
 
 	for _, group in ipairs(groups) do
-		print('group', group.id)
-
-		for coord, _ in pairs(group.coords) do
-			print(getCoord(coord))
-		end
+		print('group', group.id, #group.coords)
 	end
 
 	return groups

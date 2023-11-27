@@ -62,11 +62,11 @@ M.getHeightValue = function(tile)
     return bband(tile, 0xFF)
 end
 
-M.getBiomeAdjFlags = function(tile)
+M.getAdjBiomeFlags = function(tile)
     return bband(brshift(tile, BitmaskOffsets.ADJ_BIOME_FLAGS), 0xF)
 end
 
-M.getHeightAdjFlags = function(tile)
+M.getAdjHeightFlags = function(tile)
     return bband(brshift(tile, BitmaskOffsets.ADJ_HEIGHT_FLAGS), 0xF)
 end
 

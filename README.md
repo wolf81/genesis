@@ -99,9 +99,9 @@ local adjHeightFlags = genesis.getAdjHeightFlags(tile) 	-- EQ_TOP, EQ_LEFT, EQ_R
 local adjBiomeFlags = genesis.getAdjBiomeFlags(tile) 		-- EQ_TOP, EQ_LEFT, EQ_RIGHT, EQ_BOTTOM, EQ_ALL
 ``` 
 
-With regards to height, the height type indicates that neighbouring tiles are inside same height range. When tiles are inside the same height range, they get the same height type.
+With regards to height, the height type indicates that neighbouring tiles are inside same height range. When tiles are inside the same height range, they get the same height type. Height types are defined in heighttypes.lua.
 
-The moisture and heat types are used to generate the biome type. The biome type can be used to render appropriate tiles on the map for different biomes, like desert, savanna, tundra, etc...
+The moisture and heat types are used to generate the biome type. The biome type can be used to render appropriate tiles on the map for different biomes, like desert, savanna, tundra, etc... See biometype.lua for a list of all biome types.
 
 Finally the adjacent flags functions can be used to figure out if neighbouring tiles are of the same height or biome type. This can be useful for rendering maps. For example, if the neighbouring tiles are not of equal type, it is possible to draw a border.
 

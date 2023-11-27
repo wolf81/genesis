@@ -91,7 +91,7 @@ local function getBiomeType(moistureType, heatType)
 end
 
 local function getKey(face, x, y)
-	return bbor(blshift(face, 28), blshift(x, 14), y)
+	return face * y + x -- bbor(blshift(face, 28), blshift(x, 14), y)
 end
 
 local function getCoord(key)

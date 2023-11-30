@@ -77,13 +77,26 @@ specific information of a tile, we can use the following functions:
 
 ```lua
 local tile = tileMap[1][20][30] -- get tile at face 1, x-coord 20, y-coord 30
+
+-- height info
 local height = genesis.getHeightValue(tile) --> number between 0 .. 255
-local moisture = genesis.getMoistureValue(tile) --> number between 1 .. 6
-local heat = genesis.getHeatValue(tile) --> number between 1 .. 6
+local heightType = genesis.getHeightType(tile) --> number between 1 .. 6
+
+-- moisture, heat & biome type
+local moistureType = genesis.getMoistureType(tile) --> number between 1 .. 6
+local heatType = genesis.getHeatType(tile) --> number between 1 .. 6
+local biomeType = genesis.getBiomeType(tile) --> 1 .. 12
+
+-- adjacent height & biome flags
+local adjHeightFlags = genesis.getHeightAdjFlags(tile) -- EQ_TOP, EQ_LEFT, EQ_RIGHT, EQ_BOTTOM, EQ_ALL
+local adjBiomeFlags = genesis.getBiomeAdjFlags(tile) -- EQ_TOP, EQ_LEFT, EQ_RIGHT, EQ_BOTTOM, EQ_ALL
 ``` 
 
-The values can be used to render height maps, heat maps, moisture maps or 
-generate biomes.
+With regards to height, the height type indicates that neighbouring tiles are inside same height range. When tiles are inside the same height range, they get the same height type. Height types are defined in heighttypes.lua.
+
+The moisture and heat types are used to generate the biome type. The biome type can be used to render appropriate tiles on the map for different biomes, like desert, savanna, tundra, etc... See biometype.lua for a list of all biome types.
+
+Finally the adjactent flags function can be used to figure out if neighbouring tiles are of the same height or biome type. This can be useful for rendering maps. For example, if the neighbouring tiles are not of equal type, it is possible to draw a border.
 
 # FURTHER READING
 

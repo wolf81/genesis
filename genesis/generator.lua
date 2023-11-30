@@ -170,8 +170,8 @@ generator.generate = function(size, seed)
 				if height == adjHeight then heightFlags = bbor(heightFlags, EqualityFlags.EQ_BOTTOM) end
 
 				tileMap[face][x][y] = bbor(tile, 
-					blshift(biomeFlags, BitmaskOffsets.BIOME_ADJ_FLAGS),
-					blshift(heightFlags, BitmaskOffsets.HEIGHT_ADJ_FLAGS))
+					blshift(biomeFlags, BitmaskOffsets.ADJ_BIOME_FLAGS),
+					blshift(heightFlags, BitmaskOffsets.ADJ_HEIGHT_FLAGS))
 			end
 		end
 	end

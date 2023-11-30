@@ -79,17 +79,24 @@ specific information of a tile, we can use the following functions:
 local tile = tileMap[1][20][30] -- get tile at face 1, x-coord 20, y-coord 30
 
 -- height info
-local height = genesis.getHeightValue(tile) --> number between 0 .. 255
-local heightType = genesis.getHeightType(tile) --> number between 1 .. 6
+local height = genesis.getHeightValue(tile) 				--> number in range 0 .. 255
+
+local heightType = genesis.getHeightType(tile) 			--> number in range 1 .. 6 
+																										-->  see: genesis.HeightType
 
 -- moisture, heat & biome type
-local moistureType = genesis.getMoistureType(tile) --> number between 1 .. 6
-local heatType = genesis.getHeatType(tile) --> number between 1 .. 6
-local biomeType = genesis.getBiomeType(tile) --> 1 .. 12
+local moistureType = genesis.getMoistureType(tile) 	--> number in range 1 .. 6
+																										--> see: genesis.MoistureType
 
--- adjacent height & biome flags
-local adjHeightFlags = genesis.getAdjHeightFlags(tile) -- EQ_TOP, EQ_LEFT, EQ_RIGHT, EQ_BOTTOM, EQ_ALL
-local adjBiomeFlags = genesis.getAdjBiomeFlags(tile) -- EQ_TOP, EQ_LEFT, EQ_RIGHT, EQ_BOTTOM, EQ_ALL
+local heatType = genesis.getHeatType(tile) 					--> number in range 1 .. 6
+																										--> see: genesis.HeatType
+
+local biomeType = genesis.getBiomeType(tile) 				--> number in range 1 .. 12
+																										--> see: genesis.BiomeType
+
+-- adjacent height & biome flags, see: genesis.EqualityFlags
+local adjHeightFlags = genesis.getAdjHeightFlags(tile) 	-- EQ_TOP, EQ_LEFT, EQ_RIGHT, EQ_BOTTOM, EQ_ALL
+local adjBiomeFlags = genesis.getAdjBiomeFlags(tile) 		-- EQ_TOP, EQ_LEFT, EQ_RIGHT, EQ_BOTTOM, EQ_ALL
 ``` 
 
 With regards to height, the height type indicates that neighbouring tiles are inside same height range. When tiles are inside the same height range, they get the same height type. Height types are defined in heighttypes.lua.

@@ -6,7 +6,8 @@ local BitmaskOffsets = require(PATH .. 'bitmaskoffsets')
 local EqualityFlags = require(PATH .. 'equalityflags')
 local BiomeType = require(PATH .. 'biometype')
 local HeightType = require(PATH .. 'heighttype')
-local CubeMapHelper = require(PATH .. 'cubemaphelper')
+local CubeMap = require(PATH .. 'cubemap')
+local Group = require(PATH .. 'group')
 
 local bbor, bband, blshift, brshift = bit.bor, bit.band, bit.lshift, bit.rshift
 local mmin, mmax, mfloor, mrandom = math.min, math.max, math.floor, math.random
@@ -17,73 +18,39 @@ local HEAT_THRESHOLDS 	  = { 0.15, 0.30, 0.45, 0.60, 0.75, 1.00 } -- cold to hot
 local MOISTURE_THRESHOLDS = { 0.27, 0.40, 0.60, 0.80, 0.90, 1.00 } -- dry to wet
 local HEIGHT_THRESHOLDS   = { 0.20, 0.48, 0.52, 0.70, 0.80, 0.90, 1.00 } -- low to high
 
+local MIN_GROUP_SIZE = 32
+
 local GroupType = {
 	LAND 	= 1,
-	WATER = 2,
+	WATER 	= 2,
 }
 
 local Direction = {
 	Up 		= {  0, -1 },
 	Down 	= {  0,  1 },
 	Left 	= { -1,  0 },
-	Right = {  1,  0 },
+	Right 	= {  1,  0 },
 }
 
-local Direction = {
-	Up 		= {  0, -1 },
-	Down 	= {  0,  1 },
-	Left 	= { -1,  0 },
-	Right = {  1,  0 },
-}
+local Directions = { Direction.Left, Direction.Right, Direction.Up, Direction.Down }
 
 local BiomeTypeInfo = {
---		COLDEST						COLDER							COLD 										HOT														HOTTER													HOTTEST	
-	{ BiomeType.ICE, BiomeType.TUNDRA, BiomeType.GRASSLAND,     BiomeType.DESERT, 							BiomeType.DESERT, 			   			BiomeType.DESERT },								-- DRYEST
-	{ BiomeType.ICE, BiomeType.TUNDRA, BiomeType.GRASSLAND,     BiomeType.DESERT, 							BiomeType.DESERT, 			   			BiomeType.DESERT },								-- DRYER
-	{ BiomeType.ICE, BiomeType.TUNDRA, BiomeType.WOODLAND,      BiomeType.WOODLAND, 						BiomeType.SAVANNA, 			   			BiomeType.SAVANNA },							-- DRY
-	{ BiomeType.ICE, BiomeType.TUNDRA, BiomeType.BOREAL_FOREST, BiomeType.WOODLAND, 						BiomeType.SAVANNA, 			   			BiomeType.SAVANNA },							-- WET
-	{ BiomeType.ICE, BiomeType.TUNDRA, BiomeType.BOREAL_FOREST, BiomeType.SEASONAL_FOREST, 			BiomeType.TROPICAL_RAINFOREST, 	BiomeType.TROPICAL_RAINFOREST },	-- WETTER
-	{ BiomeType.ICE, BiomeType.TUNDRA, BiomeType.BOREAL_FOREST, BiomeType.TEMPERATE_RAINFOREST, BiomeType.TROPICAL_RAINFOREST, 	BiomeType.TROPICAL_RAINFOREST },	-- WETTEST
+--	  COLDEST		 COLDER			   COLD 					HOT							HOTTER						HOTTEST	
+	{ BiomeType.ICE, BiomeType.TUNDRA, BiomeType.GRASSLAND,     BiomeType.DESERT, 			BiomeType.DESERT, 			BiomeType.DESERT 		  }, -- DRYEST
+	{ BiomeType.ICE, BiomeType.TUNDRA, BiomeType.GRASSLAND,     BiomeType.DESERT, 			BiomeType.DESERT, 			BiomeType.DESERT 		  }, -- DRYER
+	{ BiomeType.ICE, BiomeType.TUNDRA, BiomeType.WOODLAND,      BiomeType.WOODLAND, 		BiomeType.SAVANNA, 			BiomeType.SAVANNA 		  }, -- DRY
+	{ BiomeType.ICE, BiomeType.TUNDRA, BiomeType.BOREAL_FOREST, BiomeType.WOODLAND, 		BiomeType.SAVANNA, 			BiomeType.SAVANNA 		  }, -- WET
+	{ BiomeType.ICE, BiomeType.TUNDRA, BiomeType.BOREAL_FOREST, BiomeType.SEASONAL_FOREST, 	BiomeType.TROP_RAINFOREST, 	BiomeType.TROP_RAINFOREST }, -- WETTER
+	{ BiomeType.ICE, BiomeType.TUNDRA, BiomeType.BOREAL_FOREST, BiomeType.TEMP_RAINFOREST, 	BiomeType.TROP_RAINFOREST, 	BiomeType.TROP_RAINFOREST }, -- WETTEST
 }
-
--- TODO: rename?
--- TROPRN_FOREST
--- TEMPRN_FOREST
--- SEASON_FOREST
--- BOREAL_FOREST
-
-local function newTileMap(size, fn)
-	local tileMap = {}
-	for face = 1, 6 do
-		tileMap[face] = {}
-		for x = 1, size do
-			tileMap[face][x] = {}
-			for y = 1, size do
-				tileMap[face][x][y] = fn(face, x, y)
-			end
-		end
-	end
-	return tileMap
-end
-
-local function forEachTile(tileMap, fn)
-	local size = #tileMap[1]
-	for face = 1, 6 do
-		for x = 1, size do
-			for y = 1, size do
-				fn(tileMap[face][x][y], face, x, y)
-			end
-		end
-	end
-end
 
 -- normalize a value to 0.0 .. 1.0 range
 local function normalize(value, min, max)
 	return (value - min) / (max - min)
 end
 
-local function getBiomeType(moistureType, heatType)
-	return BiomeTypeInfo[moistureType][heatType] 
+local function round(a, b)
+	 return (a - a % b) / b
 end
 
 local function getBiomeType(moistureType, heatType)
@@ -91,7 +58,7 @@ local function getBiomeType(moistureType, heatType)
 end
 
 local function getKey(face, x, y)
-	return face * y + x -- bbor(blshift(face, 28), blshift(x, 14), y)
+	return bbor(blshift(face, 28), blshift(x, 14), y)
 end
 
 local function getCoord(key)
@@ -116,11 +83,11 @@ local function getTileValue(tileMap, size, face, x, y, direction)
 	local dx, dy = unpack(direction)
 
 	if dx ~= 0 then
-		face, x, y = CubeMapHelper.getCoordDx(size, face, x, y, dx)
+		face, x, y = CubeMap.getCoordDx(size, face, x, y, dx)
 	end
 
 	if dy ~= 0 then
-		face, x, y = CubeMapHelper.getCoordDy(size, face, x, y, dy)
+		face, x, y = CubeMap.getCoordDy(size, face, x, y, dy)
 	end
 
 	return tileMap[face][x][y], face, x, y
@@ -136,78 +103,152 @@ end
 local function floodFill(heightMap, size, coord, group, getGroupType, fillInfo, stack)
 	local face, x, y = unpack(coord)
 
-	-- ignore processed coords
-	local key = getKey(face, x, y)
-	if fillInfo[key] then return end
-
 	-- mark coord as processed
-	fillInfo[key] = group.id
-
-	-- ensure the group type at current coord matches the type of the group
-	local height = heightMap[face][x][y]	
-	if group.type ~= getGroupType(height) then return end
+	fillInfo[getKey(face, x, y)] = group.id
 
 	-- add coord to current group coords
-	group.coords[#group.coords + 1] = { face, x, y }
+	Group.add(group, face, x, y)
 
 	-- add neighbors to the stack, if they are of similar group type
-	local directions = { Direction.Left, Direction.Right, Direction.Up, Direction.Down }
-	for _, direction in ipairs(directions) do
-		local value, face, x, y = getTileValue(heightMap, size, face, x, y, direction)
-		if getGroupType(value) == group.type then
-			stack[#stack + 1] = { face, x, y }
-		end
+	for _, direction in ipairs(Directions) do
+		local face, x, y = CubeMap.getCoord(size, face, x, y, unpack(direction))
+		if fillInfo[getKey(face, x, y)] ~= nil then goto continue end
+
+		local height = heightMap[face][x][y]
+		if getGroupType(height) ~= group.type then goto continue end
+
+		stack[#stack + 1] = { face, x, y }
+
+		::continue::
 	end
 end
 
-local function generateGroups(heightMap, size, heightMin, heightMax)
-	local fillInfo, groups, stack = {}, {}, {}
+local function generateGroups(heightMap, size, heightMin, heightMax, didRemoveSmallGroups)
+	local fillInfo, landGroups, waterGroups, stack = {}, {}, {}, {}
 
 	-- shore starts at top of shallow water
 	local shoreHeight = heightMin + HEIGHT_THRESHOLDS[2] * (heightMax - heightMin) 
 
 	-- determine group type for current height value, based on minimum & maximum height values
-	local getGroupType = function(height) 
-		return height >= shoreHeight and GroupType.LAND or GroupType.WATER
+	local getGroupType = function(height)
+		return (height >= shoreHeight) and GroupType.LAND or GroupType.WATER
 	end
 
 	-- generate land & water groups
-	forEachTile(heightMap, function(height, face, x, y)
+	for face, x, y, height in CubeMap.iter(heightMap) do
 		-- skip already processed coords
-		if fillInfo[getKey(face, x, y)] then return end 
+		if fillInfo[getKey(face, x, y)] ~= nil then goto continue end 
 
-		-- create a new group for the current group type and add intial coord
-		local group = {
-			id = #groups + 1,
-			type = height < shoreHeight and GroupType.WATER or GroupType.LAND,
-			coords = { { face, x, y } },
-		}
+		-- create a new group for the current group type
+		local group = Group.new(getGroupType(height))
 
 		-- add the initial coord to the stack, that will have neighbors added
-		stack[#stack + 1] = group.coords[1]
+		stack[#stack + 1] = { face, x, y }
 
 		-- process neighbors until border is reached for current group type
 		while #stack > 0 do
-			floodFill(heightMap, size, table.remove(stack, 1), group, getGroupType, fillInfo, stack)
+			floodFill(heightMap, size, table.remove(stack), group, getGroupType, fillInfo, stack)
 		end
 
 		-- only store groups with multiple coords
-		if #group.coords > 0 then
-			groups[#groups + 1] = group
+		if group.size > 0 then
+			if group.type == GroupType.LAND then
+				landGroups[#landGroups + 1] = group
+			else
+				waterGroups[#waterGroups + 1] = group
+			end
 		end
-	end)
 
-	print('groups:', #groups)
-	print()
-
-	for _, group in ipairs(groups) do
-		print('group', group.id, #group.coords)
+		::continue::
 	end
 
-	return groups
+	-- remove tiny & small islands and lakes
+	if not didRemoveSmallGroups then
+		for _, groups in ipairs({ landGroups, waterGroups }) do
+			for _, group in ipairs(groups) do
+				local v = group.type == GroupType.WATER and 0.02 or -0.02
+
+				if group.size < MIN_GROUP_SIZE then
+					for face, x, y in Group.iter(group) do
+						heightMap[face][x][y] = heightMap[face][x][y] + v
+					end
+				end
+			end
+		end
+
+		return generateGroups(heightMap, size, heightMin, heightMax, true)
+	end
+
+	print('landGroups: ' .. #landGroups, 'waterGroups: ' .. #waterGroups)
+
+	return landGroups, waterGroups
 end
 
-local function generateRivers(heightMap, size)
+local function generateRivers(heightMap, size, landGroups, heightMin, heightMax)
+	-- rivers start in mountains
+	local rockHeight = heightMin + HEIGHT_THRESHOLDS[5] * (heightMax - heightMin) 
+
+	-- rivers end in the sea
+	local shoreHeight = heightMin + HEIGHT_THRESHOLDS[2] * (heightMax - heightMin) 
+
+	for _, landGroup in ipairs(landGroups) do
+		local coords = {}
+
+		-- find coords of mountains
+		for face, x, y in Group.iter(landGroup) do
+			if heightMap[face][x][y] > rockHeight then
+				coords[#coords + 1] = { face, x, y }
+			end
+		end		
+
+		-- if no mountain coords were found, can try next land group
+		if #coords == 0 then goto continue end
+
+		-- choose a random coord from the mountain coords
+		local coord = coords[mrandom(#coords)]
+
+		-- choose a random direction
+		local angle = mrandom(math.pi * 2)
+		local dx, dy = math.cos(angle), math.sin(angle)
+
+		-- store river path
+		local path = { coord }
+
+		print(coord[1], coord[2], coord[3])
+
+		-- try find a path towards the sea based on current coord and angle
+		local face, x, y = unpack(coord)
+		for i = 1, size * 2 do
+			local face1, x1, y1 = CubeMap.getCoord(size, face, x, y, round(i * dx, 1), round(i * dy, 1))
+			local height = heightMap[face1][x1][y1]
+
+			local lastCoord = path[#path]
+			if lastCoord[1] ~= face1 and lastCoord[2] ~= x and lastCoord[3] ~= y then
+				print(face1, x1, y1)
+			end 
+
+			if height < shoreHeight then
+				path[#path + 1] = { face1, x1, y1 }
+				break
+			end
+		end
+
+		print()
+
+		-- 1. for each path, find a mid point
+		-- 2. find intersecting vector 
+		-- 3. check both sides of vector for some distance to find lowest point
+		-- 4. create new path between path start and end point with mid point
+		-- 5. rinse and repeat 
+
+		-- TODO: how can we get mid point between 2 coords from cube map?
+		--	issue, we need to know the angle between 2 points in cube map, which is different if 
+		-- 	each point is on different face
+		--	probably need to "flatten" the faces  
+
+		::continue::
+	end
+
 	--[[
 	-- 1. first figure out highest points in the map
 	-- 2. choose a random start point A from the highest points values
@@ -241,10 +282,10 @@ M.generate = function(size, seed)
 	local moistureMap, moistureMin, moistureMax = NoiseMap.generate(size, seed % 31, 4, 2.0)
 
 	local landGroups, waterGroups = generateGroups(heightMap, size, heightMin, heightMax)
-	generateRivers(heightMap, size)
+	generateRivers(heightMap, size, landGroups, heightMin, heightMax)
 
 	-- could be a 2 dimensional array, the face could be an x-offset
-	local tileMap = newTileMap(size, function(face, x, y) 
+	local tileMap = CubeMap.new(size, function(face, x, y) 
 		local height = normalize(heightMap[face][x][y], heightMin, heightMax)
 		local heat = normalize(heatMap[face][x][y], heatMin, heatMax)
 		local moisture = normalize(moistureMap[face][x][y], moistureMin, moistureMax)
@@ -284,15 +325,15 @@ M.generate = function(size, seed)
 
 		-- calculate tile value based on biomeType, heightType, heatType, moistureType, height ...
 		return bbor(
-			blshift(heatType, BitmaskOffsets.HEAT_TYPE),					-- 3 bits
+			blshift(heatType, BitmaskOffsets.HEAT_TYPE),			-- 3 bits
 			blshift(moistureType, BitmaskOffsets.MOISTURE_TYPE),	-- 3 bits
-			blshift(heightType, BitmaskOffsets.HEIGHT_TYPE),			-- 4 bits
-			blshift(biomeType, BitmaskOffsets.BIOME_TYPE),				-- 4 bits
-			mfloor(height * 255))																	-- 8 bits
+			blshift(heightType, BitmaskOffsets.HEIGHT_TYPE),		-- 4 bits
+			blshift(biomeType, BitmaskOffsets.BIOME_TYPE),			-- 4 bits
+			mfloor(height * 255))									-- 8 bits
 	end)
 
 	-- set adjacency flags for biome type & height type
-	forEachTile(tileMap, function(tile, face, x, y) 
+	for face, x, y, tile in CubeMap.iter(tileMap) do
 		local biome = bband(brshift(tile, BitmaskOffsets.BIOME_TYPE), 0xF)
 		local height = bband(brshift(tile, BitmaskOffsets.HEIGHT_TYPE), 0xF)
 		local biomeFlags, heightFlags = 0, 0
@@ -316,9 +357,9 @@ M.generate = function(size, seed)
 		tileMap[face][x][y] = bbor(tile, 
 			blshift(biomeFlags, BitmaskOffsets.ADJ_BIOME_FLAGS),
 			blshift(heightFlags, BitmaskOffsets.ADJ_HEIGHT_FLAGS))	
-	end)
+	end
 
-	return tileMap
+	return tileMap, groups
 end
 
 return M

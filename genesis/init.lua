@@ -40,7 +40,7 @@ M.BiomeType = require(PATH .. '.biometype')
 M.HeightType = require(PATH .. '.heighttype')
 M.MoistureType = require(PATH .. '.moisturetype')
 M.EqualityFlags = require(PATH .. '.equalityflags')
-M.CubeMapHelper = require(PATH .. '.cubemaphelper')
+M.CubeMap = require(PATH .. '.cubemap')
 
 M.getBiomeType = function(tile)
     return bband(brshift(tile, BitmaskOffsets.BIOME_TYPE), 0xF)

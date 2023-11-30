@@ -33,23 +33,28 @@ SOFTWARE.
     ]], 
 }
 
-M.generate = generator.generate
+M.Generator = generator
 
+M.HeatType = require(PATH .. '.heattype')
 M.BiomeType = require(PATH .. '.biometype')
+M.HeightType = require(PATH .. '.heighttype')
+M.MoistureType = require(PATH .. '.moisturetype')
+M.EqualityFlags = require(PATH .. '.equalityflags')
+M.CubeMapHelper = require(PATH .. '.cubemaphelper')
 
 M.getBiomeType = function(tile)
     return bband(brshift(tile, BitmaskOffsets.BIOME_TYPE), 0xF)
 end
 
 M.getHeightType = function(tile)
-    return bband(brshift(tile, BitmaskOffsets.HEIGHT_TYPE), 0x7)
+    return bband(brshift(tile, BitmaskOffsets.HEIGHT_TYPE), 0xF)
 end
 
-M.getHeatValue = function(tile)
+M.getHeatType = function(tile)
     return bband(brshift(tile, BitmaskOffsets.HEAT_TYPE), 0x7)
 end
 
-M.getMoistureValue = function(tile)
+M.getMoistureType = function(tile)
     return bband(brshift(tile, BitmaskOffsets.MOISTURE_TYPE), 0x7)
 end
 
@@ -57,11 +62,11 @@ M.getHeightValue = function(tile)
     return bband(tile, 0xFF)
 end
 
-M.getAdjBiomeFlags = function(tile)
+M.getBiomeAdjFlags = function(tile)
     return bband(brshift(tile, BitmaskOffsets.ADJ_BIOME_FLAGS), 0xF)
 end
 
-M.getAdjHeightFlags = function(tile)
+M.getHeightAdjFlags = function(tile)
     return bband(brshift(tile, BitmaskOffsets.ADJ_HEIGHT_FLAGS), 0xF)
 end
 

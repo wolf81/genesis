@@ -2,12 +2,12 @@
 io.stdout:setvbuf("no")
 
 local genesis = require 'genesis'
-local cubeMapHelper = require 'genesis.cubemaphelper'
-local EqualityFlags = require 'genesis.equalityflags'
+
+local Generator = genesis.Generator
 
 local SIZE = 200
 
-local FACE_OFFSETS = {
+local FaceOffsets = {
 	{ 1, 1 }, 
 	{ 2, 1 }, 
 	{ 3, 1 }, 
@@ -22,51 +22,51 @@ local tileMap = nil
 
 local tileMapType = 0
 
-local isRendering = false
+local title = ''
 
-local didTileMapChange = true
+local isBusy = false
 
-local HeightColors = {
-	{ 0, 0, 0.5, 1 },
-	{ 25/255, 25/255, 150/255, 1 },
-	{ 240 / 255, 240 / 255, 64 / 255, 1 },
-	{ 50 / 255, 220 / 255, 20 / 255, 1 },
-	{ 16 / 255, 160 / 255, 0, 1 },
-	{ 0.5, 0.5, 0.5, 1 },            
-	{ 1, 1, 1, 1 },
-}
-
-local MoistureColors = {
-	{ 1.0, 139/255, 17/255, 1.0 },
-	{ 245/255, 245/255, 23/255, 1.0 },
-	{ 80/255, 1.0, 0.0, 1.0 },
-	{ 85/255, 1.0, 1.0, 1.0 },
-	{ 20/255, 70/255, 1.0, 1.0 },
-	{ 0.0, 0.0, 100/255, 1.0 },
-}
-
-local HeatColors = {
-	{ 0.0, 1.0, 1.0, 1.0 },
-	{ 170/255, 1.0, 1.0, 1.0 },
-	{ 0.0, 229/255, 133/255, 1.0 },
-	{ 1.0, 1.0, 100/255, 1.0 },
-	{ 1.0, 100/255, 0.0, 1.0 },
-	{ 241/255, 12/255, 0.0, 1.0 },
-}
-
-local BiomeColors = {
-	{ 1.0, 1.0, 1.0, 1.0 },
-	{ 96/255, 131/255, 112/255, 1.0 },
-	{ 164/255, 225/255, 99/255, 1.0 },
-	{ 238/255, 218/255, 130/255, 1.0 },
-	{ 139/255, 175/255, 90/255, 1.0 },
-	{ 177/255, 209/255, 110/255, 1.0 },
-	{ 95/255, 115/255, 62/255, 1.0 },
-	{ 66/255, 123/255, 25/255, 1.0 },
-	{ 73/255, 100/255, 35/255, 1.0 },
-	{ 29/255, 73/255, 40/255, 1.0 },
-	{ 25/255, 25/255, 150/255, 1.0 },
-	{ 0.0, 0.0, 0.5, 1.0 },
+local Colors = {
+	Height = {
+		{ 0.0, 0.0, 0.5, 1.0 },
+		{ 0.1, 0.1, 0.6, 1.0 },
+		{ 0.9, 0.9, 0.3, 1.0 },
+		{ 0.2, 0.9, 0.1, 1.0 },
+		{ 0.1, 0.6, 0.0, 1.0 },
+		{ 0.5, 0.5, 0.5, 1.0 },            
+		{ 1.0, 1.0, 1.0, 1.0 },
+		{ 0.0, 0.0, 1.0, 1.0 },
+	},
+	Moisture = {
+		{ 1.0, 0.5, 0.1, 1.0 },
+		{ 1.0, 1.0, 0.1, 1.0 },
+		{ 0.3, 1.0, 0.0, 1.0 },
+		{ 0.3, 1.0, 1.0, 1.0 },
+		{ 0.1, 0.3, 1.0, 1.0 },
+		{ 0.0, 0.0, 0.4, 1.0 },
+	},
+	Heat = {
+		{ 0.0, 1.0, 1.0, 1.0 },
+		{ 0.7, 1.0, 1.0, 1.0 },
+		{ 0.0, 0.9, 0.5, 1.0 },
+		{ 1.0, 1.0, 0.4, 1.0 },
+		{ 1.0, 0.4, 0.0, 1.0 },
+		{ 0.9, 0.0, 0.0, 1.0 },
+	},
+	Biome = {
+		{ 1.0, 1.0, 1.0, 1.0 },
+		{ 0.4, 0.5, 0.5, 1.0 },
+		{ 0.6, 0.9, 0.4, 1.0 },
+		{ 0.9, 0.9, 0.5, 1.0 },
+		{ 0.5, 0.7, 0.4, 1.0 },
+		{ 0.7, 0.8, 0.4, 1.0 },
+		{ 0.4, 0.5, 0.2, 1.0 },
+		{ 0.3, 0.5, 0.1, 1.0 },
+		{ 0.3, 0.9, 0.1, 1.0 },
+		{ 0.1, 0.3, 0.2, 1.0 },
+		{ 0.1, 0.1, 0.6, 1.0 },
+		{ 0.0, 0.0, 0.5, 1.0 },
+	},
 }
 
 local function lerp(a, b, t)
@@ -74,40 +74,46 @@ local function lerp(a, b, t)
 end
 
 local function generate()
-	tileMap = genesis.generate(SIZE)
+	isBusy = true
+
+	tileMap = Generator.generate(SIZE)
+
+	isBusy = false
 end
 
 local function render() 
-	isRendering = true
+	isBusy = true
 
-	if didTileMapChange then
-		if tileMapType == 0 then
-			print('height')
-		elseif tileMapType == 1 then
-			print('moisture')
-		elseif tileMapType == 2 then
-			print('heat')
-		elseif tileMapType == 3 then
-			print('biome')
-		end
-		didTileMapChange = false					
+	if tileMapType == 0 then
+		title = 'height value'
+	elseif tileMapType == 1 then
+		title = 'height type'
+	elseif tileMapType == 2 then
+		title = 'moisture type'
+	elseif tileMapType == 3 then
+		title = 'heat type'
+	elseif tileMapType == 4 then
+		title = 'biome type'
 	end
 
-	-- defaults form: tileMapType == 0
-	local valueFunc = genesis.getHeightType
-	local flagsFunc = genesis.getAdjHeightFlags
-	local colorTable = HeightColors
+	local adjFlagsFunc = function() return genesis.EqualityFlags.EQ_ALL end
+	local colorFunc = function(tile)
+		local value = genesis.getHeightValue(tile) 
+		return { value / 255, value / 255, value / 255, 1.0 } 
+	end
 
 	if tileMapType == 1 then
-		valueFunc = genesis.getMoistureValue
-		colorTable = MoistureColors
+		adjFlagsFunc = genesis.getHeightAdjFlags
+		colorFunc = function(tile) return Colors.Height[genesis.getHeightType(tile)] end
 	elseif tileMapType == 2 then
-		valueFunc = genesis.getHeatValue
-		colorTable = HeatColors
+		adjFlagsFunc = genesis.getHeightAdjFlags
+		colorFunc = function(tile) return Colors.Moisture[genesis.getMoistureType(tile)] end
 	elseif tileMapType == 3 then
-		valueFunc = genesis.getBiomeType
-		flagsFunc = genesis.getAdjBiomeFlags	
-		colorTable = BiomeColors
+		adjFlagsFunc = genesis.getHeightAdjFlags
+		colorFunc = function(tile) return Colors.Heat[genesis.getHeatType(tile)] end
+	elseif tileMapType == 4 then
+		adjFlagsFunc = genesis.getBiomeAdjFlags	
+		colorFunc = function(tile) return Colors.Biome[genesis.getBiomeType(tile)] end
 	end
 
 	for face = 1, 6 do
@@ -116,14 +122,14 @@ local function render()
 			for x = 1, SIZE do
 				for y = 1, SIZE do
 					local tile = tileMap[face][x][y]
-					local color = colorTable[valueFunc(tile)]
+					local color = colorFunc(tile)
 
 					-- draw border at biome or height type edges
-					if flagsFunc(tile) ~= EqualityFlags.EQ_ALL then
+					if adjFlagsFunc(tile) ~= genesis.EqualityFlags.EQ_ALL then
 						color = {
-							lerp(color[1], 0.0, 0.35),
-							lerp(color[2], 0.0, 0.35),
-							lerp(color[3], 0.0, 0.35),
+							lerp(color[1], 0.0, 0.4),
+							lerp(color[2], 0.0, 0.4),
+							lerp(color[3], 0.0, 0.4),
 							1.0,
 						}
 					end
@@ -138,13 +144,11 @@ local function render()
 
 	love.graphics.setColor(1.0, 1.0, 1.0, 1.0)
 
-	isRendering = false
+	isBusy = false
 end
 
 local function toggle()
-	tileMapType = (tileMapType + 1) % 4
-	didTileMapChange = true
-	render()
+	tileMapType = (tileMapType + 1) % 5
 end
 
 function love.load(args)
@@ -153,13 +157,14 @@ function love.load(args)
 end
 
 function love.keyreleased(key)
-	if key == 'g' and not isRendering then
+	if key == 'g' and not isBusy then
 		generate()
 		render()
 	end
 
-	if key == 't' then
+	if key == 't' and not isBusy then
 		toggle()
+		render()
 	end
 
 	if key == "escape" then
@@ -168,12 +173,14 @@ function love.keyreleased(key)
 end
 
 function love.draw()
-	if isRendering then return end
+	if isBusy then return end
+
+	love.graphics.print(title, 10, 10)
 
 	love.graphics.push()
 	love.graphics.scale(1)
 	for face = 1, 6 do
-		local ox, oy = unpack(FACE_OFFSETS[face])
+		local ox, oy = unpack(FaceOffsets[face])
 		love.graphics.draw(textures[face], ox * SIZE, oy * SIZE)
 	end
 	love.graphics.pop()

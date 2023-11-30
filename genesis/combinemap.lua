@@ -1,6 +1,6 @@
 local mmin, mmax = math.min, math.max
 
-local combineMap = {}
+local M = {}
 
 local function multiply(size, maps)
     local mapCount = #maps
@@ -32,10 +32,10 @@ local function multiply(size, maps)
     return values, min, max
 end
 
-combineMap.generate = function(size, ...)
+M.generate = function(size, ...)
     local maps = {...}
     local values, min, max = multiply(size, maps)
     return values, min, max
 end
 
-return combineMap
+return M

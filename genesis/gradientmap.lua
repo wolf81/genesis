@@ -1,6 +1,6 @@
 local mmin, mmax, msqrt, mcos = math.min, math.max, math.sqrt, math.cos
 
-local gradientMap = {}
+local M = {}
 
 local function squareGradient(size) 
     local values = {}
@@ -89,9 +89,9 @@ local function radialGradient(size)
     return values, min, max
 end
 
-gradientMap.generate = function(size)
+M.generate = function(size)
     local values, min, max = radialGradient(size)
     return values, min, max 
 end
 
-return gradientMap
+return M

@@ -103,16 +103,16 @@ local function render()
 	end
 
 	if tileMapType == 1 then
-		adjFlagsFunc = genesis.getHeightAdjFlags
+		adjFlagsFunc = genesis.getAdjHeightFlags
 		colorFunc = function(tile) return Colors.Height[genesis.getHeightType(tile)] end
 	elseif tileMapType == 2 then
-		adjFlagsFunc = genesis.getHeightAdjFlags
+		adjFlagsFunc = genesis.getAdjHeightFlags
 		colorFunc = function(tile) return Colors.Moisture[genesis.getMoistureType(tile)] end
 	elseif tileMapType == 3 then
-		adjFlagsFunc = genesis.getHeightAdjFlags
+		adjFlagsFunc = genesis.getAdjHeightFlags
 		colorFunc = function(tile) return Colors.Heat[genesis.getHeatType(tile)] end
 	elseif tileMapType == 4 then
-		adjFlagsFunc = genesis.getBiomeAdjFlags	
+		adjFlagsFunc = genesis.getAdjBiomeFlags	
 		colorFunc = function(tile) return Colors.Biome[genesis.getBiomeType(tile)] end
 	end
 

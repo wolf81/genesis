@@ -2,8 +2,10 @@
 io.stdout:setvbuf("no")
 
 local genesis = require 'genesis'
+local cubeMapHelper = require 'genesis.cubemaphelper'
+local EqualityFlags = require 'genesis.equalityflags'
 
-local SIZE = 100
+local SIZE = 200
 
 local FACE_OFFSETS = {
 	{ 1, 1 }, 
@@ -67,6 +69,10 @@ local BiomeColors = {
 	{ 0.0, 0.0, 0.5, 1.0 },
 }
 
+local function lerp(a, b, t)
+	return a + (b - a) * t
+end
+
 local function generate()
 	tileMap = genesis.generate(SIZE)
 end
@@ -87,28 +93,42 @@ local function render()
 		didTileMapChange = false					
 	end
 
+	local valueFunc = genesis.getHeightType
+	local flagsFunc = genesis.getHeightAdjFlags
+	local colorTable = HeightColors
+
+	if tileMapType == 1 then
+		valueFunc = genesis.getMoistureValue
+		colorTable = MoistureColors
+	elseif tileMapType == 2 then
+		valueFunc = genesis.getHeatValue
+		colorTable = HeatColors
+	elseif tileMapType == 3 then
+		valueFunc = genesis.getBiomeType
+		flagsFunc = genesis.getBiomeAdjFlags	
+		colorTable = BiomeColors
+	end
+
 	for face = 1, 6 do
 		local canvas = love.graphics.newCanvas(SIZE, SIZE)		
 		canvas:renderTo(function()
 			for x = 1, SIZE do
 				for y = 1, SIZE do
 					local tile = tileMap[face][x][y]
+					local color = colorTable[valueFunc(tile)]
 
-					if tileMapType == 0 then
-						local value = genesis.getHeightType(tile)
-						love.graphics.setColor(unpack(HeightColors[value]))
-					elseif tileMapType == 1 then						
-						local value = genesis.getMoistureValue(tile)
-						love.graphics.setColor(unpack(MoistureColors[value]))
-					elseif tileMapType == 2 then
-						local value = genesis.getHeatValue(tile)
-						love.graphics.setColor(unpack(HeatColors[value]))						
-					elseif tileMapType == 3 then
-						local value = genesis.getBiomeType(tile)
-						love.graphics.setColor(unpack(BiomeColors[value]))
+					-- draw border at biome or height type edges
+					if flagsFunc(tile) ~= EqualityFlags.EQ_ALL then
+						color = {
+							lerp(color[1], 0.0, 0.35),
+							lerp(color[2], 0.0, 0.35),
+							lerp(color[3], 0.0, 0.35),
+							1.0,
+						}
 					end
 
-					love.graphics.points(x - 1, y)
+					love.graphics.setColor(unpack(color))
+					love.graphics.points(x - 0.5, y - 0.5)
 				end
 			end
 		end)
@@ -132,7 +152,7 @@ function love.load(args)
 end
 
 function love.keyreleased(key)
-	if key == 'g' then
+	if key == 'g' and not isRendering then
 		generate()
 		render()
 	end
@@ -150,7 +170,7 @@ function love.draw()
 	if isRendering then return end
 
 	love.graphics.push()
-	love.graphics.scale(2)
+	love.graphics.scale(1)
 	for face = 1, 6 do
 		local ox, oy = unpack(FACE_OFFSETS[face])
 		love.graphics.draw(textures[face], ox * SIZE, oy * SIZE)

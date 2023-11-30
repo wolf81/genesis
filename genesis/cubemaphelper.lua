@@ -1,5 +1,5 @@
 --[[
-The CubeMapHelper class provides utility functions for dealing with cube maps. 
+The cubeMapHelper class provides utility functions for dealing with cube maps. 
 In order to better understand the functions, we should realize the cubemap faces 
 are ordered as such:
     
@@ -11,7 +11,7 @@ In the above representation we see faces 1 to 4 are horizontally aligned with
 one another. Face 5 is the top face and face 6 is the bottom face.
 ]]
 
-local CubeMapHelper = {}
+local cubeMapHelper = {}
 
 --[[
 The adjactent face map helps find neighbour faces for a given face number. The 
@@ -27,114 +27,75 @@ local adjacentFaceMap = {
 	[6] = { 1, 4, 3, 2 },
 }
 
-function CubeMapHelper.getCoord(face, size, x, y, dx, dy)
-	local face, x, y = CubeMapHelper.getCoordDx(face, size, x, y, dx)
+function cubeMapHelper.getCoord(face, size, x, y, dx, dy)
+	face, x, y = CubeMapHelper.getCoordDx(face, size, x, y, dx)
 	return CubeMapHelper.getCoordDy(face, size, x, y, dy)
 end
 
-function CubeMapHelper.getCoordDx(face, size, x, y, dx)
-	local x = x + dx
-
+function cubeMapHelper.getCoordDx(face, size, x, y, dx)
+	-- print('getCoordDx', face, x, y, dx)
+	x = x + dx
+	
 	if x > size then
-		dx = x - size
-
 		local nextFace = adjacentFaceMap[face][4]
-
+		
 		if face == 5 then
-			face, x, y = CubeMapHelper.getCoordDy(nextFace, size, size - y + 1, 1, dx)
-		elseif face == 6 then			
-			face, x, y = CubeMapHelper.getCoordDy(nextFace, size, y, size, -(dx))
+			return cubeMapHelper.getCoordDy(nextFace, size, size - y + 1, 0, x - size)
+		elseif face == 6 then
+			return cubeMapHelper.getCoordDy(nextFace, size, y, size, size - x + 1)
 		else
-			face, x, y = CubeMapHelper.getCoordDx(nextFace, size, 1, y, dx)
+			return cubeMapHelper.getCoordDx(nextFace, size, 0, y, x - size) -- (?) 1, x - size + 1
 		end
-
 	elseif x < 1 then
-		dx = x + size
-
 		local nextFace = adjacentFaceMap[face][2]
 
 		if face == 5 then
-			face, x, y = CubeMapHelper.getCoordDy(nextFace, size, y, 1, size - dx)
+			return cubeMapHelper.getCoordDy(nextFace, size, y, 1, -x)
 		elseif face == 6 then
-			face, x, y = CubeMapHelper.getCoordDy(nextFace, size, size - y + 1, size, -(size - dx))
+			return cubeMapHelper.getCoordDy(nextFace, size, size - y + 1, size, x)
 		else
-			face, x, y = CubeMapHelper.getCoordDx(nextFace, size, size, y, -(size - dx))
+			return cubeMapHelper.getCoordDx(nextFace, size, size, y, x)
 		end
 	end
 
 	return face, x, y
 end
 
-function CubeMapHelper.getCoordDy(face, size, x, y, dy)
-	local y = y + dy
+function cubeMapHelper.getCoordDy(face, size, x, y, dy)
+	-- print('getCoordDy', face, x, y, dy)
+	y = y + dy
 
-	if y > size then		
-		dy = y - size
-
+	if y > size then
 		local nextFace = adjacentFaceMap[face][3]
 
 		if face == 2 then
-			face, x, y = CubeMapHelper.getCoordDx(nextFace, size, size, x, -(dy))			
+			face, x, y = cubeMapHelper.getCoordDx(nextFace, size, size, x, size - y + 1)			
 		elseif face == 3 then
-			face, x, y = CubeMapHelper.getCoordDy(nextFace, size, size - x + 1, size, -(dy))
+			face, x, y = cubeMapHelper.getCoordDy(nextFace, size, size - x + 1, size, size - y + 1)
 		elseif face == 4 then
-			face, x, y = CubeMapHelper.getCoordDx(nextFace, size, 1, size - x + 1, dy)			
+			face, x, y = cubeMapHelper.getCoordDx(nextFace, size, 0, size - x + 1, y - size) -- (?)			
 		elseif face == 6 then
-			face, x, y = CubeMapHelper.getCoordDy(nextFace, size, size - x + 1, size, -(dy))
-		else -- face: 2, 5
-			face, x, y = CubeMapHelper.getCoordDy(nextFace, size, x, 1, dy)
+			face, x, y = cubeMapHelper.getCoordDy(nextFace, size, size - x + 1, size, size - y + 1)
+		else -- face: 1, 5
+			face, x, y = cubeMapHelper.getCoordDy(nextFace, size, x, 0, y - size) -- (?) 1, y - size + 1
 		end
 	elseif y < 1 then
-		dy = y + size
-
 		local nextFace = adjacentFaceMap[face][1]
 
 		if face == 3 then
-			face, x, y = CubeMapHelper.getCoordDy(nextFace, size, size - x + 1, 1, size - dy)
+			face, x, y = cubeMapHelper.getCoordDy(nextFace, size, size - x + 1, 1, -y)
 		elseif face == 2 then
-			face, x, y = CubeMapHelper.getCoordDx(nextFace, size, size, size - x + 1, -(size - dy))
+			face, x, y = cubeMapHelper.getCoordDx(nextFace, size, size, size - x + 1, y)
 		elseif face == 4 then
-			face, x, y = CubeMapHelper.getCoordDx(nextFace, size, 1, x, size - dy)	
+			face, x, y = cubeMapHelper.getCoordDx(nextFace, size, 1, x, -y)	
 		elseif face == 5 then
-			face, x, y = CubeMapHelper.getCoordDy(nextFace, size, size - x + 1, 1, size - dy)
+			face, x, y = cubeMapHelper.getCoordDy(nextFace, size, size - x + 1, 1, -y)
 		else -- face: 1, 6
-			face, x, y = CubeMapHelper.getCoordDy(nextFace, size, x, size, -(size - dy))
+			face, x, y = cubeMapHelper.getCoordDy(nextFace, size, x, size, y)
 		end
 	end
 
 	return face, x, y
 end
 
-function CubeMapHelper.each(size)
-	local finished = false
-
-	local face, x, y = 1, 0, 1
-
-	return function()
-		while not finished do
-			x = x + 1
-
-			if x > size then
-				y = y + 1
-				x = 1
-
-				if y > size then
-					face = face + 1
-					y = 1
-
-					if face > 6 then
-						finished = true
-					end
-				end
-			end
-
-			if not finished then
-				return face, x, y
-			end
-		end
-
-		return nil
-	end
-end
-
-return CubeMapHelper
+return cubeMapHelper

@@ -1,14 +1,13 @@
 --[[
-The CubeMapHelper class provides utility functions for dealing with cube maps. 
-In order to better understand the functions, we should realize the cubemap faces 
-are ordered as such:
+The CubeMap module provides functions for generating and dealing with cube maps. In order to better 
+understand the functions, we should realize the cube map faces are ordered as such:
     
     5
 	1 2 3 4
 	6
 
-In the above representation we see faces 1 to 4 are horizontally aligned with 
-one another. Face 5 is the top face and face 6 is the bottom face.
+In the above representation we see faces 1 to 4 are horizontally aligned with one another. Face 5 
+is the top face and face 6 is the bottom face.
 
 For each face, x- and y-coordinates go from top left to bottom right, as such:
 
@@ -16,16 +15,14 @@ For each face, x- and y-coordinates go from top left to bottom right, as such:
 	(1, 2), (2, 2), (3, 2)
 	(1, 3), (2, 3), (3, 3) 
 
-The CubeMapHelper can figure out the adjacent coordinate when moving between 
-faces.
+The CubeMap module can figure out the adjacent coordinate when moving between faces.
 ]]
 
 local M = {}
 
 --[[
-The adjactent face map helps find neighbour faces for a given face number. The 
-key is the current face number and the values are adjacent face numbers in order 
-TOP, LEFT, BOTTOM, RIGHT.
+The adjacent face map helps find neighbour faces for a given face number. The key is the current 
+face number and the values are adjacent face numbers in order TOP, LEFT, BOTTOM, RIGHT.
 --]]
 local adjacentFaceMap = {
 	[1] = { 5, 4, 6, 2 },
@@ -36,12 +33,14 @@ local adjacentFaceMap = {
 	[6] = { 1, 4, 3, 2 },
 }
 
-function M.getCoord(size, face, x, y, dx, dy)
+-- Find a coordinate on the cube map based on size, current coordinate & delta x- and y-values.
+M.getCoord = function(size, face, x, y, dx, dy)
 	face, x, y = M.getCoordDx(size, face, x, y, dx)
 	return M.getCoordDy(size, face, x, y, dy)
 end
 
-function M.getCoordDx(size, face, x, y, dx)
+-- Find a coordinate on the cube map based on size, current coordiante & delta x-value.
+M.getCoordDx = function(size, face, x, y, dx)
 	x = x + dx
 	
 	if x > size then
@@ -69,7 +68,8 @@ function M.getCoordDx(size, face, x, y, dx)
 	return face, x, y
 end
 
-function M.getCoordDy(size, face, x, y, dy)
+-- Find a coordinate on the cube map based on size, current coordinate & delta y-value.
+M.getCoordDy = function(size, face, x, y, dy)
 	y = y + dy
 
 	if y > size then
@@ -103,6 +103,58 @@ function M.getCoordDy(size, face, x, y, dy)
 	end
 
 	return face, x, y
+end
+
+-- Iterate over positions and values in a cube map, which can be done as follows:
+--
+-- 	for face, x, y, val in CubeMap.iter do
+--	   -- do something
+-- 	end
+M.iter = function(cubeMap)
+	local face, x, y = 1, 0, 1
+	local size = #cubeMap[1]
+
+	return function()
+		while true do
+			x = x + 1
+			if x > size then
+				y = y + 1
+				x = 1
+				if y > size then
+					face = face + 1
+					x = 1
+					y = 1
+					if face > 6 then return nil end
+				end
+			end
+
+			return face, x, y, cubeMap[face][x][y]
+		end
+	end
+end
+
+-- Create a new CubeMap of a given size. Optionally provide a function to set a value at a position.
+-- If no function is provided, all values will be initially set to 0. Use as such:
+--
+--	var cubeMap = CubeMap.new(25, function(face, x, y) return x + y end)
+--    --or--
+-- 	var cubeMap = CubeMap.new(50)
+M.new = function(size, fn)
+	local cubeMap = {}
+
+	fn = fn or function() return 0 end
+
+	for face = 1, 6 do
+		cubeMap[face] = {}
+		for x = 1, size do
+			cubeMap[face][x] = {}
+			for y = 1, size do
+				cubeMap[face][x][y] = fn(face, x, y)
+			end
+		end
+	end
+
+	return cubeMap
 end
 
 return M

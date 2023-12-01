@@ -214,8 +214,6 @@ local function generateRivers(heightMap, size, landGroups, heightMin, heightMax)
 		-- store river path
 		local path = { coord }
 
-		print(coord[1], coord[2], coord[3])
-
 		-- try find a path towards the sea based on current coord and angle
 		local face, x, y = unpack(coord)
 		for i = 1, size * 2 do
@@ -223,14 +221,17 @@ local function generateRivers(heightMap, size, landGroups, heightMin, heightMax)
 			local height = heightMap[face1][x1][y1]
 
 			local lastCoord = path[#path]
-			if lastCoord[1] ~= face1 and lastCoord[2] ~= x and lastCoord[3] ~= y then
-				print(face1, x1, y1)
+			if lastCoord[1] ~= face1 or lastCoord[2] ~= x1 or lastCoord[3] ~= y1 then
+				path[#path + 1] = { face1, x1, y1 }
 			end 
 
 			if height < shoreHeight then
-				path[#path + 1] = { face1, x1, y1 }
 				break
 			end
+		end
+
+		for _, coord in ipairs(path) do
+			print(unpack(coord))
 		end
 
 		print()

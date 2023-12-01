@@ -2,6 +2,7 @@ local mmin, mmax, msqrt, mcos = math.min, math.max, math.sqrt, math.cos
 
 local M = {}
 
+--[[
 local function squareGradient(size) 
     local values = {}
 
@@ -50,6 +51,7 @@ local function squareGradient(size)
 
     return values, 0.0, 1.0
 end
+--]]
 
 local function radialGradient(size)
     local values = {}

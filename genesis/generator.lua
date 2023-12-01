@@ -166,7 +166,7 @@ local function generateGroups(heightMap, size, heightMin, heightMax, didRemoveSm
 	if not didRemoveSmallGroups then
 		for _, groups in ipairs({ landGroups, waterGroups }) do
 			for _, group in ipairs(groups) do
-				local v = group.type == GroupType.WATER and 0.02 or -0.02
+				local v = group.type == GroupType.WATER and 0.05 or -0.05
 
 				if group.size < MIN_GROUP_SIZE then
 					for face, x, y in Group.iter(group) do
@@ -204,48 +204,56 @@ local function generateRivers(heightMap, size, landGroups, heightMin, heightMax)
 		-- if no mountain coords were found, can try next land group
 		if #coords == 0 then goto continue end
 
-		-- choose a random coord from the mountain coords
-		local coord = coords[mrandom(#coords)]
+		local riverCount = mfloor(math.log(landGroup.size) / math.log(10))
 
-		-- choose a random direction
-		local angle = mrandom(math.pi * 2)
-		local dx, dy = math.cos(angle), math.sin(angle)
+		for i = 1, riverCount do
+			-- choose a random coord from the mountain coords
+			local coord = coords[mrandom(#coords)]
 
-		-- store river path
-		local path = { coord }
+			-- choose a random direction
+			local angle = mrandom(math.pi * 2)
+			local dx, dy = math.cos(angle), math.sin(angle)
 
-		-- try find a path towards the sea based on current coord and angle
-		local face, x, y = unpack(coord)
-		for i = 1, size * 2 do
-			local face1, x1, y1 = CubeMap.getCoord(size, face, x, y, round(i * dx, 1), round(i * dy, 1))
-			local height = heightMap[face1][x1][y1]
+			-- store river path
+			local path = { coord }
 
-			local lastCoord = path[#path]
-			if lastCoord[1] ~= face1 or lastCoord[2] ~= x1 or lastCoord[3] ~= y1 then
-				path[#path + 1] = { face1, x1, y1 }
-			end 
+			-- try find a path towards the sea based on current coord and angle
+			local face, x, y = unpack(coord)
+			for i = 1, size * 4 do
+				local face1, x1, y1 = CubeMap.getCoord(size, face, x, y, round(i * dx, 1), round(i * dy, 1))
+				local height = heightMap[face1][x1][y1]
 
-			if height < shoreHeight then
-				break
+				local lastCoord = path[#path]
+				if lastCoord[1] ~= face1 or lastCoord[2] ~= x1 or lastCoord[3] ~= y1 then
+					path[#path + 1] = { face1, x1, y1 }
+				end 
+
+				heightMap[face1][x1][y1] = shoreHeight - 0.1
+
+				if height < shoreHeight then
+					break
+				end
 			end
+
+			-- for _, coord in ipairs(path) do
+			-- 	print(unpack(coord))
+			-- end
+
+			-- print()
+
+			-- 1. for each path, find a mid point
+			-- 2. find intersecting vector 
+			-- 3. check both sides of vector for some distance to find lowest point
+			-- 4. create new path between path start and end point with mid point
+			-- 5. rinse and repeat 
+
+			-- TODO: how can we get mid point between 2 coords from cube map?
+			--	issue, we need to know the angle between 2 points in cube map, which is different if 
+			-- 	each point is on different face
+			--	probably need to "flatten" the faces  
+
+			::continue::			
 		end
-
-		for _, coord in ipairs(path) do
-			print(unpack(coord))
-		end
-
-		print()
-
-		-- 1. for each path, find a mid point
-		-- 2. find intersecting vector 
-		-- 3. check both sides of vector for some distance to find lowest point
-		-- 4. create new path between path start and end point with mid point
-		-- 5. rinse and repeat 
-
-		-- TODO: how can we get mid point between 2 coords from cube map?
-		--	issue, we need to know the angle between 2 points in cube map, which is different if 
-		-- 	each point is on different face
-		--	probably need to "flatten" the faces  
 
 		::continue::
 	end

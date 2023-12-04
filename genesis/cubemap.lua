@@ -33,6 +33,11 @@ local adjacentFaceMap = {
 	[6] = { 1, 4, 3, 2 },
 }
 
+-- TODO: Maybe use a CubeMap layout as in GLSL, in which we have x-, y- and z-coords and coords run
+-- from -x to +x, -y to +y, -z to +z. This approach might make it a bit more complicated to figure
+-- out which face we're on, but perhaps this is not important. On the other hand, distance 
+-- calculations might become easier / possible, which is something we don't have right now.
+
 -- Find a coordinate on the cube map based on size, current coordinate & delta x- and y-values.
 M.getCoord = function(size, face, x, y, dx, dy)
 	face, x, y = M.getCoordDx(size, face, x, y, dx)

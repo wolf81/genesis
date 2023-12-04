@@ -79,7 +79,7 @@ local function getTypeForValue(value, thresholds)
 	return idx
 end
 
-local function getTileValue(tileMap, size, face, x, y, direction)
+local function getValue(tileMap, size, face, x, y, direction)
 	local dx, dy = unpack(direction)
 
 	if dx ~= 0 then
@@ -94,7 +94,7 @@ local function getTileValue(tileMap, size, face, x, y, direction)
 end
 
 local function getAdjFlags(tileMap, size, face, x, y, direction)
-	local adjTile, adjFace, adjX, adjY = getTileValue(tileMap, size, face, x, y, direction)
+	local adjTile, adjFace, adjX, adjY = getValue(tileMap, size, face, x, y, direction)
 	local adjBiome = bband(brshift(adjTile, BitmaskOffsets.BIOME_TYPE), 0xF)
 	local adjHeight = bband(brshift(adjTile, BitmaskOffsets.HEIGHT_TYPE), 0x7)
 	return adjBiome, adjHeight
@@ -184,6 +184,34 @@ local function generateGroups(heightMap, size, heightMin, heightMax, didRemoveSm
 	return landGroups, waterGroups
 end
 
+local function generateRiver(heightMap, size, coord, shoreHeight, riverInfo, stack)
+	local face, x, y = unpack(coord) -- get last coord from path
+
+	-- find lowest neighbor
+	local neighbors = {}
+	for _, dir in ipairs(Directions) do
+		local height, face, x, y = getValue(heightMap, size, face, x, y, dir)
+		local key = getKey(face, x, y)
+
+		-- until we reach the sea
+		if height < shoreHeight then return end
+
+		-- ensure we don't add any value already added previously
+		if riverInfo[key] == nil then
+			neighbors[#neighbors + 1] = { dir = dir, height = height, key = key, coord = { face, x, y } }
+		end
+	end
+
+	if #neighbors > 0 then
+		-- proceed to lowest neighbor
+		table.sort(neighbors, function(a, b) return a.height < b.height end)
+		
+		local neighbor = neighbors[1]
+		stack[#stack + 1] = neighbor.coord
+		riverInfo[neighbor.key] = true			
+	end
+end
+
 local function generateRivers(heightMap, size, landGroups, heightMin, heightMax)
 	-- rivers start in mountains
 	local rockHeight = heightMin + HEIGHT_THRESHOLDS[5] * (heightMax - heightMin) 
@@ -204,55 +232,39 @@ local function generateRivers(heightMap, size, landGroups, heightMin, heightMax)
 		-- if no mountain coords were found, can try next land group
 		if #coords == 0 then goto continue end
 
+		-- base river count on land group size
 		local riverCount = mfloor(math.log(landGroup.size) / math.log(10))
 
+		-- try to generate rivers
 		for i = 1, riverCount do
 			-- choose a random coord from the mountain coords
 			local coord = coords[mrandom(#coords)]
 
-			-- choose a random direction
-			local angle = mrandom(math.pi * 2)
-			local dx, dy = math.cos(angle), math.sin(angle)
+			local stack = { coord }
+			local path = { coord } 
+			local riverInfo = {}
 
-			-- store river path
-			local path = { coord }
+			local key = getKey(unpack(coord))
+			riverInfo[key] = true
 
-			-- try find a path towards the sea based on current coord and angle
-			local face, x, y = unpack(coord)
-			for i = 1, size * 4 do
-				local face1, x1, y1 = CubeMap.getCoord(size, face, x, y, round(i * dx, 1), round(i * dy, 1))
-				local height = heightMap[face1][x1][y1]
-
-				local lastCoord = path[#path]
-				if lastCoord[1] ~= face1 or lastCoord[2] ~= x1 or lastCoord[3] ~= y1 then
-					path[#path + 1] = { face1, x1, y1 }
-				end 
-
-				heightMap[face1][x1][y1] = shoreHeight - 0.1
-
-				if height < shoreHeight then
-					break
-				end
+			while #stack > 0 do
+				local coord = table.remove(stack)
+				path[#path + 1] = coord
+				generateRiver(heightMap, size, coord, shoreHeight, riverInfo, stack)
 			end
 
-			-- for _, coord in ipairs(path) do
-			-- 	print(unpack(coord))
-			-- end
+			-- TODO: merge rivers
 
-			-- print()
+			print('river length: ' .. #path)
+			print()
 
-			-- 1. for each path, find a mid point
-			-- 2. find intersecting vector 
-			-- 3. check both sides of vector for some distance to find lowest point
-			-- 4. create new path between path start and end point with mid point
-			-- 5. rinse and repeat 
-
-			-- TODO: how can we get mid point between 2 coords from cube map?
-			--	issue, we need to know the angle between 2 points in cube map, which is different if 
-			-- 	each point is on different face
-			--	probably need to "flatten" the faces  
-
-			::continue::			
+			-- only add rivers of minimum length
+			if #path >= 10 then
+				for _, coord in ipairs(path) do
+					local face, x, y = unpack(coord)
+					heightMap[face][x][y] = heightMin
+				end
+			end
 		end
 
 		::continue::

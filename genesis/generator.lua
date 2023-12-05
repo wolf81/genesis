@@ -8,6 +8,7 @@ local BiomeType = require(PATH .. 'biometype')
 local HeightType = require(PATH .. 'heighttype')
 local CubeMap = require(PATH .. 'cubemap')
 local Group = require(PATH .. 'group')
+local River = require(PATH .. 'river')
 
 local bbor, bband, blshift, brshift = bit.bor, bit.band, bit.lshift, bit.rshift
 local mmin, mmax, mfloor, mrandom = math.min, math.max, math.floor, math.random
@@ -19,6 +20,9 @@ local MOISTURE_THRESHOLDS = { 0.27, 0.40, 0.60, 0.80, 0.90, 1.00 } -- dry to wet
 local HEIGHT_THRESHOLDS   = { 0.20, 0.48, 0.52, 0.70, 0.80, 0.90, 1.00 } -- low to high
 
 local MIN_GROUP_SIZE = 32
+local MAX_RIVER_ATTEMPTS = 1000
+local MIN_RIVER_LENGTH = 10
+local MIN_RIVER_TURNS = 3
 
 local GroupType = {
 	LAND 	= 1,
@@ -184,103 +188,182 @@ local function generateGroups(heightMap, size, heightMin, heightMax, didRemoveSm
 	return landGroups, waterGroups
 end
 
-local function generateRiver(heightMap, size, coord, shoreHeight, riverInfo, stack)
-	local face, x, y = unpack(coord) -- get last coord from path
-
-	-- find lowest neighbor
+local function getLowestNeighbor(heightMap, size, face, x, y)
 	local neighbors = {}
-	for _, dir in ipairs(Directions) do
-		local height, face, x, y = getValue(heightMap, size, face, x, y, dir)
-		local key = getKey(face, x, y)
 
-		-- until we reach the sea
-		if height < shoreHeight then return end
-
-		-- ensure we don't add any value already added previously
-		if riverInfo[key] == nil then
-			neighbors[#neighbors + 1] = { dir = dir, height = height, key = key, coord = { face, x, y } }
-		end
+	for _, direction in ipairs(Directions) do
+		local height, face, x, y = getValue(heightMap, size, face, x, y, direction)
+		neighbors[#neighbors + 1] = { 
+			direction = direction, 
+			coord = { face, x, y }, 
+			height = height,
+			-- key = getKey(face, x, y),
+		}
 	end
 
-	if #neighbors > 0 then
-		-- proceed to lowest neighbor
-		table.sort(neighbors, function(a, b) return a.height < b.height end)
-		
-		local neighbor = neighbors[1]
-		stack[#stack + 1] = neighbor.coord
-		riverInfo[neighbor.key] = true			
-	end
+	table.sort(neighbors, function(a, b) return a.height < b.height end)
+
+	return neighbors[1]
 end
 
-local function generateRivers(heightMap, size, landGroups, heightMin, heightMax)
+local function getRiverNeighborCount(face, x, y, riverInfo)	
+	local face1, x1, y1 = CubeMap.getCoordDx(size, face, x, y, -1) -- left
+	local face2, x2, y2 = CubeMap.getCoordDx(size, face, x, y, 1)  -- right
+	local face3, x3, y3 = CubeMap.getCoordDy(size, face, x, y, -1) -- up
+	local face4, x4, y4 = CubeMap.getCoordDy(size, face, x, y, 1)  -- down
+
+	local count = 0
+
+	if riverInfo[getKey(face1, x1, y1)] ~= nil then count = count + 1 end
+	if riverInfo[getKey(face2, x2, y2)] ~= nil then count = count + 1 end
+	if riverInfo[getKey(face3, x3, y3)] ~= nil then count = count + 1 end
+	if riverInfo[getKey(face4, x4, y4)] ~= nil then count = count + 1 end
+
+	return count
+end
+
+local function findPathToWater(heightMap, size, face, x, y, river, riverInfo, shoreHeight)
+	local key = getKey(face, x, y)
+
+	-- TODO: in riverInfo should store list of river ids and check if river.id is stored here
+	if riverInfo[key] ~= nil then return end
+
+	-- TODO: add intersection if other river.ids exist
+	River.add(river, face, x, y)
+
+	local face1, x1, y1 = CubeMap.getCoordDx(size, face, x, y, -1) -- left
+	local face2, x2, y2 = CubeMap.getCoordDx(size, face, x, y, 1)  -- right
+	local face3, x3, y3 = CubeMap.getCoordDy(size, face, x, y, -1) -- up
+	local face4, x4, y4 = CubeMap.getCoordDy(size, face, x, y, 1)  -- down
+
+	local height1, height2, height3, height4 = math.huge, math.huge, math.huge, math.huge
+
+	local neighborRiverInfo = {
+		[Direction.Left] = getRiverNeighborCount(face1, x1, y1),
+		[Direction.Right] = getRiverNeighborCount(face2, x2, y2),
+		[Direction.Top] = getRiverNeighborCount(face2, x2, y2),
+		[Direction.Bottom] = getRiverNeighborCount(face2, x2, y2),
+	}
+
+	-- set height if it's not already part of river and if tile contains at most one neighbor river
+	if not River.contains(river, face1, x1, y1) and neighborRiverInfo[Direction.Left] < 2 then 
+		height1 = heightMap[face1][x1][y1] 
+	end
+	if not River.contains(river, face2, x2, y2) and neighborRiverInfo[Direction.Right] < 2 then 
+		height2 = heightMap[face2][x2][y2] 
+	end
+	if not River.contains(river, face3, x3, y3) and neighborRiverInfo[Direction.Top] < 2 then 
+		height3 = heightMap[face3][x3][y3] 
+	end
+	if not River.contains(river, face4, x4, y4) and neighborRiverInfo[Direction.Bottom] < 2 then 
+		height4 = heightMap[face4][x4][y4] 
+	end
+
+	-- TODO: if neighbor is existing river that is not this one, flow into it
+
+	-- override flow direction if significantly lower
+	if river.direction == Direction.Left then
+		if math.abs(height2 - height1) < 0.1 then height2 = math.huge end
+	elseif river.direction == Direction.Right then
+		if math.abs(height2 - height1) < 0.1 then height1 = math.huge end
+	elseif river.direction == Direction.Top then
+		if math.abs(height4 - height3) < 0.1 then height4 = math.huge end
+	elseif river.direction == Direction.Bottom then
+		if math.abs(height4 - height3) < 0.1 then height3 = math.huge end
+	end
+
+	-- find minimum height
+	local neighbors = {
+		{ face = face1, x = x1, y = y1, height = height1, direction = Direction.Left },
+		{ face = face2, x = x2, y = y2, height = height2, direction = Direction.Right },
+		{ face = face3, x = x3, y = y3, height = height3, direction = Direction.Top },
+		{ face = face4, x = x4, y = y4, height = height4, direction = Direction.Bottom },
+	}
+	table.sort(neighbors, function(a, b) return a.height < b.height end)
+
+	local neighbor = neighbors[1]
+
+	-- if no minimum height found, exit
+	if neighbor.height == math.huge then return false end
+
+	-- stop when sea is reached
+	if neighbor.height < shoreHeight then return true end
+
+	-- move to next neighbor
+	if river.direction ~= neighbor.direction then
+		river.turnCount = river.turnCount + 1
+		river.direction = neighbor.direction
+	end
+
+	return findPathToWater(heightMap, size, neighbor.face, neighbor.x, neighbor.y, river, riverInfo, shoreHeight)
+end
+
+local function generateRivers(heightMap, size, heightMin, heightMax)
 	-- rivers start in mountains
 	local rockHeight = heightMin + HEIGHT_THRESHOLDS[5] * (heightMax - heightMin) 
 
 	-- rivers end in the sea
 	local shoreHeight = heightMin + HEIGHT_THRESHOLDS[2] * (heightMax - heightMin) 
 
-	for _, landGroup in ipairs(landGroups) do
-		local coords = {}
+	-- calculate river count and remaining attempts based on map area
+	local area = size * 6
+	local riverCount = mfloor(math.sqrt(area))
+	local attemptsRemaining = mfloor(math.sqrt(size) * area) 
 
-		-- find coords of mountains
-		for face, x, y in Group.iter(landGroup) do
-			if heightMap[face][x][y] > rockHeight then
-				coords[#coords + 1] = { face, x, y }
-			end
-		end		
+	local rivers = {}
+	local riverInfo = {}
 
-		-- if no mountain coords were found, can try next land group
-		if #coords == 0 then goto continue end
+	while riverCount > 0 and attemptsRemaining > 0 do
+		attemptsRemaining = attemptsRemaining - 1
 
-		-- base river count on land group size
-		local riverCount = mfloor(math.log(landGroup.size) / math.log(10))
+		-- get a random coord
+		local face, x, y = mrandom(6), mrandom(size), mrandom(size)
 
-		-- try to generate rivers
-		for i = 1, riverCount do
-			-- choose a random coord from the mountain coords
-			local coord = coords[mrandom(#coords)]
+		-- skip coord if occupied by river
+		if riverInfo[getKey(face, x, y)] == true then goto continue end
 
-			local stack = { coord }
-			local path = { coord } 
-			local riverInfo = {}
+		-- skip coord if not starting in mountain
+		if heightMap[face][x][y] < rockHeight then goto continue end
 
-			local key = getKey(unpack(coord))
-			riverInfo[key] = true
+		-- flow towards lowest neighbor
+		local lowestNeighbor = getLowestNeighbor(heightMap, size, face, x, y)
+		local river = River.new(lowestNeighbor.direction)
 
-			while #stack > 0 do
-				local coord = table.remove(stack)
-				path[#path + 1] = coord
-				generateRiver(heightMap, size, coord, shoreHeight, riverInfo, stack)
-			end
-
-			-- TODO: merge rivers
-
-			print('river length: ' .. #path)
-			print()
-
-			-- only add rivers of minimum length
-			if #path >= 10 then
-				for _, coord in ipairs(path) do
-					local face, x, y = unpack(coord)
-					heightMap[face][x][y] = heightMin
-				end
-			end
+		-- ... and flow towards sea
+		if not findPathToWater(heightMap, size, face, x, y, river, riverInfo, shoreHeight) then
+			goto continue 
 		end
+
+		-- validate river
+		if river.turnCount < MIN_RIVER_TURNS or river.length < MIN_RIVER_LENGTH then 
+			goto continue 
+		end
+		
+		-- TODO: intersections check
+		print('add river', river.id)
+
+		-- add river
+		rivers[#rivers + 1] = river
+
+		-- update river info with river coords
+		for key, _ in pairs(river.coordInfo) do
+			riverInfo[key] = true
+		end
+
+		riverCount = riverCount - 1
 
 		::continue::
 	end
 
-	--[[
-	-- 1. first figure out highest points in the map
-	-- 2. choose a random start point A from the highest points values
-	-- 2. for a given point, figure out the boundary (coast) - we can cache this ("islands")
-	--		easiest way to figure out boundary would be to implement the island / continent algorithm
-	-- 3. choose a random end point B
-	-- 4. repeat until river is completed (all connected):
-	--		4.1 get midpoint between A and B
-	--		4.2 find lowest position perpendicular to midpoint, this will be point C 
-	--		4.3 return to 4, for midpoints between A and C, B and C
-	--]] 
+	return rivers, riverInfo
+end
+
+local function addMoisture(tileMap, face, x, y, radius)
+	for x = 1, radius do
+		local moisture = 0.025 / 1.0 -- magnitude ( math.sqrt(math.pow(v1, 2) - math.pow(v2, 2)) )
+		
+		-- each neighbor ...
+	end
 end
 
 -- generate tile maps based on size and optionally seed & sea level
@@ -303,7 +386,7 @@ M.generate = function(size, seed)
 	local moistureMap, moistureMin, moistureMax = NoiseMap.generate(size, seed % 31, 4, 2.0)
 
 	local landGroups, waterGroups = generateGroups(heightMap, size, heightMin, heightMax)
-	generateRivers(heightMap, size, landGroups, heightMin, heightMax)
+	local rivers, riverInfo = generateRivers(heightMap, size, heightMin, heightMax)
 
 	-- could be a 2 dimensional array, the face could be an x-offset
 	local tileMap = CubeMap.new(size, function(face, x, y) 
@@ -313,6 +396,9 @@ M.generate = function(size, seed)
 		local biomeType = 0
 
 		local heightType = getTypeForValue(height, HEIGHT_THRESHOLDS)
+		if riverInfo[getKey(face, x, y)] ~= nil then
+			heightType = HeightType.RIVER
+		end
 
 		-- increase moisture above water and coastal areas
 		if heightType == HeightType.DEEP_WATER then
@@ -323,6 +409,8 @@ M.generate = function(size, seed)
 			biomeType = BiomeType.SHALLOW_WATER
 		elseif heightType == HeightType.SHORE then
 			moisture = mmin(moisture + 0.25 * height, 1.0)
+		elseif heightType == HeightType.RIVER then
+			addMoisture(tileMap, face, x, y, 60)
 		end
 
 		-- above coast level: decrease temperature as height increases

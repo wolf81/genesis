@@ -206,17 +206,19 @@ local function getLowestNeighbor(heightMap, size, face, x, y)
 	return neighbors[1]
 end
 
-local function getRiverNeighborCount(face, x, y, riverInfo)	
-	local face1, x1, y1 = CubeMap.getCoordDx(size, face, x, y, -1) -- left
-	local face2, x2, y2 = CubeMap.getCoordDx(size, face, x, y, 1)  -- right
-	local face3, x3, y3 = CubeMap.getCoordDy(size, face, x, y, -1) -- up
-	local face4, x4, y4 = CubeMap.getCoordDy(size, face, x, y, 1)  -- down
-
+local function getRiverNeighborCount(size, face, x, y, riverInfo)	
 	local count = 0
 
+	local face1, x1, y1 = CubeMap.getCoordDx(size, face, x, y, -1) -- left
 	if riverInfo[getKey(face1, x1, y1)] ~= nil then count = count + 1 end
+
+	local face2, x2, y2 = CubeMap.getCoordDx(size, face, x, y, 1)  -- right
 	if riverInfo[getKey(face2, x2, y2)] ~= nil then count = count + 1 end
+
+	local face3, x3, y3 = CubeMap.getCoordDy(size, face, x, y, -1) -- up
 	if riverInfo[getKey(face3, x3, y3)] ~= nil then count = count + 1 end
+
+	local face4, x4, y4 = CubeMap.getCoordDy(size, face, x, y, 1)  -- down
 	if riverInfo[getKey(face4, x4, y4)] ~= nil then count = count + 1 end
 
 	return count
@@ -226,7 +228,7 @@ local function findPathToWater(heightMap, size, face, x, y, river, riverInfo, sh
 	local key = getKey(face, x, y)
 
 	-- TODO: in riverInfo should store list of river ids and check if river.id is stored here
-	if riverInfo[key] ~= nil then return end
+	if riverInfo[key] ~= nil then return false end
 
 	-- TODO: add intersection if other river.ids exist
 	River.add(river, face, x, y)
@@ -239,23 +241,23 @@ local function findPathToWater(heightMap, size, face, x, y, river, riverInfo, sh
 	local height1, height2, height3, height4 = math.huge, math.huge, math.huge, math.huge
 
 	local neighborRiverInfo = {
-		[Direction.Left] = getRiverNeighborCount(face1, x1, y1),
-		[Direction.Right] = getRiverNeighborCount(face2, x2, y2),
-		[Direction.Top] = getRiverNeighborCount(face2, x2, y2),
-		[Direction.Bottom] = getRiverNeighborCount(face2, x2, y2),
+		left = getRiverNeighborCount(size, face1, x1, y1, riverInfo),
+		right = getRiverNeighborCount(size, face2, x2, y2, riverInfo),
+		up = getRiverNeighborCount(size, face3, x3, y3, riverInfo),
+		down = getRiverNeighborCount(size, face4, x4, y4, riverInfo),
 	}
 
 	-- set height if it's not already part of river and if tile contains at most one neighbor river
-	if not River.contains(river, face1, x1, y1) and neighborRiverInfo[Direction.Left] < 2 then 
+	if not River.contains(river, face1, x1, y1) and neighborRiverInfo.left < 2 then 
 		height1 = heightMap[face1][x1][y1] 
 	end
-	if not River.contains(river, face2, x2, y2) and neighborRiverInfo[Direction.Right] < 2 then 
+	if not River.contains(river, face2, x2, y2) and neighborRiverInfo.right < 2 then 
 		height2 = heightMap[face2][x2][y2] 
 	end
-	if not River.contains(river, face3, x3, y3) and neighborRiverInfo[Direction.Top] < 2 then 
+	if not River.contains(river, face3, x3, y3) and neighborRiverInfo.up < 2 then 
 		height3 = heightMap[face3][x3][y3] 
 	end
-	if not River.contains(river, face4, x4, y4) and neighborRiverInfo[Direction.Bottom] < 2 then 
+	if not River.contains(river, face4, x4, y4) and neighborRiverInfo.down < 2 then 
 		height4 = heightMap[face4][x4][y4] 
 	end
 

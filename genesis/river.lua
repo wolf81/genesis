@@ -2,7 +2,7 @@ local bbor, blshift = bit.bor, bit.lshift
 
 local M = {}
 
-local id = 1
+local id = 0
 
 local function getKey(face, x, y)
     return bbor(blshift(face, 28), blshift(x, 14), y)
@@ -21,7 +21,7 @@ M.add = function(river, face, x, y)
 end
 
 M.new = function(direction)
-    id = id + 1
+    id = math.max(id + 1, 1) -- rivers always start at index 1, never negative
 
     return {
         direction = direction,
